@@ -1,0 +1,52 @@
+一步一步，教你如何在linux PC上运行CHANOS
+
+1	准备工作
+1.1	为新板卡起名字
+起名字很关键，板卡的名字叫什么无所谓，但是一定要统一。
+本例中的板卡名字（board_name）叫做PCX8601、板卡系列名字(board_family)叫做x86。
+1.2	了解新板卡的一些参数
+了解板卡的一些参数，当然，到下面的需要了解的时候再了解也是可以的。
+1.2.1	CPU
+板卡用的是哪一种CPU，比如mips、x86、x64等。
+本例中用的是x86，各处的表述可能不同，比如：i386、i686等等。
+1.2.2	大小端
+当然，知道了CPU也就知道了大小端。
+1.2.3	网口数目、类型、速率等
+也是后来会用到的。
+1.2.4	C编译器
+由CPU决定，如果不是当前编译环境，那么需要交叉编译器，也是在后面进行设置。
+1.3	板卡的SDK、文档等
+板卡的C语言SDK也很重要，nam层会调用到。
+本例因为只是用x86平台做一个范例，所以就直接用linux的ioctrl等进行调用了。
+2	npd层修改
+做好了前面的准备工作，那么就可以开始npd层代码的改造了。npd层代码的改造主要涉及的是板管理与板定义这一块的代码。
+	比较快捷的方法是：
+第一步，在src目录下搜索PCX，可以找到一些结果。这些都是PCX8601的相关板管理和板定义代码。之后，按照PCX8601的样子，添加相应的新产品的的代码即可（除去nh_x86_spec_init.c、nbm_cpld.c、pcx8601_*.c这些文件不要改，其他的都改，别忘记了PCX8601要替换成新板子的名称）。
+第二步，要创建nh_[board_family]_spec_init.c、[board_name]_conn.c、[board_name]_param.c、[board_name]_feature.c这几个文件，[board_family]替换成你的新板卡的系列名，随便起一个就行，[board_name]替换成新板卡的名字即可（小写）。
+第三步，参照pcx8601_conn.c、pcx8601_param.c、pcx8601_feature.c的那三个文件，来写[board_name]对应的相应文件。其实主要的工作就是替换里面的pcx8601或PCX8601之类的字段等为新板卡的名字。然后，可能会不一样的是板卡的端口数目、交换芯片数目、网口速率等。pcx8601设定的是单交换芯片、24网口。可以通过代码里的相应注释进行修改。
+第四步，参照nh_x86_spec_init.c来编写nh_[board_family]_spec_init.c。
+3	nam层修改
+在src/npdsuit/nam_x86/src/lib下有诸多形如nam_*.c的文件，这里就是直接调用相应硬件sdk并被npd层调用的X86的nam层函数。
+对于新板卡，也需要在src/npdsuit/nam_[board_family]/src/lib下创建nam层文件。而它们的名字，是要与其他板卡系列的名字相同的。而且不仅仅是文件名，其文件中的函数名、参数、参数类型以及返回值类型也要一样。不同的只是函数的内容。
+nam函数的内容可以参照相应注释或npd代码，了解其要完成的功能后，调用相应的硬件SDK并返回结果。如果不知道如何调用或硬件没有提供相应的功能或SDK，直接返回一个值也是可以的。
+4	make相关脚本与配置文件的修改
+4.1	mk脚本
+在工程根目录下，可以找到mkx86.sh。可以参照mkx86.sh中的内容编写相应的mk[board_family].sh。（其实就是将里面的x86替换成[board_family]即可）
+4.2	make特定板的配置
+在工程根目录下，有一个make文件夹，里面存放的都是和make各个板子image有关的配置。
+对于一个新板卡，有两个地方要改：
+一个是形如make.tools.*.glibc的文件，里面主要是用以表示使用哪个编译器（交叉编译器的前缀，后缀都是gcc）和kernel版本等。可以看招相应的例子进行编写。
+另一个是在[board_family]文件夹下。这里存放的都是该板卡系列通用的配置：make.kernel.[board_family]表示的是如何生成iamge、kernel等目标。make.modules.[board_family]表示该产品包括的功能。make.[board_family]则是一些其他的配置，具体可以参照make.x86来编写。
+4.3	其他需要改动的地方
+在dev_x86/src/quagga有一个叫configpkg的文件。这个文件决定了如何加载编译quagga模块（quaggalib和quaggabin）。可以看到每一种板卡系列都有自己的config函数。在最下方就是各个板卡系列的判断。x86系列，所调用的是config_x86_2这个函数。对于新板卡，我们需要在这里添加其相应的判断。然后写其对应的config函数。对于config函数的写法可以参照其他系列的写法。（比如config_x86_2）注意修改—host参数即可，这里决定了其目标设备的主机，同时也就决定了编译器。
+5	fateroot相关文件的添加
+fateroot，顾名思义，也就是假的根目录。是将来做image或安装包时的文件依据。x86目录下有一个rootfs，而这个rootfs下的files目录就是所谓的fateroot了。这个目录下除了一些make后生成的文件（可执行文件和*.so文件）外，还有一些原本就应有的文件。而这些文件就是需要我们手动添加的文件了，这些文件包括：
+etc目录下的所有文件，可以直接用x86的。
+usr/bin目录下的所有*.sh文件，可以直接用x86的。
+sbin目录下的tipc-config，这个是用x86目录下的tipcutils-1.0.4.tar.gz解压后，make出来的（编译器当然要用对应的交叉编译器）。
+除此以外，还需要新建usr/lib、opt/lib、opt/bin这几个空目录。
+除了以上这些工作外，还有两个地方需要注意：
+一个是dev_x86目录下，有一个etc目录。对于安装包（deb）方式的输出，里边的文件与dbus模块冲突，所以没有放到x86/rootfs/ files目录下。如果是image模式，那么就需要把它放到x86/rootfs/files目录下，如果是 deb模式，那么就不需要，但是，在目标设备安装完deb后，需要手动将这一文件拷贝到根目录（建议做好备份）。
+另一个是对于目标设备要以M的模式加载tipc.ko模块。具体是进入linux的kernel源码目录。make menuconfig，进入menuconfig后，分别进入Networking support、Networking options。找到The TIPC Protocol (EXPERIMENTAL)，将其前面的标记变为M即可。要注意的是，kernel源码里的net/tipc目录下要有相应源码才可以（*.c、*.h之类）。
+6	编译
+以上都做完了就可以编译了。在dev_x86目录下执行“mk[board_family].sh image“即可。以pcx8601为例，就是，“mkx86.sh image”。pcx8601最后生成的是一个deb文件。有了这个文件，就可以将他拷贝到目标设备，进行安装就行了。
