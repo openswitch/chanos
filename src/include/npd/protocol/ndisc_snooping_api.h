@@ -1,0 +1,9 @@
+#ifndef _PROTOCOL_NDISC_SNOOPING_H
+#define _PROTOCOL_NDISC_SNOOPINT_H
+
+
+
+
+#endif  //_NPD_NDISC_SNOOPINT_H
+
+
