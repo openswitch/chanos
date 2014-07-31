@@ -1,0 +1,51 @@
+
+kernel: ${KERNEL_ROOT}/.config
+	@echo "Making kernel ..."
+	-rm ${KERNEL_ROOT}/usr/initramfs_data.cpio*
+	make KALLSYMS_EXTRA_PASS=1 -C ${KERNEL_ROOT}
+
+compressimg:
+	@echo "Copy generated vmlinux file to ${TARGETDIR}"
+	if [ ! -d ${TARGETDIR} ]; then mkdir -p ${TARGETDIR} ; chmod 777 ${TARGETDIR} ; fi
+	cp ${KERNEL_ROOT}/vmlinux ${TARGETDIR}/${IMGNAME}.ELF
+	ls -lh ${TARGETDIR}/${IMGNAME}*
+	cp ${KERNEL_ROOT}/vmlinux $(PROJECT_BUILD_DIR)
+	@echo "Making image for u-boot." 
+	./makeimg-ds.sh ${IMGNAME}
+	ls -lh $(PROJECT_BUILD_DIR)
+	./pack $(PROJECT_BUILD_DIR)/AW.IMG AW.`cat ${PRODUCTFILE}`.IMG `cat ${PRODUCTFILE}` `cat ${VERFILE}`.`cat ${BUILDNOFILE}` ${IMGNAME}.IMG
+	mv ${IMGNAME}.IMG ${TARGETDIR}/${IMGNAME}.IMG
+	@echo "WWW_DAILYBUILDDIR is ${WWW_DAILYBUILDDIR}"
+	@if [ -n "${WWW_DAILYBUILDDIR}" ] ; then  [ -d ${WWW_DAILYBUILDDIR} ] || mkdir ${WWW_DAILYBUILDDIR}; cp $(PROJECT_BUILD_DIR)/AW.IMG ${WWW_DAILYBUILDDIR}/${IMGNAME}.IMG ; fi
+	ls -lh ${TARGETDIR}/${IMGNAME}*
+	cp ${TARGETDIR}/$(IMGNAME).IMG ~
+
+image: 
+	@echo "Preparing product info"
+	@echo D6 > ${PRODUCTFILE}
+	make kernel
+	make IMGNAME="AW`cat ${VERFILE}`.`cat ${BUILDNOFILE}`.`cat ${PRODUCTFILE}`" compressimg
+	mv ${KERNEL_ROOT}/vmlinux $(PROJECT_BUILD_DIR)/AW.D6.ELF
+
+
+rebuild_img: cleannpdlib cleannpdsuit cleanmanlib cleanconfsyncd cleandbus_relay cleantipc_api cleandcli cleanquagga cleanunpack cleanfile_split kernel tipc_api dbus_relay libnpdlib quagga nam sdk nbm bm npd manlib confsyncd dcli unpack file_split
+
+	make tipc_api
+	make dbus_relay
+	@echo "Preparing product info"
+	@echo D6 > ${PRODUCTFILE}
+	make kernel
+	make IMGNAME="AW`cat ${VERFILE}`.`cat ${BUILDNOFILE}`.`cat ${PRODUCTFILE}`" compressimg
+	mv ${KERNEL_ROOT}/vmlinux $(PROJECT_BUILD_DIR)/AW.D6.ELF
+
+build_img: npdsuit manlib confsyncd quagga dcli unpack file_split
+
+	make tipc_api
+	make dbus_relay
+	@echo "Preparing product info"
+	@echo D6 > ${PRODUCTFILE}
+	make kernel
+	make IMGNAME="AW`cat ${VERFILE}`.`cat ${BUILDNOFILE}`.`cat ${PRODUCTFILE}`" compressimg
+	mv ${KERNEL_ROOT}/vmlinux $(PROJECT_BUILD_DIR)/AW.D6.ELF
+
+

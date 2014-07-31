@@ -1,0 +1,1 @@
+-include	$(PROJECT_TOP_DIR)/make/$(PRODUCT_SERIES)/make.board.$(BOARD_NAME)

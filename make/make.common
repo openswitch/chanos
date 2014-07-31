@@ -1,0 +1,9 @@
+
+include $(PROJECT_TOP_DIR)/make/$(PRODUCT_SERIES)/make.$(PRODUCT_SERIES)
+
+include $(PROJECT_TOP_DIR)/make/make.modules
+include $(PROJECT_TOP_DIR)/make/make.tools
+include $(PROJECT_TOP_DIR)/make/make.rules
+include $(PROJECT_TOP_DIR)/make/make.board
+include $(PROJECT_TOP_DIR)/make/$(PRODUCT_SERIES)/make.kernel.$(PRODUCT_SERIES)
+

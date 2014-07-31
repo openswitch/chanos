@@ -1,0 +1,5 @@
+
+export COMPILER_PREFIX=arm-marvell-linux-gnueabi-
+export COMPILER_HOST_PREFIX=arm-marvell-linux-gnueabi
+export PATH:=/opt/armv7-marvell-linux-gnueabi-softfp_i686_64K/bin:${PATH}
+export TARGET_LINUX_VERSION=3.2.40

@@ -1,0 +1,5 @@
+
+export COMPILER_PREFIX=mips-openwrt-linux-
+export COMPILER_HOST_PREFIX=mips-openwrt-linux
+export PATH:=/opt/openwrt-mips/toolchain-mips_gcc-4.3.3+cs_uClibc-0.9.31/bin:${PATH}
+export TARGET_LINUX_VERSION=2.6.36.2

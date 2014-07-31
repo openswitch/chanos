@@ -1,0 +1,41 @@
+
+kernel: 
+	@echo "Making kernel ..."
+	-rm ${KERNEL_ROOT}/usr/initramfs_data.cpio*
+	make -C ${KERNEL_ROOT} uImage
+
+pre_image: 
+	@echo "Preparing product info"
+	@echo S6 > ${PRODUCTFILE}
+	cp -R ${BUILD_ROOTFS_DIR}/opt/etc/version ${KERNEL_ROOT}/initramfs/etc/
+	make kernel IMGNAME=$(IMGNAME)
+	if [ ! -d ${TARGETDIR} ]; then mkdir -p ${TARGETDIR} ; chmod 777 ${TARGETDIR} ; fi
+	mv ${KERNEL_ROOT}/arch/arm/boot/uImage $(PROJECT_BUILD_DIR)/uImage
+	chmod 777 ${BUILD_ROOTFS_DIR} -R
+	chmod 4755 ${BUILD_ROOTFS_DIR}/usr/bin/sudo
+	chmod 0440 ${BUILD_ROOTFS_DIR}/opt/etc/sudoers
+	mksquashfs ${BUILD_ROOTFS_DIR} $(PROJECT_BUILD_DIR)/rootfs.S6.squashfs -comp lzma -noappend -all-root > /dev/null
+	dd conv=sync bs=64k < $(PROJECT_BUILD_DIR)/uImage > $(PROJECT_BUILD_DIR)/$(IMGNAME).IMG
+	cat $(PROJECT_BUILD_DIR)/rootfs.S6.squashfs >> $(PROJECT_BUILD_DIR)/$(IMGNAME).IMG
+	./pack $(PROJECT_BUILD_DIR)/$(IMGNAME).IMG AW.`cat ${PRODUCTFILE}`.IMG `cat ${PRODUCTFILE}` `cat ${VERFILE}`.`cat ${BUILDNOFILE}` ${IMGNAME}.IMG
+	mv $(IMGNAME).IMG ${TARGETDIR}/$(IMGNAME).IMG
+
+image: 
+	make pre_image IMGNAME="AW`cat ${VERFILE}`.`cat ${BUILDNOFILE}`.`cat ${PRODUCTFILE}`"
+
+
+rebuild_img: cleannpdlib cleannpdsuit cleanasd cleanwcpss cleanhad cleandhcp cleanlldp cleanmanlib cleanconfsyncd cleandbus_relay cleandcli cleanigmp cleanquagga cleanstpsuit cleantipc_api cleanunpack cleanfile_split cleanccgi cleansnmp cleansmartlink npdsuit stpsuit asd lldp quagga manlib dcli confsyncd igmp dhcp had unpack file_split ccgi snmp smartlink erpp
+	make tipc_api
+	make dbus_relay
+	make image
+
+build_img: npdsuit stpsuit asd lldp quagga manlib dcli confsyncd igmp dhcp had unpack file_split ccgi snmp smartlink erpp
+	make tipc_api
+	make dbus_relay
+	make image
+
+fast_rebuild_img: cleannpdlib cleannpd cleannam cleannbm cleanbm cleanasd cleanwcpss cleanhad cleandhcp cleanlldp cleanmanlib cleanconfsyncd cleandbus_relay cleandcli cleanigmp cleanquagga cleanstpsuit cleantipc_api cleanunpack cleanfile_split cleanccgi cleansnmp cleansmartlink npdsuit stpsuit asd lldp quagga manlib dcli confsyncd igmp dhcp had unpack file_split ccgi snmp smartlink erpp
+	make tipc_api
+	make dbus_relay
+	make image
+

@@ -1,0 +1,75 @@
+
+include $(PROJECT_TOP_DIR)/make/make.tools.$(CPU_ARCH)$(ENDIAN_SUFFIX).$(LIBC_TYPE)
+
+export AR=${COMPILER_PREFIX}ar
+export RANLIB=${COMPILER_PREFIX}ranlib
+export OBJDUMP=${COMPILER_PREFIX}objdump
+export STRIP=${COMPILER_PREFIX}strip
+export SIZE=${COMPILER_PREFIX}size
+export CC=${COMPILER_PREFIX}gcc
+export CXX=${COMPILER_PREFIX}g++
+export LD=${COMPILER_PREFIX}ld
+export NM=${COMPILER_PREFIX}nm
+ECHO:=echo
+TOUCH:=touch
+Q:=
+MKDIR:=mkdir
+SED:=sed
+ifeq ($(BLDDIR),)
+BLDDIR=$(PROJECT_BUILD_DIR)
+endif
+
+DEPS_SED = \
+	$(CP) $(BLDDIR)/$*.d $(BLDDIR)/$*.tmp;\
+	$(ECHO) >> $(BLDDIR)/$*.tmp;\
+	$(SED) -e 's/\#.*//' -e 's/^[^:]*: *//' \
+	-e 's/ *\\$$//' -e '/^$$/ d' -e 's/$$/ :/' \
+	-e '/^ .$$/d' \
+	< $(BLDDIR)/$*.d >> $(BLDDIR)/$*.tmp; \
+	$(SED) -e 's|^\([^\/ ].*\.o\):|'$(BLDDIR)/'\1:|g'  \
+	-e 's|.*?/\(.*\.o\):|'$(BLDDIR)/'\1:|g'  \
+	< $(BLDDIR)/$*.tmp > $(BLDDIR)/$*.P; \
+	$(RM) -f $(BLDDIR)/$*.d $(BLDDIR)/$*.tmp
+
+# Gnu compilers always support -MD -MF
+DEPS_OPT = -MD -MF $(BLDDIR)/$*.d
+DEPS_CMD = $(DEPS_SED)
+
+%/.tree:
+	@$(ECHO) Creating build directory $(dir $@)
+	$Q($(MKDIR) $(dir $@); $(TOUCH) $@)
+
+%.E: %.c
+	$Q$(CC) -E ${CFLAGS} $< | $(SED) -e '/^ *$$/d' -e p -e d > $@
+
+# Rule allowing build through source only, creates .s file from .c file.
+
+%.s: %.c
+	$Q$(CC) -S ${CFLAGS} $<
+
+
+${BLDDIR}/%.o: %.c
+	$(call do,$$(CC) $$(DEPS_OPT) $$(CFLAGS) $$(EXTRA_CFLAGS) -o $$@ -c $$(realpath $$<))  && ($(DEPS_CMD))
+
+${BLDDIR}/%.o: %.s
+	@$(ECHO) Assembling ${LOCALDIR}/$<
+	$Q$(CC) ${CFLAGS} ${EXTRA_CFLAGS} -o $@ -c $(realpath $<)
+
+${BLDDIR}/%.o: %.cpp
+	@$(ECHO) Compiling ${LOCALDIR}/$<
+	$Q$(CXX) ${CXXFLAGS}  -o $@ -c $(realpath $<)
+
+${BLDDIR}/%.o: %.cc ${BLDDIR}/.tree
+	@$(ECHO) Compiling ${LOCALDIR}/$<
+	$Q$(CXX) ${CXXFLAGS} -o $@ -c $(realpath $<)
+
+
+#
+# Cause "make foo.o" in any subdirectory to put the object in the build
+# directory instead of the local directory.
+#
+%.o: ${BLDDIR}/%.o
+	@
+
+
+

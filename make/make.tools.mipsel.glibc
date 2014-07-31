@@ -1,0 +1,7 @@
+
+export COMPILER_PREFIX=mipsel-linux-
+export COMPILER_HOST_PREFIX=mipsel-linux
+export PATH:=/opt/gcc-3.4.6-2f/bin/:${PATH}
+
+export TARGET_LINUX_VERSION=2.6.36.23
+

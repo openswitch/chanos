@@ -1,0 +1,8 @@
+
+export COMPILER_PREFIX=i686-unknown-linux-gnu-
+export COMPILER_HOST_PREFIX=i686-unknown-linux-gnu
+export PATH:=/workspace26/i386-env/cross-tools/bin:${PATH}
+export TARGET_LINUX_VERSION=2.6.27
+
+export CFLAGS += $(TOS_UFLAGS)
+export LDFLAGS += $(TOS_LDFLAGS)

@@ -1,0 +1,5 @@
+
+export COMPILER_PREFIX=armeb-mv5sft-linux-gnueabi-
+export COMPILER_HOST_PREFIX=armeb-mv5sft-linux-gnueabi
+export PATH:=/opt/armeb-mv5sft-linux-gnueabi_SW3.2/bin:${PATH}
+export TARGET_LINUX_VERSION=2.6.31.8
