@@ -2724,8 +2724,6 @@ enum npd_dbus_result_no_e {
 #define NPD_DBUS_FDB_METHOD_CONFIG_FDB_NUMBER_WITH_VLAN       "config_fdb_vlan_number"
 #define NPD_DBUS_FDB_METHOD_CONFIG_FDB_NUMBER_WITH_VLAN_PORT  "confing_fdb_vlan_port_number"
 
-#define NPD_DBUS_FDB_METHOD_SHOW_FDB_NUMBER_LIMIT_ITEM         "show_fdb_number_limit_item"
-
 #define NPD_DBUS_STATIC_FDB_METHOD_SHOW_RUNNING_CONFIG         "run_static_init"
 
 
@@ -3396,62 +3394,6 @@ enum npd_dbus_result_no_e {
 *			NPD_FAILURE
 ********************************************************************************/
 #define NPD_DBUS_ETHPORTS_INTERFACE_METHOD_CLEAR_ETHPORT_STAT "clear_ethport_stat" 
-
-/*****************************************************************************
-*	DESCRIPTION: 
-*			This method should clear arp;
-*			 NPD_DBUS_ETHPORTS_INTERFACE_METHOD_CLEAR_ETHPORT_STAT
-*
-*	INPUT:
-*	 	byte slot    //slot number on the board
-*		byte port   //port number on the slot
-*
-*  OUTPUT:  
-* 			NONE
-*
-*		RETURN
-*			NPD_SUCCESS
-*			NPD_FAILURE
-********************************************************************************/
-#define NPD_DBUS_ETHPORTS_METHOD_STP_GET_PORT_LINK_STATE      "get_stp_portlk_stae" 
-
-
-
-/************************************************************************
- * DESCRIPTION:
- * 	arg lists for method NPD_DBUS_ETHPORTS_METHOD_STP_GET_PORT_SPEED;in order to 
- *    get the port link state;
- *
- * INPUT:
- * 
- *	uint32-	port_index - port index
- *
- * OUTPUT:
- *
- *		up
- *		down
- *
- ***********************************************************************/
-#define NPD_DBUS_ETHPORTS_METHOD_STP_GET_PORT_SPEED	      "get_stp_port_speed" 
-
-
-
-/************************************************************************
- * DESCRIPTION:
- * 	arg lists for method NPD_DBUS_ETHPORTS_METHOD_STP_GET_PORT_DUPLEX_MODE;in order to 
- *    get the port link state;
- *
- * INPUT:
- * 
- *	uint32-	port_index - port index
- *
- * OUTPUT:
- *
- *		up
- *		down
- *
- ***********************************************************************/
-#define NPD_DBUS_ETHPORTS_METHOD_STP_GET_PORT_DUPLEX_MODE   "get_stp_port_duplex_mode" 
 
 
 /* Port interface will be used with VLAN/TRUNK/ and so on.*/

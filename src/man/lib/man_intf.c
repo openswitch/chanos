@@ -2075,6 +2075,14 @@ int create_intf
     {
         return INTERFACE_RETURN_CODE_IFNAME_RESERVED;
     }
+    else if(strncmp("sit", ifname, strlen("sit"))== 0)
+    {
+        return INTERFACE_RETURN_CODE_IFNAME_RESERVED;
+    }
+    else if(strncmp("ip6tnl", ifname, strlen("ip6tnl"))== 0)
+    {
+        return INTERFACE_RETURN_CODE_IFNAME_RESERVED;
+    }
 	else
 	{
         netif_index = parse_intf_name_to_netif_index(ifname);
@@ -2147,6 +2155,16 @@ int delete_intf
 	        {
 		        return INTERFACE_RETURN_CODE_IFNAME_RESERVED;
 	        }
+			if(strncmp("sit", ifname, strlen("sit")) == 0)
+	        {
+		        return INTERFACE_RETURN_CODE_IFNAME_RESERVED;
+	        }
+
+			if(strncmp("ip6tnl", ifname, strlen("ip6tnl")) == 0)
+	        {
+		        return INTERFACE_RETURN_CODE_IFNAME_RESERVED;
+	        }
+
 
 			
 	        sprintf(line,"no interface %s",dcli_vty_ifname);

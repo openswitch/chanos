@@ -16,7 +16,7 @@
   */
 #define CONN_MAX_GMODULE_PERSLOT 2
 #define CONN_MAX_MODULE_PERUNIT 2
-
+#define CONN_MAX_SUBPORT_PER_ETHPORT 4
 enum
 {
     CENTRAL_FABRIC,
@@ -60,6 +60,13 @@ typedef struct peer_chip_port_s
     int distance; /*the unit in which distance, should be PLANE_DISTANCE_x*/
 }peer_chip_port_t;
 
+typedef struct eth_sub_port_s
+{
+    int unit;
+    int unit_port;
+    int user_type;
+}eth_sub_port_t;
+
 typedef enum plane_porttype_s
 {
     PLANE_PORTTYPE_STACK,
@@ -101,6 +108,7 @@ typedef struct panel_conn_s
     int user_type;  /*such as cooper, sfp, combo, */
     int driver_type; /*such as broadcom, marvell, cavium*/
     int can_be_stack; /*can configure as stack port*/
+	eth_sub_port_t sub_ports[CONN_MAX_SUBPORT_PER_ETHPORT];
 }panel_conn_t;
 
 typedef panel_conn_t *panel_chip_conn_t;
@@ -119,6 +127,7 @@ typedef struct asic_conn_s
     int peer_unit;
     int peer_port;
     int cross_port;
+    int sub_port;
 }asic_conn_t;
 
 typedef asic_conn_t  *board_chip_conn_t;
@@ -235,8 +244,16 @@ extern product_conn_type_t *backplane_type;
 /* get panel port no by (unit,port)  */
 #define PHY_2_PANEL_TYPE(unit, phy_port, asic_type) \
 	((local_board_conn_type->board_conn_from_chip[asic_type][unit])[phy_port].panel_port)
+	
+#define PHY_2_PANEL_SUBPORT_TYPE(unit, phy_port, asic_type) \
+	((local_board_conn_type->board_conn_from_chip[asic_type][unit])[phy_port].sub_port)
+	
 #define PHY_2_PANEL(unit, phy_port) \
 	PHY_2_PANEL_TYPE(unit, phy_port, ASIC_SWITCH_TYPE)
+	
+#define PHY_2_PANEL_SUBPORT(unit, phy_port) \
+	PHY_2_PANEL_SUBPORT_TYPE(unit, phy_port, ASIC_SWITCH_TYPE)
+
 
 #define PPAL_PANEL_PORT_TYPE(mtype, lport) \
     ((board_conn_type[mtype]->board_conn_from_panel)[lport-1].user_type)
@@ -248,13 +265,23 @@ extern product_conn_type_t *backplane_type;
 #define PANEL_2_PHY_PORT_TYPE(lport,asic_type) \
 	((local_board_conn_type->board_conn_from_panel)[lport-1].chip_port[asic_type].unit_port)
 #define PANEL_2_PHY_PORT(lport) \
-    PANEL_2_PHY_PORT_TYPE(lport,ASIC_SWITCH_TYPE)    
+    PANEL_2_PHY_PORT_TYPE(lport,ASIC_SWITCH_TYPE)
+    
+#define PANEL_SUBPORT_2_PHY_PORT(lport, sub_port) \
+    (sub_port&&((local_board_conn_type->board_conn_from_panel)[lport-1].sub_ports[sub_port].user_type))? \
+        ((local_board_conn_type->board_conn_from_panel)[lport-1].sub_ports[sub_port].unit_port):PANEL_2_PHY_PORT_TYPE(lport,ASIC_SWITCH_TYPE)
+
 
    /* get device port no by panel port no */
 #define PANEL_2_PHY_UNIT_TYPE(lport,asic_type) \
 	((local_board_conn_type->board_conn_from_panel)[lport-1].chip_port[asic_type].unit)
 #define PANEL_2_PHY_UNIT(lport) \
     PANEL_2_PHY_UNIT_TYPE(lport,ASIC_SWITCH_TYPE)
+    
+#define PANEL_SUBPORT_2_PHY_UNIT(lport, sub_port) \
+    (sub_port&&((local_board_conn_type->board_conn_from_panel)[lport-1].sub_ports[sub_port].user_type))? \
+        ((local_board_conn_type->board_conn_from_panel)[lport-1].sub_ports[sub_port].unit):PANEL_2_PHY_UNIT_TYPE(lport,ASIC_SWITCH_TYPE)
+
 
 #define PANEL_2_POE_PORT_TYPE(lport,asic_type) \
 	((local_board_conn_type->board_conn_from_panel)[lport-1].chip_port[asic_type].unit_port)
@@ -325,19 +352,36 @@ extern product_conn_type_t *backplane_type;
 #define PPAL_PHY_2_PANEL_TYPE(mtype, unit, phy_port, type) \
 	((board_conn_type[mtype]->board_conn_from_chip[type][unit])[phy_port].panel_port)
 
+#define PPAL_PHY_2_PANEL_SUBPORT_TYPE(mtype, unit, phy_port, type) \
+	((board_conn_type[mtype]->board_conn_from_chip[type][unit])[phy_port].sub_port)
+
 #define PPAL_PHY_2_PANEL(mtype, unit, phy_port) \
 	PPAL_PHY_2_PANEL_TYPE(mtype,unit, phy_port, ASIC_SWITCH_TYPE)
+	
+#define PPAL_PHY_2_PANEL_SUBPORT(mtype, unit, phy_port) \
+	PPAL_PHY_2_PANEL_SUBPORT_TYPE(mtype,unit, phy_port, ASIC_SWITCH_TYPE)
+
 
 #define PPAL_PANEL_2_PHY_PORT_TYPE(mtype, lport,type) \
 	((board_conn_type[mtype]->board_conn_from_panel)[lport-1].chip_port[type].unit_port)
 #define PPAL_PANEL_2_PHY_PORT(mtype, lport) \
-    PPAL_PANEL_2_PHY_PORT_TYPE(mtype, lport,ASIC_SWITCH_TYPE)    
+    PPAL_PANEL_2_PHY_PORT_TYPE(mtype, lport,ASIC_SWITCH_TYPE)
+    
+#define PPAL_PANEL_SUBPORT_2_PHY_PORT(mtype, lport, sub_port) \
+    (sub_port&&((board_conn_type[mtype]->board_conn_from_panel)[lport-1].sub_ports[sub_port].user_type))? \
+        ((board_conn_type[mtype]->board_conn_from_panel)[lport-1].sub_ports[sub_port].unit_port):PPAL_PANEL_2_PHY_PORT_TYPE(mtype, lport,ASIC_SWITCH_TYPE)
     
    /* get device port no by panel port no */
 #define PPAL_PANEL_2_PHY_UNIT_TYPE(mtype, lport,type) \
 	((board_conn_type[mtype]->board_conn_from_panel)[lport-1].chip_port[type].unit)
+	
 #define PPAL_PANEL_2_PHY_UNIT(mtype, lport) \
     PPAL_PANEL_2_PHY_UNIT_TYPE(mtype,lport,ASIC_SWITCH_TYPE)
+    
+#define PPAL_PANEL_SUBPORT_2_PHY_UNIT(mtype, lport, sub_port) \
+    (sub_port&&((board_conn_type[mtype]->board_conn_from_panel)[lport-1].sub_ports[sub_port].user_type))? \
+        ((board_conn_type[mtype]->board_conn_from_panel)[lport-1].sub_ports[sub_port].unit):PPAL_PANEL_2_PHY_UNIT_TYPE(mtype,lport,ASIC_SWITCH_TYPE)
+
 
 #define PPAL_PANEL_2_SUBSLOT(mtype, lport) \
     ((board_conn_type[mtype]->board_conn_from_panel)[lport-1].subslot_port)
@@ -359,6 +403,12 @@ extern product_conn_type_t *backplane_type;
         ((local_board_conn_type->board_conn_from_sub[sub_slot - 1])[port].chip_port[ASIC_SWITCH_TYPE].unit)
 #define PPAL_SUB_SLOT_PANEL_PORT_2_PORT(sub_slot, port) \
         ((local_board_conn_type->board_conn_from_sub[sub_slot - 1])[port].chip_port[ASIC_SWITCH_TYPE].unit_port)
+        
+#define PPAL_SUB_SLOT_PANEL_PORT_AND_SUBPORT_2_UNIT(sub_slot, port, sub_port) \
+        (sub_port&&((local_board_conn_type->board_conn_from_sub[sub_slot - 1])[port].sub_ports[sub_port].user_type))?((local_board_conn_type->board_conn_from_sub[sub_slot - 1])[port].sub_ports[sub_port].unit):((local_board_conn_type->board_conn_from_sub[sub_slot - 1])[port].chip_port[ASIC_SWITCH_TYPE].unit)
+
+#define PPAL_SUB_SLOT_PANEL_PORT_AND_SUBPORT_2_PORT(sub_slot, port, sub_port) \
+        (sub_port&&((local_board_conn_type->board_conn_from_sub[sub_slot - 1])[port].sub_ports[sub_port].user_type))?((local_board_conn_type->board_conn_from_sub[sub_slot - 1])[port].sub_ports[sub_port].unit_port):((local_board_conn_type->board_conn_from_sub[sub_slot - 1])[port].chip_port[ASIC_SWITCH_TYPE].unit_port)
 
 extern void ax_sal_config_init_defaults(void);
 

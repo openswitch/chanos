@@ -687,9 +687,6 @@ static DBusHandlerResult npd_dbus_message_handler (DBusConnection *connection, D
 		else if(dbus_message_is_method_call(message, NPD_DBUS_FDB_INTERFACE,NPD_DBUS_FDB_METHOD_CONFIG_FDB_NUMBER_WITH_VLAN)){
 			reply = npd_dbus_fdb_config_vlan_number(connection,message,user_data);
 		}
-		else if(dbus_message_is_method_call(message, NPD_DBUS_FDB_INTERFACE,NPD_DBUS_FDB_METHOD_SHOW_FDB_NUMBER_LIMIT_ITEM)){
-			reply = npd_dbus_fdb_show_limit_item(connection,message,user_data);
-		}
 		else if(dbus_message_is_method_call(message,NPD_DBUS_FDB_INTERFACE,NPD_DBUS_FDB_METHOD_CONFIG_FDB_NUMBER_WITH_VLAN_PORT)){
 			reply = npd_dbus_fdb_config_vlan_port_number(connection,message,user_data);
 		}
@@ -2376,20 +2373,6 @@ static DBusHandlerResult npd_dbus_relay_message_handler (DBusConnection *connect
     		{
     			reply = npd_dbus_show_cpu_stats(connection,message,user_data);
     		}
-#ifdef HAVE_BRIDGE_STP
-            else if(dbus_message_is_method_call(message,NPD_DBUS_RELAY_INTERFACE,NPD_DBUS_ETHPORTS_METHOD_STP_GET_PORT_LINK_STATE))
-    		{
-    			reply = npd_dbus_stp_get_port_link_state(connection,message,user_data);
-    		}
-            else if(dbus_message_is_method_call(message,NPD_DBUS_RELAY_INTERFACE,NPD_DBUS_ETHPORTS_METHOD_STP_GET_PORT_SPEED))
-    		{
-    			reply = npd_dbus_stp_get_port_speed(connection,message,user_data);
-    		}
-            else if(dbus_message_is_method_call(message,NPD_DBUS_RELAY_INTERFACE,NPD_DBUS_ETHPORTS_METHOD_STP_GET_PORT_DUPLEX_MODE))
-    		{
-    			reply = npd_dbus_stp_get_port_duplex_mode(connection,message,user_data);
-    		}
-#endif
 #ifdef HAVE_TEMPERATURE_MONITOR
             else if(dbus_message_is_method_call(message,NPD_DBUS_RELAY_INTERFACE,NPD_DBUS_DEVICE_METHOD_SHOW_TEMPER))
 			{

@@ -126,16 +126,15 @@ NPD_ETH_PORT_NOTIFIER_FUNC	portNotifier = NULL;
 npd_msg_list_t *npd_port_event_list = NULL;
 
 /* port array need to poll fiber state*/
-unsigned int g_fiber_port_poll[MAX_ETHPORT_PER_BOARD];
-unsigned int g_eth_port_rate_poll[MAX_ETHPORT_PER_BOARD];
-unsigned int g_eth_port_rateInput[MAX_ETHPORT_PER_BOARD]= {0};
-unsigned long long g_ethport_input_bytes[MAX_ETHPORT_PER_BOARD][6] = {{0}};
-unsigned  int g_eth_port_rateOutput[MAX_ETHPORT_PER_BOARD] = {0};
-unsigned long long g_ethport_output_bytes[MAX_ETHPORT_PER_BOARD][6] = {{0}};
+unsigned int g_eth_port_rate_poll[MAX_ETHPORT_PER_BOARD*MAX_SUBPORT_PER_ETHPORT];
+unsigned int g_eth_port_rateInput[MAX_ETHPORT_PER_BOARD*MAX_SUBPORT_PER_ETHPORT]= {0};
+unsigned long long g_ethport_input_bytes[MAX_ETHPORT_PER_BOARD*MAX_SUBPORT_PER_ETHPORT][6] = {{0}};
+unsigned  int g_eth_port_rateOutput[MAX_ETHPORT_PER_BOARD*MAX_SUBPORT_PER_ETHPORT] = {0};
+unsigned long long g_ethport_output_bytes[MAX_ETHPORT_PER_BOARD*MAX_SUBPORT_PER_ETHPORT][6] = {{0}};
 
 static unsigned int scType = ETH_PORT_STREAM_BPS_E;
-eth_port_stats_t 	g_eth_port_counter[MAX_SLOT_SUBBOARD_COUNT][MAX_ETHPORT_PER_BOARD];
-struct eth_port_counter_s 	g_stack_port_counter[MAX_SLOT_SUBBOARD_COUNT][MAX_ETHPORT_PER_BOARD];
+eth_port_stats_t 	g_eth_port_counter[MAX_SLOT_SUBBOARD_COUNT][MAX_ETHPORT_PER_BOARD*MAX_SUBPORT_PER_ETHPORT];
+struct eth_port_counter_s 	g_stack_port_counter[MAX_SLOT_SUBBOARD_COUNT][MAX_ETHPORT_PER_BOARD*MAX_SUBPORT_PER_ETHPORT];
 
 extern int manu_testing;
 
@@ -248,8 +247,8 @@ void npd_eth_port_linkup_update(void *private_date, int len)
 	}
 	syslog_ax_eth_port_dbg("Netif index: 0x%x, attibute bitmap: %x.\r\n", eth_attr->eth_port_ifindex, eth_attr->attr_bitmap);
 	netif_index = eth_attr->eth_port_ifindex;
-	/*\B6\D4ethernet port, trunk, switch port, vlan\B5ķ\C7\CA\FD\BEݿ\E2\B5\C4update/insert/delete\B2\D9\D7\F7\B1\D8\D0밴\CF\C2\C1\D0
-	   ˳\D0\F2\D7\F6\CB\F8\A3\AC\D2Ա㲻\D2\FD\C6\F0\CA\FD\BEݲ\BBһ\D6\C2\CE\CA\CC\E2*/
+	/*\B6\D4ethernet port, trunk, switch port, vlan\B5?\C7\CA\FD\BE?\E2\B5\C4update/insert/delete\B2\D9\D7\F7\B1\D8\D0?\CF\C2\C1\D0
+	   ?\D0\F2\D7\F6\CB\F8\A3\AC\D2??\D2\FD\C6\F0\CA\FD\BE?\BB?\D6\C2\CE\CA\CC\E2*/
 	npd_key_database_lock();
     current_eth = npd_get_port_by_index(netif_index);
     if(NULL == current_eth)
@@ -359,7 +358,6 @@ void npd_init_eth_ports(void)
 
     register_netif_notifier(&eth_port_notifier);
 	netif_notify_remote_event_callback = npd_eth_port_linkup_update;
-    memset(g_fiber_port_poll, 0,sizeof(g_fiber_port_poll));
     memset(g_eth_port_counter, 0, sizeof(g_eth_port_counter));
 	memset(g_stack_port_counter, 0, sizeof(g_stack_port_counter));
 
@@ -584,6 +582,7 @@ void npd_create_eth_port
     unsigned int slot_index,
     unsigned int sub_slot,
     unsigned int eth_local_index,
+    unsigned int sub_port,
     int state
 )
 {
@@ -594,11 +593,11 @@ void npd_create_eth_port
     int port_type;
     int port_driver_type;
 
-	/*\B6\D4\D3ں\D0ʽ\C9豸\A3\ACnetif_index\D6д\AB\C8\EB\B5\C4slotʵ\BC\CA\C9\CF\CA\C7subslot*/
+	/*\B6\D4\D3?\D0?\C9��\A3\ACnetif_index\D6��\AB\C8\EB\B5\C4slot?\BC\CA\C9\CF\CA\C7subslot*/
 	if(PRODUCT_IS_BOX)
-        eth_port_ifindex = eth_port_generate_ifindex(slot_index, sub_slot, 0, eth_local_index);
+        eth_port_ifindex = eth_port_generate_ifindex(slot_index, sub_slot, 0, eth_local_index, sub_port);
 	else
-        eth_port_ifindex = eth_port_generate_ifindex(chassis, slot_index, sub_slot, eth_local_index);
+        eth_port_ifindex = eth_port_generate_ifindex(chassis, slot_index, sub_slot, eth_local_index, sub_port);
 		
     syslog_ax_eth_port_dbg("Chassis %d, slot %d, sub slot %d, port %d!\r\n",chassis, slot_index, sub_slot, eth_local_index);
     eth_ports = (struct eth_port_s *)malloc(sizeof(struct eth_port_s));
@@ -701,6 +700,7 @@ void npd_delete_eth_port(
     unsigned int slot_index,
     unsigned int sub_slot,
     unsigned int eth_local_index,
+    unsigned int sub_port,
     int state
 )
 {
@@ -709,11 +709,11 @@ void npd_delete_eth_port(
     struct eth_port_s *eth_ports = NULL;
 
 	
-	/*\B6\D4\D3ں\D0ʽ\C9豸\A3\ACnetif_index\D6д\AB\C8\EB\B5\C4slotʵ\BC\CA\C9\CF\CA\C7subslot*/
+	/*\B6\D4\D3?\D0?\C9��\A3\ACnetif_index\D6��\AB\C8\EB\B5\C4slot?\BC\CA\C9\CF\CA\C7subslot*/
 	if(PRODUCT_IS_BOX)
-        eth_port_ifindex = eth_port_generate_ifindex(slot_index, sub_slot, 0, eth_local_index);
+        eth_port_ifindex = eth_port_generate_ifindex(slot_index, sub_slot, 0, eth_local_index, sub_port);
 	else
-        eth_port_ifindex = eth_port_generate_ifindex(chassis, slot_index, sub_slot, eth_local_index);
+        eth_port_ifindex = eth_port_generate_ifindex(chassis, slot_index, sub_slot, eth_local_index, sub_port);
     eth_ports = (struct eth_port_s *)malloc(sizeof(struct eth_port_s));
 
     if (NULL == eth_ports)
@@ -722,15 +722,19 @@ void npd_delete_eth_port(
         return;
     }
     npd_key_database_lock();
+	
     netif_notify_event(eth_port_ifindex, PORT_NOTIFIER_DELETE);
     netif_app_notify_event(eth_port_ifindex, PORT_NOTIFIER_DELETE, NULL, 0);
+	
     memset((void *)eth_ports,0,sizeof(struct eth_port_s));
     eth_ports->eth_port_ifindex = eth_port_ifindex;
 	
     ret = dbtable_sequence_search(g_eth_ports,  eth_port_ifindex, eth_ports);
 
     if (-1 == ret)
+    {
         goto error;
+    }
 
     netif_notify_event(eth_port_ifindex, PORT_NOTIFIER_L2DELETE);
     netif_app_notify_event(eth_port_ifindex, PORT_NOTIFIER_L2DELETE, NULL, 0);
@@ -752,6 +756,7 @@ void npd_remove_eth_port(
     unsigned int slot_index,
     unsigned int sub_slot,
     unsigned int eth_local_index,
+    unsigned int sub_port,
     int state
 )
 {
@@ -761,11 +766,11 @@ void npd_remove_eth_port(
 	
     int array_id = 0;
 
-	/*\B6\D4\D3ں\D0ʽ\C9豸\A3\ACnetif_index\D6д\AB\C8\EB\B5\C4slotʵ\BC\CA\C9\CF\CA\C7subslot*/
+	/*\B6\D4\D3?\D0?\C9��\A3\ACnetif_index\D6��\AB\C8\EB\B5\C4slot?\BC\CA\C9\CF\CA\C7subslot*/
 	if(PRODUCT_IS_BOX)
-        eth_port_ifindex = eth_port_generate_ifindex(slot_index, sub_slot, 0, eth_local_index);
+        eth_port_ifindex = eth_port_generate_ifindex(slot_index, sub_slot, 0, eth_local_index, sub_port);
 	else
-        eth_port_ifindex = eth_port_generate_ifindex(chassis, slot_index, sub_slot, eth_local_index);
+        eth_port_ifindex = eth_port_generate_ifindex(chassis, slot_index, sub_slot, eth_local_index, sub_port);
     eth_ports = (struct eth_port_s *)malloc(sizeof(struct eth_port_s));
 
     if (NULL == eth_ports)
@@ -802,6 +807,7 @@ void npd_insert_eth_port(
     unsigned int slot_index,
     unsigned int sub_slot,
     unsigned int eth_local_index,
+    unsigned int sub_port,
     int state
 )
 {
@@ -810,11 +816,11 @@ void npd_insert_eth_port(
     unsigned int eth_port_ifindex = 0;
     struct eth_port_s *eth_ports = NULL;
 
-	/*\B6\D4\D3ں\D0ʽ\C9豸\A3\ACnetif_index\D6д\AB\C8\EB\B5\C4slotʵ\BC\CA\C9\CF\CA\C7subslot*/
+	/*\B6\D4\D3?\D0?\C9��\A3\ACnetif_index\D6��\AB\C8\EB\B5\C4slot?\BC\CA\C9\CF\CA\C7subslot*/
 	if(PRODUCT_IS_BOX)
-        eth_port_ifindex = eth_port_generate_ifindex(slot_index, sub_slot, 0, eth_local_index);
+        eth_port_ifindex = eth_port_generate_ifindex(slot_index, sub_slot, 0, eth_local_index, sub_port);
 	else
-        eth_port_ifindex = eth_port_generate_ifindex(chassis, slot_index, sub_slot, eth_local_index);
+        eth_port_ifindex = eth_port_generate_ifindex(chassis, slot_index, sub_slot, eth_local_index, sub_port);
     syslog_ax_eth_port_dbg("Chassis %d, slot %d, sub slot %d, port %d!\r\n",chassis, slot_index, sub_slot, eth_local_index);
     eth_ports = (struct eth_port_s *)malloc(sizeof(struct eth_port_s));
 
@@ -878,35 +884,12 @@ error:
 void npd_init_subslot_eth_ports(int chassis, int slot, int subslot, int state)
 {
     int j = 0;
-    int port_type;
     syslog_ax_eth_port_dbg("Creating eth-port on chassis %d slot %d sub-slot %d module %s\r\n",	\
                            chassis, slot, subslot, module_id_str(MODULE_TYPE_ON_SUBSLOT_INDEX(slot, subslot)));
 
-    for (j = 0; j < ETH_LOCAL_PORT_SUBSLOT_COUNT(slot, subslot); )
+    for (j = 0; j < ETH_LOCAL_PORT_SUBSLOT_COUNT(slot, subslot); j++)
     {
-        npd_create_eth_port(chassis, slot, subslot, j, state);
-        if(PRODUCT_IS_BOX)
-        {
-            port_type = npd_get_port_type(
-                             MODULE_TYPE_ON_SUBSLOT_INDEX(slot, subslot),
-                             ETH_LOCAL_INDEX2NO(slot,j)
-                             );
-        }
-    	else
-    	{
-            port_type = npd_get_port_type(
-                             MODULE_TYPE_ON_SLOT_INDEX(slot),
-                             ETH_LOCAL_INDEX2NO(slot,j)
-                             );
-    	}
-		if(port_type == ETH_40G_QSFP)
-		{
-		    j += 4;
-		}
-		else
-		{
-		    j++;
-		}
+        npd_create_eth_port(chassis, slot, subslot, j, 0,state);
     }
 
     return;
@@ -914,13 +897,16 @@ void npd_init_subslot_eth_ports(int chassis, int slot, int subslot, int state)
 
 void npd_remove_subslot_eth_ports(int chassis, int slot, int subslot, int state)
 {
-    int j = 0;
+    int i = 0, j = 0;
     syslog_ax_eth_port_dbg("Removing eth-port on chassis %d slot %d sub-slot %d module %s\r\n",	\
                            chassis, slot, subslot, module_id_str(MODULE_TYPE_ON_SUBSLOT_INDEX(slot, subslot)));
 
-    for (j = 0; j < ETH_LOCAL_PORT_SUBSLOT_COUNT(slot, subslot); j++)
+    for (i = 0; i < ETH_LOCAL_PORT_SUBSLOT_COUNT(slot, subslot); i++)
     {
-        npd_remove_eth_port(chassis, slot, subslot, j, state);
+        for(j = 0; j < MAX_SUBPORT_PER_ETHPORT; j++)
+        {
+            npd_remove_eth_port(chassis, slot, subslot, i, j, state);
+        }
     }
 
     return;
@@ -928,13 +914,16 @@ void npd_remove_subslot_eth_ports(int chassis, int slot, int subslot, int state)
 
 void npd_delete_subslot_eth_ports(int chassis, int slot, int subslot, int state)
 {
-    int j = 0;
+    int i = 0, j = 0;
     syslog_ax_eth_port_dbg("Deleting eth-port on chassis %d slot %d sub-slot %d module %s\r\n",	\
                            chassis, slot, subslot, module_id_str(MODULE_TYPE_ON_SUBSLOT_INDEX(slot, subslot)));
 
-    for (j = 0; j < ETH_LOCAL_PORT_SUBSLOT_COUNT(slot, subslot); j++)
+    for (i = 0; i < ETH_LOCAL_PORT_SUBSLOT_COUNT(slot, subslot); i++)
     {
-        npd_delete_eth_port(chassis, slot, subslot, j, state);
+        for(j = 0; j < MAX_SUBPORT_PER_ETHPORT; j++)
+        {
+            npd_delete_eth_port(chassis, slot, subslot, i, j, state);
+        }
     }
 
     return;
@@ -943,35 +932,13 @@ void npd_delete_subslot_eth_ports(int chassis, int slot, int subslot, int state)
 void npd_insert_subslot_eth_ports(int chassis, int slot, int subslot, int state)
 {
     int j = 0;
-    int port_type;
+	
     syslog_ax_eth_port_dbg("Inserting eth-port on chassis %d slot %d sub-slot %d module %s\r\n",	\
                            chassis, slot, subslot, module_id_str(MODULE_TYPE_ON_SUBSLOT_INDEX(slot, subslot)));
 
-    for (j = 0; j < ETH_LOCAL_PORT_SUBSLOT_COUNT(slot, subslot); )
+    for (j = 0; j < ETH_LOCAL_PORT_SUBSLOT_COUNT(slot, subslot); j++)
     {
-        npd_insert_eth_port(chassis, slot, subslot, j, state);
-        if(PRODUCT_IS_BOX)
-        {
-            port_type = npd_get_port_type(
-                             MODULE_TYPE_ON_SUBSLOT_INDEX(slot, subslot),
-                             ETH_LOCAL_INDEX2NO(slot, j)
-                             );
-        }
-    	else
-    	{
-            port_type = npd_get_port_type(
-                             MODULE_TYPE_ON_SLOT_INDEX(slot),
-                             ETH_LOCAL_INDEX2NO(slot, j)
-                             );
-    	}
-		if(port_type == ETH_40G_QSFP)
-		{
-		    j += 4;
-		}
-		else
-		{
-		    j++;
-		}
+        npd_insert_eth_port(chassis, slot, subslot, j, 0, state);
     }
 
     return;
@@ -1024,12 +991,11 @@ void npd_port_xg_to_4xg(unsigned int netif_index)
     slot_index = npd_netif_eth_get_slot(netif_index);
 	sub_slot = npd_netif_eth_get_subslot(netif_index);
     eth_local_index = npd_netif_eth_get_port(netif_index);
-	/*40G�˿���Ҫ4����*/
-    eth_local_index = eth_local_index/4 * 4;
+	
     /*first delete the 4 XG ports from database*/
 	for(i = 0; i < 4; i++)
 	{
-	    npd_delete_eth_port(chassis, slot_index, sub_slot, eth_local_index + i, 0);
+	    npd_delete_eth_port(chassis, slot_index, sub_slot, eth_local_index, i, 0);
 	}
 	
     if(PRODUCT_IS_BOX)
@@ -1050,7 +1016,7 @@ void npd_port_xg_to_4xg(unsigned int netif_index)
 	}
 	
     /*then add the a 4XG port to database*/
-	npd_create_eth_port(chassis, slot_index, sub_slot, eth_local_index, PORT_NORMAL);
+	npd_create_eth_port(chassis, slot_index, sub_slot, eth_local_index, 0, PORT_NORMAL);
 }
 
 void npd_port_4xg_to_xg(unsigned int netif_index)
@@ -1064,11 +1030,10 @@ void npd_port_4xg_to_xg(unsigned int netif_index)
     slot_index = npd_netif_eth_get_slot(netif_index);
 	sub_slot = npd_netif_eth_get_subslot(netif_index);
     eth_local_index = npd_netif_eth_get_port(netif_index);
-    /*first delete the 4 XG ports from database*/
-	/*40G�˿���Ҫ4����*/
-    eth_local_index = eth_local_index/4 * 4;
-	npd_delete_eth_port(chassis, slot_index, sub_slot, eth_local_index, 0);
 	
+    /*first delete the 4 XG ports from database*/
+	npd_delete_eth_port(chassis, slot_index, sub_slot, eth_local_index, 0, 0);
+
     if(PRODUCT_IS_BOX)
     {
         npd_set_port_type(
@@ -1085,11 +1050,10 @@ void npd_port_4xg_to_xg(unsigned int netif_index)
                          ETH_XGE_QSFP
                          );
 	}
-	
     /*then add the 4 XG ports to database*/
 	for(i = 0; i < 4; i++)
 	{
-	    npd_create_eth_port(chassis, slot_index, sub_slot, eth_local_index + i, PORT_NORMAL);
+	    npd_create_eth_port(chassis, slot_index, sub_slot, eth_local_index, i, PORT_NORMAL);
 	}
 }
 
@@ -1117,7 +1081,7 @@ int npd_get_port_driver_type(unsigned int eth_g_index)
 
 
 
-/*\BE\A1\C1\BF\B2\BBҪֱ\BD\D3ʹ\D3\C3ȫ\BEֱ\E4\C1\BFg_eth_ports*/
+/*\BE\A1\C1\BF\B2\BB??\BD\D3?\D3\C3?\BE?\E4\C1\BFg_eth_ports*/
 unsigned long eth_port_sw_link_time_change_get(unsigned int eth_g_index)
 {
     struct eth_port_s portInfo;
@@ -2154,10 +2118,9 @@ long npd_eth_port_insert(void *data)
 
     if (ETHPORT_RETURN_CODE_ERR_NONE != ret)
         return NPD_SUCCESS;
+	
     npd_eth_port_local_member_add(new_port->eth_port_ifindex);
-    if (new_port->port_type == ETH_GE_SFP)
-        ret = npd_eth_port_poll_add_member(new_port->eth_port_ifindex);
-
+	
     {
         unsigned char an_state = 0,fc = 0,duplex = 0;
         unsigned char admin_status = 0;
@@ -2421,7 +2384,7 @@ int npd_eth_port_update_admin(
 
     admin_status = (new_port->attr_bitmap & ETH_ATTR_ADMIN_STATUS) >> ETH_ADMIN_STATUS_BIT;
 
-    /*\B3\F5ʼ\BB\AFδ\BD\E1\CA\F8\A3\AC\B2\BBenable\B6˿\DA*/
+    /*\B3\F5?\BB\AF��\BD\E1\CA\F8\A3\AC\B2\BBenable\B6?\DA*/
     if((admin_status == ETH_ATTR_ENABLE) && (!npd_startup_end))
         ;
     else
@@ -2431,7 +2394,7 @@ int npd_eth_port_update_admin(
      
 int npd_eth_port_startup_end_update()
 {
-	/*\D3\C3traversal\BB\E1\B7\E2\CB\F8\CA\FD\BEݿ\E2\BDϳ\A4ʱ\BC䣬\D4\DAQUALCOMMƽ̨\C9\CF\D3п\C9\C4ܵ\BC\D6\C2\D6\D8\C6\F4*/
+	/*\D3\C3traversal\BB\E1\B7\E2\CB\F8\CA\FD\BE?\E2\BD?\A4?\BC?\D4\DAQUALCOMM??\C9\CF\D3��\C9\C4?\BC\D6\C2\D6\D8\C6\F4*/
 	int ret;
 	struct eth_port_s eth_port = {0};
 
@@ -2443,7 +2406,7 @@ int npd_eth_port_startup_end_update()
 		if(local_ret == ETHPORT_RETURN_CODE_ERR_NONE)
 		{
     		npd_eth_port_update_admin(g_eth_ports, &eth_port, 0);
-    		/*˯10ms\A3\AC\D2Ա㴦\C0\ED\CD\EA\B6˿\DAup\D6ж\CF*/
+    		/*?10ms\A3\AC\D2??\C0\ED\CD\EA\B6?\DAup\D6��\CF*/
     		usleep(10000);
 		}
 		ret = dbtable_sequence_traverse_next(g_eth_ports, eth_port.eth_port_ifindex, &eth_port);
@@ -2945,7 +2908,7 @@ eth_port_stats_t *npd_get_port_counter_by_index
 {
     eth_port_stats_t *port_counter_info = NULL;
     unsigned int sub_slot = 0;
-    unsigned int portno = 0;
+    unsigned int portno = 0, sub_port = 0;
 	unsigned int slot_index = 0, sub_slot_index = 0;
 	int module_type;
 	unsigned char tmp_devNum, tmp_portNum; 
@@ -2974,7 +2937,8 @@ eth_port_stats_t *npd_get_port_counter_by_index
 		{
 	        sub_slot = npd_netif_eth_get_subslot(eth_g_index);
 	        portno = npd_netif_eth_get_port(eth_g_index);
-	        port_counter_info = &g_eth_port_counter[sub_slot][portno];
+			sub_port = npd_netif_eth_get_sub_port(eth_g_index);
+	        port_counter_info = &g_eth_port_counter[sub_slot][portno*MAX_SUBPORT_PER_ETHPORT + sub_port];
 		}
     }
 
@@ -3168,7 +3132,7 @@ int npd_set_port_admin_status
     }
 	if(ETH_ATTR_DISABLE == attr)
 	{
-		/*\B9ر\D5\C1\B4·\B2\BB\CEȶ\A8\B5ļ\EC\B2\E2\D7Զ\AFshutdown\B6˿ڻ\FA\D6\C6*/
+		/*\B9?\D5\C1\B4?\B2\BB\CE?\A8\B5?\EC\B2\E2\D7?\AFshutdown\B6??\FA\D6\C6*/
 		int array_id = netif_array_index_from_ifindex(eth_g_index);
         npd_ethport_change_fast_detect[array_id].auto_shutdown = 0;		
 	}
@@ -4337,7 +4301,7 @@ int npd_get_eth_port_rate(unsigned int eth_g_index, unsigned int * inbandwidth,u
     int i = 0;
 	int ret = 0;
 	
-	for (i = 0; i < MAX_ETHPORT_PER_BOARD; i++)
+	for (i = 0; i < MAX_ETHPORT_PER_BOARD*MAX_SUBPORT_PER_ETHPORT; i++)
     {
         if (eth_g_index == g_eth_port_rate_poll[i])
         {
@@ -4681,7 +4645,7 @@ int npd_del_ethport_route_mode(unsigned int eth_g_index)
             npd_put_port(portInfo);
             netif_notify_event(eth_g_index, PORT_NOTIFIER_L2CREATE);
             
-/* Ӧ\B8\C3û\D3б\D8Ҫ\A3\AC\CF\E0\B9صĴ\A6\C0\ED\D4\DAL2CREATE\CA¼\FE\D6\D0\D2Ѿ\AD\D7\F6\C1ˣ\AC\B6\F8\C7ҿ\C9\C4\DC\D2\FD\B7\A2\CA\FD\BEݲ\BBһ\D6µ\C4\CE\CA\CC\E2
+/* ?\B8\C3?\D3��\D8?\A3\AC\CF\E0\B9??\A6\C0\ED\D4\DAL2CREATE\CA?\FE\D6\D0\D2?\AD\D7\F6\C1?\AC\B6\F8\C7?\C9\C4\DC\D2\FD\B7\A2\CA\FD\BE?\BB?\D6?\C4\CE\CA\CC\E2
             if(link_status)
                 netif_notify_event(eth_g_index, PORT_NOTIFIER_LINKUP_E);
             else
@@ -4868,12 +4832,14 @@ int npd_eth_port_thread_notifier
 	if(local == ETHPORT_RETURN_CODE_ERR_NONE)
 	{
         old_state = npd_check_eth_port_status(eth_g_index);
-		/*\C8\E7\B9\FB\CAǱ\BE\B0\E5\B6˿ڣ\AC\D0\E8Ҫ\B6\D4ethPort\B5\C4\CA\FD\BEݽ\F8\D0и\FC\D0\C2*/
+		/*\C8\E7\B9\FB\CA?\BE\B0\E5\B6??\AC\D0\E8?\B6\D4ethPort\B5\C4\CA\FD\BE?\F8\D0��\FC\D0\C2*/
         ret = npd_get_port_link_status(eth_g_index,&new_state);
 
         if (NPD_SUCCESS != ret)
         {
-            /*\C8\E7\B9\FB\B1\BE\B0岻\CA\C7\D6\F7\BF\D8\C7Ҷ˿ڲ\BB\CAǱ\BE\B0\E5\BDӿ\DA, \B2\BB\D7\F6\B4\A6\C0\ED*/
+            npd_netif_index_to_user_fullname(eth_g_index, name);
+            /*\C8\E7\B9\FB\B1\BE\B0?\CA\C7\D6\F7\BF\D8\C7???\BB\CA?\BE\B0\E5\BD?\DA, \B2\BB\D7\F6\B4\A6\C0\ED*/
+			printf("Can't get link status of ethernet port %s(%x).\r\n", name, eth_g_index);
             goto error;
         }
         port_counter_info = npd_get_port_counter_by_index(eth_g_index);
@@ -4923,10 +4889,11 @@ int npd_eth_port_thread_notifier
         }
         if (old_state == new_state)
         {
-	/*\D3\C9\D3ڷֲ\BCʽDB\B2\D9\D7\F7\B2\BB\CA\C7ԭ\D7Ӳ\D9\D7\F7\A3\AC\CB\F9\D2Դ\E6\D4ڿ\C9\C4\DC\C1\AC\D0\F8\C9ϱ\A8\CA¼\FE\A3\AC
-	\B5\AB\CA\C7DB\D6е\C4״̬û\D3иı\E4
+	/*\D3\C9\D3??\BC?DB\B2\D9\D7\F7\B2\BB\CA\C7?\D7?\D9\D7\F7\A3\AC\CB\F9\D2?\E6\D4?\C9\C4\DC\C1\AC\D0\F8\C9?\A8\CA?\FE\A3\AC
+	\B5\AB\CA\C7DB\D6��\C4???\D3��?\E4
             goto error;
         */
+        printf("Link change trigged but state not changed.\r\n");
         }
         else if (ETH_PORT_NOTIFIER_LINKPOLL_E == event)  /*find state change when polling*/
         {
@@ -4945,10 +4912,10 @@ int npd_eth_port_thread_notifier
                 ((ETH_ATTR_LINKDOWN == new_state) && (ETH_PORT_NOTIFIER_LINKUP_E == event)))
         {
 			
-            syslog_ax_eth_port_dbg("link %s event but port %#x current state %s error\n",		\
+            printf("link %s event but port %#x current state %s error\n",		\
                                    (ETH_PORT_NOTIFIER_LINKUP_E == event) ? "UP":"DOWN",eth_g_index,	\
                                    (ETH_ATTR_LINKUP == new_state) ? "UP":"DOWN");
-            /*\B4˴\A6\B2\BB\C4ܲ\BB\B4\A6\C0\ED\A3\AC\CF\E0ͬ\CA¼\FE\CF\C2\C3\E6\B4\FA\C2\EB\BBᴦ\C0\ED,\BD\F6\D0\E8Ҫ\B6\D4event\B8\B3\D2\D4\D5\FDȷ\B5\C4ֵ*/
+            /*\B4?\A6\B2\BB\C4?\BB\B4\A6\C0\ED\A3\AC\CF\E0?\CA?\FE\CF\C2\C3\E6\B4\FA\C2\EB\BB?\C0\ED,\BD\F6\D0\E8?\B6\D4event\B8\B3\D2\D4\D5\FD?\B5\C4?*/
             event = (ETH_ATTR_LINKUP == new_state) ? ETH_PORT_NOTIFIER_LINKUP_E :
                     (ETH_ATTR_LINKDOWN == new_state) ? ETH_PORT_NOTIFIER_LINKDOWN_E : event;
 		    /*
@@ -4962,7 +4929,7 @@ int npd_eth_port_thread_notifier
         case PORT_NOTIFIER_LINKUP_E:
 			if(local == ETHPORT_RETURN_CODE_ERR_NONE)
 			{
-				/*\C8\E7\B9\FB\CAǱ\BE\B0\E5\B6˿ڣ\AC\D0\E8Ҫ\B6\D4ethPort\CA\FD\BE\DD\D7\F6\B8\FC\D0\C2*/
+				/*\C8\E7\B9\FB\CA?\BE\B0\E5\B6??\AC\D0\E8?\B6\D4ethPort\CA\FD\BE\DD\D7\F6\B8\FC\D0\C2*/
                 ret = npd_port_media_get(eth_g_index,&portMedia);
     
                 if (NPD_TRUE == ret)
@@ -5027,7 +4994,7 @@ int npd_eth_port_thread_notifier
         array_id = netif_array_index_from_ifindex(eth_g_index);
         if(event == npd_ethport_change_fast_detect[array_id].last_event)
     	{
-    		/*\B9\E6\B1\DC\C1\AC\D0\F8\B5\C4\CF\E0ͬ\CA¼\FE\C9ϱ\A8*/
+    		/*\B9\E6\B1\DC\C1\AC\D0\F8\B5\C4\CF\E0?\CA?\FE\C9?\A8*/
             goto error;
     	}
         if(event == PORT_NOTIFIER_LINKDOWN_E)
@@ -5041,8 +5008,8 @@ int npd_eth_port_thread_notifier
             int heavyCount = arpCount+routeCount+stpCount+mrouteCount+dhcpCount+fdbCount;
             if(heavyCount > 2000)
             {
-                /*\C8\E7\B9\FBϵͳ\B4\A6\D3\DA\D6\D8\D4\D8\C7\E9\BF\F6\A3\AC\B6˿\DAUP\CA¼\FE\C9ϱ\A8\D0\E8Ҫ\B6\EE\CD\E2\D1ӳ٣\AC
-                  \B9\E6\B1\DC\D2\F2CPU\B4\A6\C0\ED\C4\DC\C1\A6\B2\BB\B9\BB\B5\BC\D6µ\C4ϵͳ\D2쳣,Ŀǰ\D4ݶ\A820\C3\EB*/
+                /*\C8\E7\B9\FB??\B4\A6\D3\DA\D6\D8\D4\D8\C7\E9\BF\F6\A3\AC\B6?\DAUP\CA?\FE\C9?\A8\D0\E8?\B6\EE\CD\E2\D1??\AC
+                  \B9\E6\B1\DC\D2\F2CPU\B4\A6\C0\ED\C4\DC\C1\A6\B2\BB\B9\BB\B5\BC\D6?\C4??\D2?,??\D4?\A820\C3\EB*/
                 global_portup_event_delay_count = 4;
             }
         }
@@ -5072,8 +5039,8 @@ int npd_eth_port_thread_notifier
         }
         else if(global_portup_event_delay_count)
         {
-            /*\C8\E7\B9\FBϵͳ\B4\A6\D3\DA\D6\D8\D4\D8\C7\E9\BF\F6\A3\AC\B6˿\DAUP\CA¼\FE\C9ϱ\A8\D0\E8Ҫ\B6\EE\CD\E2\D1ӳ٣\AC
-              \B9\E6\B1\DC\D2\F2CPU\B4\A6\C0\ED\C4\DC\C1\A6\B2\BB\B9\BB\B5\BC\D6µ\C4ϵͳ\D2쳣,Ŀǰ\D4ݶ\A820\C3\EB*/
+            /*\C8\E7\B9\FB??\B4\A6\D3\DA\D6\D8\D4\D8\C7\E9\BF\F6\A3\AC\B6?\DAUP\CA?\FE\C9?\A8\D0\E8?\B6\EE\CD\E2\D1??\AC
+              \B9\E6\B1\DC\D2\F2CPU\B4\A6\C0\ED\C4\DC\C1\A6\B2\BB\B9\BB\B5\BC\D6?\C4??\D2?,??\D4?\A820\C3\EB*/
             if(event == PORT_NOTIFIER_LINKUP_E)
             {
     		    npd_ethport_change_fast_detect[array_id].fast_count++;
@@ -5228,7 +5195,7 @@ void npd_eth_port_handle_delay_event()
 		if((npd_ethport_change_fast_detect[array_id].fast_count > 0)
 			&& (((unsigned int)tnow.tv_sec - (unsigned int)eth_port.lastLinkChange) > 1))
 		{
-			/*ÿ\B4ζ˿ڵ\C4\C4\DA\C8ݸ\FC\D0\C2\D4\DA\CA¼\FE\C9ϱ\A8ʱ\D2Ѿ\AD\CD\EA\B3\C9*/
+			/*?\B4��??\C4\C4\DA\C8?\FC\D0\C2\D4\DA\CA?\FE\C9?\A8?\D2?\AD\CD\EA\B3\C9*/
             eth_port.lastLinkChange = tnow.tv_sec;
         
             switch (event)
@@ -5292,7 +5259,7 @@ void npd_eth_port_master_notifier
     switch (event)
     {
         case PORT_NOTIFIER_LINKUP_E:
-			/*\B8\FC\D0\C2\D2Ѿ\AD\D4\DAǰ\C3\E6\CD\EA\B3\C9*/
+			/*\B8\FC\D0\C2\D2?\AD\D4\DA?\C3\E6\CD\EA\B3\C9*/
 			netif_app_notify_event(eth_g_index, PORT_NOTIFIER_LINKUP_E, &ethPort, sizeof(ethPort));
             npd_syslog_official_event("Interface %s link state is UP.\r\n", name);
             break;
@@ -5367,57 +5334,6 @@ int npd_eth_port_register_notifier_hook
     portNotifier = npd_eth_port_notifier;
     return 0;
 }
-
-/**********************************************************************************
- *  npd_eth_port_poll_add_member
- *
- *	DESCRIPTION:
- * 		Add port to participate link status polling.
- *
- *	INPUT:
- *		eth_g_index - global eth-port index
- *
- *	OUTPUT:
- *		NULL
- *
- * 	RETURN:
- *		NPD_SUCCESS - find position to add port
- *		NPD_FAIL - no proper position found for the port
- *
- **********************************************************************************/
-int npd_eth_port_poll_add_member
-(
-    unsigned int eth_g_index
-)
-{
-    int i = 0;
-    unsigned int ret = NPD_SUCCESS;
-    /* disable link status interrupt on the port */
-    ret = npd_eth_port_mask_link_interrupt_set(eth_g_index, 0);
-
-    if (ret)
-    {
-        syslog_ax_eth_port_err("mask eth-port %#x link status interrupt error %d\n", eth_g_index, ret);
-    }
-
-    for (; i < MAX_ETHPORT_PER_BOARD; i++)
-    {
-        if (0 == g_fiber_port_poll[i])
-        {
-            g_fiber_port_poll[i] = eth_g_index;
-            return NPD_SUCCESS;
-        }
-        else if (g_fiber_port_poll[i] == eth_g_index)
-            return NPD_SUCCESS;
-    }
-
-    if (MAX_ETH_GLOBAL_INDEX == i)
-    {
-        return NPD_FAIL;
-    }
-
-    return ret;
-}
 int npd_eth_port_local_member_add
 (
     unsigned int eth_g_index
@@ -5426,7 +5342,7 @@ int npd_eth_port_local_member_add
     int i = 0;
     unsigned int ret = NPD_SUCCESS;
 	
-    for (; i < MAX_ETHPORT_PER_BOARD; i++)
+    for (; i < MAX_ETHPORT_PER_BOARD*MAX_SUBPORT_PER_ETHPORT; i++)
     {
         if (0 == g_eth_port_rate_poll[i])
         {
@@ -5442,78 +5358,6 @@ int npd_eth_port_local_member_add
         return NPD_FAIL;
     }
 
-    return ret;
-}
-
-/**********************************************************************************
- *  npd_eth_port_poll_add_member
- *
- *	DESCRIPTION:
- * 		delete port from poll ports array to stop link status polling.
- *
- *	INPUT:
- *		eth_g_index - global eth-port index
- *
- *	OUTPUT:
- *		NULL
- *
- * 	RETURN:
- *		NPD_SUCCESS - find position to add port.
- *		NPD_FAIL - port not found in the polling array.
- *
- **********************************************************************************/
-int npd_eth_port_poll_del_member
-(
-    unsigned int eth_g_index
-)
-{
-    int i = 0;
-
-    for (; i < MAX_ETHPORT_PER_BOARD; i++)
-    {
-        if (eth_g_index == g_fiber_port_poll[i])
-        {
-            g_fiber_port_poll[i] = 0;
-            return NPD_SUCCESS;
-        }
-    }
-
-    if (MAX_ETH_GLOBAL_INDEX == i)
-    {
-        return NPD_FAIL;
-    }
-
-    return NPD_FAIL;
-}
-
-
-/**********************************************************************************
- *  npd_eth_port_mask_link_interrupt_set
- *
- *	DESCRIPTION:
- * 		This method enable/disable(unmask/mask) eth-port link status change interrupt event.
- *
- *	INPUT:
- *		eth_g_index - global eth-port index
- *
- *	OUTPUT:
- *		NULL
- *
- * 	RETURN:
- *		NPD_SUCCESS - unmask/mask eth-port link status interrupt successfully.
- *		other - set up failed.
- *
- **********************************************************************************/
-unsigned int npd_eth_port_mask_link_interrupt_set
-(
-    unsigned int eth_g_index,
-    unsigned int enable
-)
-{
-    unsigned int ret = NPD_SUCCESS;
-    //ret = nam_ethport_mask_link_interrupt_set(eth_g_index,enable);
-    syslog_ax_eth_port_dbg("\t%s port %#x  link status INTR %s\n",	\
-                           enable ? "enable":"disable",eth_g_index,  ret ? "FAIL":"OK");
     return ret;
 }
 
@@ -5701,7 +5545,7 @@ int npd_eth_port_sc_cfg
 				}
 				break;
 			case PORT_SPEED_10000_E:
-		    /*\D0޸\C4Ϊ\B2\BB\D4\CA\D0\ED\C5\E4\D6ô\F3\D3\DA1G\B5ķ籩\D2\D6\D6\C6\C1\F7\C1\BF*/
+		    /*\D0?\C4?\B2\BB\D4\CA\D0\ED\C5\E4\D6?\F3\D3\DA1G\B5??\D2\D6\D6\C6\C1\F7\C1\BF*/
 #if 0				
 				if(ETH_PORT_STREAM_PPS_E == scMode)
 				{
@@ -5793,7 +5637,7 @@ int npd_eth_port_sc_cfg
 			case ETH_XGE_FIBER:
 			case ETH_XGE_SFPPLUS:
 			case ETH_XGE_XFP:
-		    /*\D0޸\C4Ϊ\B2\BB\D4\CA\D0\ED\C5\E4\D6ô\F3\D3\DA1G\B5ķ籩\D2\D6\D6\C6\C1\F7\C1\BF*/
+		    /*\D0?\C4?\B2\BB\D4\CA\D0\ED\C5\E4\D6?\F3\D3\DA1G\B5??\D2\D6\D6\C6\C1\F7\C1\BF*/
 #if 0				
 				if(ETH_PORT_STREAM_PPS_E == scMode)
 				{
@@ -6013,50 +5857,6 @@ retcode:
     }
 
     return ret;
-}
-
-
-unsigned int npd_eth_port_sc_set_check
-(
-    unsigned int modeType
-)
-{
-    int i = 0,j = 0;
-
-    for (i = 0 ; i < SYS_MODULE_PORT_NUM(SYS_LOCAL_MODULE_TYPE); i++)
-    {
-        unsigned int eth_g_index = ETH_GLOBAL_INDEX_FROM_SLOT_PORT_LOCAL_INDEX(SYS_LOCAL_MODULE_SLOT_INDEX,j);
-        unsigned int ret = 0;
-        unsigned int rateType = 0,rateValue = 0;
-        unsigned char devNum = 0,portNum = 0;
-        ret = npd_get_devport_by_global_index(eth_g_index,&devNum,&portNum);
-
-        if (NPD_SUCCESS != ret)
-        {
-            continue;
-        }
-
-        /* eth-port storm control*/
-        if (NPD_OK == npd_eth_port_get_sc_cfg(eth_g_index,PORT_STORM_CONTROL_STREAM_DLF,&rateType,&rateValue))
-        {
-            if (modeType != rateType)
-                return NPD_ERR;
-        }
-
-        if (NPD_OK == npd_eth_port_get_sc_cfg(eth_g_index,PORT_STORM_CONTROL_STREAM_MCAST,&rateType,&rateValue))
-        {
-            if (modeType != rateType)
-                return NPD_ERR;
-        }
-
-        if (NPD_OK == npd_eth_port_get_sc_cfg(eth_g_index,PORT_STORM_CONTROL_STREAM_BCAST,&rateType,&rateValue))
-        {
-            if (modeType != rateType)
-                return NPD_ERR;
-        }
-    }
-
-    return NPD_SUCCESS;
 }
 
 int npd_ethport_desc(unsigned int netif_index, char *desc)
@@ -6433,7 +6233,7 @@ int npd_ethport_show_running(void *data, char *string, int* size)
     if (admin_status != ethport_attr_default(local_port_type)->admin_state)
     {
 		int array_id = netif_array_index_from_ifindex(eth_g_index);
-		/*\B2\BB\B4洢\D2\F2Ϊ\B6˿\DA\C1\B4·\B2\BB\CEȶ\A8\B5\BC\D6µ\C4shutdown*/
+		/*\B2\BB\B4?\D2\F2?\B6?\DA\C1\B4?\B2\BB\CE?\A8\B5\BC\D6?\C4shutdown*/
         if(0 == npd_ethport_change_fast_detect[array_id].auto_shutdown)		
         {
             enter_node = 1;
@@ -9383,7 +9183,7 @@ void* eth_port_rate_poll_thread(void)
 		eth_port_delay_event_count++;
 		if(eth_port_delay_event_count%60 == 1)
 		{
-            for (j = 0; j < MAX_ETHPORT_PER_BOARD; j++)
+            for (j = 0; j < MAX_ETHPORT_PER_BOARD*MAX_SUBPORT_PER_ETHPORT; j++)
             {
                 
                 if(g_eth_port_rate_poll[j] == 0)
@@ -9415,7 +9215,7 @@ void* eth_port_rate_poll_thread(void)
     		minute_roll++;
     		minute_roll = minute_roll%6;
 		}
-		/*\B4\A6\C0\ED\B6˿\DA\CA¼\FE\B9\FD\BF\EC\B5\C4\D1ӳ\D9\C9ϱ\A8\B6˿\DA\CA¼\FE*/
+		/*\B4\A6\C0\ED\B6?\DA\CA?\FE\B9\FD\BF\EC\B5\C4\D1?\D9\C9?\A8\B6?\DA\CA?\FE*/
 		if(SYS_LOCAL_MODULE_ISMASTERACTIVE)
 		{
 			if((eth_port_delay_event_count%5) == 0)

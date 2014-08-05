@@ -18,7 +18,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*LINUX_ETH,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS,
     },
     {
         .panel_port = 2,
@@ -33,7 +33,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
     {
         .panel_port = 3,
@@ -48,7 +48,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
     {
         .panel_port = 4,
@@ -63,7 +63,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
     {
         .panel_port = 5,
@@ -78,7 +78,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
     {
         .panel_port = 6,
@@ -93,7 +93,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
     {
         .panel_port = 7,
@@ -108,7 +108,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
     {
         .panel_port = 8,
@@ -123,7 +123,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
     {
         .panel_port = 9,
@@ -138,7 +138,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
     {
         .panel_port = 10,
@@ -153,7 +153,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
     {
         .panel_port = 11,
@@ -168,7 +168,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
     {
         .panel_port = 12,
@@ -183,7 +183,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
     {
         .panel_port = 13,
@@ -198,7 +198,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
     {
         .panel_port = 14,
@@ -213,7 +213,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
     {
         .panel_port = 15,
@@ -228,7 +228,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
     {
         .panel_port = 16,
@@ -243,7 +243,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
     {
         .panel_port = 17,
@@ -258,7 +258,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
     {
         .panel_port = 18,
@@ -273,7 +273,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
     {
         .panel_port = 19,
@@ -288,7 +288,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
     {
         .panel_port = 20,
@@ -303,7 +303,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
     {
         .panel_port = 21,
@@ -318,7 +318,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
     {
         .panel_port = 22,
@@ -333,7 +333,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
     {
         .panel_port = 23,
@@ -348,7 +348,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
     {
         .panel_port = 24,
@@ -363,7 +363,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
 	{
         .panel_port = 25,
@@ -378,7 +378,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
 	{
         .panel_port = 26,
@@ -393,7 +393,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
 	{
         .panel_port = 27,
@@ -408,7 +408,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
 	{
         .panel_port = 28,
@@ -423,7 +423,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
 	{
         .panel_port = 29,
@@ -438,7 +438,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
 	{
         .panel_port = 30,
@@ -453,7 +453,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
 	{
         .panel_port = 31,
@@ -468,7 +468,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
 	{
         .panel_port = 32,
@@ -483,7 +483,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
 	{
         .panel_port = 33,
@@ -498,7 +498,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
 	{
         .panel_port = 34,
@@ -513,7 +513,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
 	{
         .panel_port = 35,
@@ -528,7 +528,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
 	{
         .panel_port = 36,
@@ -543,7 +543,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
 	{
         .panel_port = 37,
@@ -558,7 +558,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
 	{
         .panel_port = 38,
@@ -573,7 +573,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
 	{
         .panel_port = 39,
@@ -588,7 +588,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
 	{
         .panel_port = 40,
@@ -603,7 +603,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
 	{
         .panel_port = 41,
@@ -618,7 +618,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
 	{
         .panel_port = 42,
@@ -633,7 +633,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
 	{
         .panel_port = 43,
@@ -648,7 +648,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
 	{
         .panel_port = 44,
@@ -663,7 +663,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
 	{
         .panel_port = 45,
@@ -678,7 +678,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
 	{
         .panel_port = 46,
@@ -693,7 +693,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
 	{
         .panel_port = 47,
@@ -708,7 +708,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
 	{
         .panel_port = 48,
@@ -723,7 +723,7 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_XGE_SFPPLUS,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
     },
 	{
         .panel_port = 49,
@@ -738,55 +738,32 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_40G_QSFP,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
+        .sub_ports = {
+            [0] = {
+                .unit = 0,
+                .unit_port = 84,
+                .user_type = ETH_XGE_QSFP
+            },
+            [1] = {
+                .unit = 0,
+                .unit_port = 85,
+                .user_type = ETH_XGE_QSFP
+            },
+            [2] = {
+                .unit = 0,
+                .unit_port = 86,
+                .user_type = ETH_XGE_QSFP
+            },
+            [3] = {
+                .unit = 0,
+                .unit_port = 87,
+                .user_type = ETH_XGE_QSFP
+            }
+        }
     },
 	{
         .panel_port = 50,
-        .chip_port = {
-            [ASIC_SWITCH_TYPE] = {
-                .unit = 0,
-                .unit_port = 85,
-                .distance = 0
-            },
-        },
-        .subslot_port = -1,
-        .plane_port = -1,
-        .bcast_bus = -1,
-        .user_type = ETH_XGE_QSFP,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
-    },
-	{
-        .panel_port = 51,
-        .chip_port = {
-            [ASIC_SWITCH_TYPE] = {
-                .unit = 0,
-                .unit_port = 86,
-                .distance = 0
-            },
-        },
-        .subslot_port = -1,
-        .plane_port = -1,
-        .bcast_bus = -1,
-        .user_type = ETH_XGE_QSFP,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
-    },
-	{
-        .panel_port = 52,
-        .chip_port = {
-            [ASIC_SWITCH_TYPE] = {
-                .unit = 0,
-                .unit_port = 87,
-                .distance = 0
-            },
-        },
-        .subslot_port = -1,
-        .plane_port = -1,
-        .bcast_bus = -1,
-        .user_type = ETH_XGE_QSFP,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
-    },
-	{
-        .panel_port = 53,
         .chip_port = {
             [ASIC_SWITCH_TYPE] = {
                 .unit = 0,
@@ -798,55 +775,32 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_40G_QSFP,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
-    },
-	{
-        .panel_port = 54,
-        .chip_port = {
-            [ASIC_SWITCH_TYPE] = {
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
+        .sub_ports = {
+            [0] = {
+                .unit = 0,
+                .unit_port = 80,
+                .user_type = ETH_XGE_QSFP
+            },
+            [1] = {
                 .unit = 0,
                 .unit_port = 81,
-                .distance = 0
+                .user_type = ETH_XGE_QSFP
             },
-        },
-        .subslot_port = -1,
-        .plane_port = -1,
-        .bcast_bus = -1,
-        .user_type = ETH_XGE_QSFP,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
-    },
-	{
-        .panel_port = 55,
-        .chip_port = {
-            [ASIC_SWITCH_TYPE] = {
+            [2] = {
                 .unit = 0,
                 .unit_port = 82,
-                .distance = 0
+                .user_type = ETH_XGE_QSFP
             },
-        },
-        .subslot_port = -1,
-        .plane_port = -1,
-        .bcast_bus = -1,
-        .user_type = ETH_XGE_QSFP,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
-    },
-	{
-        .panel_port = 56,
-        .chip_port = {
-            [ASIC_SWITCH_TYPE] = {
+            [3] = {
                 .unit = 0,
                 .unit_port = 83,
-                .distance = 0
-            },
-        },
-        .subslot_port = -1,
-        .plane_port = -1,
-        .bcast_bus = -1,
-        .user_type = ETH_XGE_QSFP,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+                .user_type = ETH_XGE_QSFP
+            }
+        }
     },
 	{
-        .panel_port = 57,
+        .panel_port = 51,
         .chip_port = {
             [ASIC_SWITCH_TYPE] = {
                 .unit = 0,
@@ -858,55 +812,32 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_40G_QSFP,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
-    },
-	{
-        .panel_port = 58,
-        .chip_port = {
-            [ASIC_SWITCH_TYPE] = {
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
+        .sub_ports = {
+            [0] = {
+                .unit = 0,
+                .unit_port = 96,
+                .user_type = ETH_XGE_QSFP
+            },
+            [1] = {
                 .unit = 0,
                 .unit_port = 97,
-                .distance = 0
+                .user_type = ETH_XGE_QSFP
             },
-        },
-        .subslot_port = -1,
-        .plane_port = -1,
-        .bcast_bus = -1,
-        .user_type = ETH_XGE_QSFP,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
-    },
-	{
-        .panel_port = 59,
-        .chip_port = {
-            [ASIC_SWITCH_TYPE] = {
+            [2] = {
                 .unit = 0,
                 .unit_port = 98,
-                .distance = 0
+                .user_type = ETH_XGE_QSFP
             },
-        },
-        .subslot_port = -1,
-        .plane_port = -1,
-        .bcast_bus = -1,
-        .user_type = ETH_XGE_QSFP,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
-    },
-	{
-        .panel_port = 60,
-        .chip_port = {
-            [ASIC_SWITCH_TYPE] = {
+            [3] = {
                 .unit = 0,
                 .unit_port = 99,
-                .distance = 0
-            },
-        },
-        .subslot_port = -1,
-        .plane_port = -1,
-        .bcast_bus = -1,
-        .user_type = ETH_XGE_QSFP,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+                .user_type = ETH_XGE_QSFP
+            }
+        }
     },
 	{
-        .panel_port = 61,
+        .panel_port = 52,
         .chip_port = {
             [ASIC_SWITCH_TYPE] = {
                 .unit = 0,
@@ -918,52 +849,29 @@ struct panel_conn_s ds5652_board_panel_conn[] =
         .plane_port = -1,
         .bcast_bus = -1,
         .user_type = ETH_40G_QSFP,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
-    },
-	{
-        .panel_port = 62,
-        .chip_port = {
-            [ASIC_SWITCH_TYPE] = {
+        .driver_type = MODULE_DRIVER_NAM_CPSS, /*CPSS_SDK_DRIVER,*/
+        .sub_ports = {
+            [0] = {
+                .unit = 0,
+                .unit_port = 100,
+                .user_type = ETH_XGE_QSFP
+            },
+            [1] = {
                 .unit = 0,
                 .unit_port = 101,
-                .distance = 0
+                .user_type = ETH_XGE_QSFP
             },
-        },
-        .subslot_port = -1,
-        .plane_port = -1,
-        .bcast_bus = -1,
-        .user_type = ETH_XGE_QSFP,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
-    },
-	{
-        .panel_port = 63,
-        .chip_port = {
-            [ASIC_SWITCH_TYPE] = {
+            [2] = {
                 .unit = 0,
                 .unit_port = 102,
-                .distance = 0
+                .user_type = ETH_XGE_QSFP
             },
-        },
-        .subslot_port = -1,
-        .plane_port = -1,
-        .bcast_bus = -1,
-        .user_type = ETH_XGE_QSFP,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
-    },
-	{
-        .panel_port = 64,
-        .chip_port = {
-            [ASIC_SWITCH_TYPE] = {
+            [3] = {
                 .unit = 0,
                 .unit_port = 103,
-                .distance = 0
-            },
-        },
-        .subslot_port = -1,
-        .plane_port = -1,
-        .bcast_bus = -1,
-        .user_type = ETH_XGE_QSFP,
-        .driver_type = MODULE_DRIVER_NAM_CPSS, /*BCM_SDK_DRIVER,*/
+                .user_type = ETH_XGE_QSFP
+            }
+        }
     }
 };
 
@@ -2014,53 +1922,57 @@ struct asic_conn_s ds5652_board_asic_conn0[] =
         .unit = 0,
         .unit_port = 80,
         .bcast_bus = -1,
-        .panel_port = 53,
+        .panel_port = 50,
         .plane_port = -1,
         .phy_addr = -1,
         .trunk = -1,
         .subslot_port = -1,
         .peer_unit = -1,
         .peer_port = -1,
-        .cross_port = -1
+        .cross_port = -1,
+        .sub_port = 0
     },
     {
         .unit = 0,
         .unit_port = 81,
         .bcast_bus = -1,
-        .panel_port = 54,
+        .panel_port = 50,
         .plane_port = -1,
         .phy_addr = -1,
         .trunk = -1,
         .subslot_port = -1,
         .peer_unit = -1,
         .peer_port = -1,
-        .cross_port = -1
+        .cross_port = -1,
+        .sub_port = 1
     },
     {
         .unit = 0,
         .unit_port = 82,
         .bcast_bus = -1,
-        .panel_port = 55,
+        .panel_port = 50,
         .plane_port = -1,
         .phy_addr = -1,
         .trunk = -1,
         .subslot_port = -1,
         .peer_unit = -1,
         .peer_port = -1,
-        .cross_port = -1
+        .cross_port = -1,
+        .sub_port = 2
     },
     {
         .unit = 0,
         .unit_port = 83,
         .bcast_bus = -1,
-        .panel_port = 56,
+        .panel_port = 50,
         .plane_port = -1,
         .phy_addr = -1,
         .trunk = -1,
         .subslot_port = -1,
         .peer_unit = -1,
         .peer_port = -1,
-        .cross_port = -1
+        .cross_port = -1,
+        .sub_port = 3
     },
     {
         .unit = 0,
@@ -2073,46 +1985,50 @@ struct asic_conn_s ds5652_board_asic_conn0[] =
         .subslot_port = -1,
         .peer_unit = -1,
         .peer_port = -1,
-        .cross_port = -1
+        .cross_port = -1,
+        .sub_port = 0
     },
     {
         .unit = 0,
         .unit_port = 85,
         .bcast_bus = -1,
-        .panel_port = 50,
+        .panel_port = 49,
         .plane_port = -1,
         .phy_addr = -1,
         .trunk = -1,
         .subslot_port = -1,
         .peer_unit = -1,
         .peer_port = -1,
-        .cross_port = -1
+        .cross_port = -1,
+        .sub_port = 1
     },
     {
         .unit = 0,
         .unit_port = 86,
         .bcast_bus = -1,
-        .panel_port = 51,
+        .panel_port = 49,
         .plane_port = -1,
         .phy_addr = -1,
         .trunk = -1,
         .subslot_port = -1,
         .peer_unit = -1,
         .peer_port = -1,
-        .cross_port = -1
+        .cross_port = -1,
+        .sub_port = 2
     },
     {
         .unit = 0,
         .unit_port = 87,
         .bcast_bus = -1,
-        .panel_port = 52,
+        .panel_port = 49,
         .plane_port = -1,
         .phy_addr = -1,
         .trunk = -1,
         .subslot_port = -1,
         .peer_unit = -1,
         .peer_port = -1,
-        .cross_port = -1
+        .cross_port = -1,
+        .sub_port = 3
     },
     {
         .unit = 0,
@@ -2222,105 +2138,113 @@ struct asic_conn_s ds5652_board_asic_conn0[] =
         .unit = 0,
         .unit_port = 96,
         .bcast_bus = -1,
-        .panel_port = 57,
+        .panel_port = 51,
         .plane_port = -1,
         .phy_addr = -1,
         .trunk = -1,
         .subslot_port = -1,
         .peer_unit = -1,
         .peer_port = -1,
-        .cross_port = -1
+        .cross_port = -1,
+        .sub_port = 0
     },
     {
         .unit = 0,
         .unit_port = 97,
         .bcast_bus = -1,
-        .panel_port = 58,
+        .panel_port = 51,
         .plane_port = -1,
         .phy_addr = -1,
         .trunk = -1,
         .subslot_port = -1,
         .peer_unit = -1,
         .peer_port = -1,
-        .cross_port = -1
+        .cross_port = -1,
+        .sub_port = 1
     },
     {
         .unit = 0,
         .unit_port = 98,
         .bcast_bus = -1,
-        .panel_port = 59,
+        .panel_port = 51,
         .plane_port = -1,
         .phy_addr = -1,
         .trunk = -1,
         .subslot_port = -1,
         .peer_unit = -1,
         .peer_port = -1,
-        .cross_port = -1
+        .cross_port = -1,
+        .sub_port = 2
     },
     {
         .unit = 0,
         .unit_port = 99,
         .bcast_bus = -1,
-        .panel_port = 60,
+        .panel_port = 51,
         .plane_port = -1,
         .phy_addr = -1,
         .trunk = -1,
         .subslot_port = -1,
         .peer_unit = -1,
         .peer_port = -1,
-        .cross_port = -1
+        .cross_port = -1,
+        .sub_port = 3
     },
     {
         .unit = 0,
         .unit_port = 100,
         .bcast_bus = -1,
-        .panel_port = 61,
+        .panel_port = 52,
         .plane_port = -1,
         .phy_addr = -1,
         .trunk = -1,
         .subslot_port = -1,
         .peer_unit = -1,
         .peer_port = -1,
-        .cross_port = -1
+        .cross_port = -1,
+        .sub_port = 0
     },
     {
         .unit = 0,
         .unit_port = 101,
         .bcast_bus = -1,
-        .panel_port = 62,
+        .panel_port = 52,
         .plane_port = -1,
         .phy_addr = -1,
         .trunk = -1,
         .subslot_port = -1,
         .peer_unit = -1,
         .peer_port = -1,
-        .cross_port = -1
+        .cross_port = -1,
+        .sub_port = 1
     },
     {
         .unit = 0,
         .unit_port = 102,
         .bcast_bus = -1,
-        .panel_port = 63,
+        .panel_port = 52,
         .plane_port = -1,
         .phy_addr = -1,
         .trunk = -1,
         .subslot_port = -1,
         .peer_unit = -1,
         .peer_port = -1,
-        .cross_port = -1
+        .cross_port = -1,
+        .sub_port = 2
     },
     {
         .unit = 0,
         .unit_port = 103,
         .bcast_bus = -1,
-        .panel_port = 64,
+        .panel_port = 52,
         .plane_port = -1,
         .phy_addr = -1,
         .trunk = -1,
         .subslot_port = -1,
         .peer_unit = -1,
         .peer_port = -1,
-        .cross_port = -1
+        .cross_port = -1,
+        .sub_port = 3
     },
     {
         .unit = 0,
@@ -2578,7 +2502,7 @@ board_conn_type_t ds5652_board_board_conn =
     .chassis_topo = CENTRAL_FABRIC,
     .panel_portnum = {
          [ASIC_SWITCH_TYPE] = {
-            [0] = 64,
+            [0] = 52,
          }
     },
     .board_conn_from_plane = NULL,

@@ -1593,7 +1593,6 @@ DBusMessage * npd_dbus_device_config_fan_speed(DBusConnection *conn, DBusMessage
 	int ret;
 	int op_ret;
 	int speed_value;
-	int inserted = 0;
 	int state = 0;
 	int fan_no = 0;
 	int fan_index = 0;
@@ -1662,7 +1661,6 @@ DBusMessage * npd_dbus_device_config_fan_speed(DBusConnection *conn, DBusMessage
 	}
 	else
 	{
-		inserted = 0;
 		ret = DEVICE_RETURN_CODE_FAN_NOT_PRESENT;
 		goto retcode;
 	}
@@ -1782,7 +1780,7 @@ int test_add_port_to_vlan(int slot, FILE *fp)
     {
         for (j = 0; j < ETH_LOCAL_PORT_SUBSLOT_COUNT(slot, 0); j++)
         {
-            eth_index = eth_port_generate_ifindex(0, slot, 0, j); 
+            eth_index = eth_port_generate_ifindex(0, slot, 0, j, 0); 
             ret = nam_asic_vlan_entry_ports_del(1, eth_index, 0);
             if(0 != ret)
             {
@@ -1949,7 +1947,7 @@ int test_all_panel_odd_port(int slot, FILE *fp, unsigned char odd_flag, unsigned
 	//printf("odd_port_test, odd_flag %d, odd_port %d.\n", odd_flag, odd_port);
 	if (odd_flag == 1)
 	{
-		odd_index = eth_port_generate_ifindex(0, slot, 0, odd_port);
+		odd_index = eth_port_generate_ifindex(0, slot, 0, odd_port, 0);
 		/*最后一个端口为光口*/
 		if (1 == eth_port_fiber_type_check(odd_index))
 		{
@@ -2004,14 +2002,14 @@ int test_all_panel_odd_port(int slot, FILE *fp, unsigned char odd_flag, unsigned
 			}
 			else
 			{
-				odd_index = eth_port_generate_ifindex(0, slot, 0, odd_port);
-				odd_peer_index = eth_port_generate_ifindex(0, slot, 0, odd_port - 1);
+				odd_index = eth_port_generate_ifindex(0, slot, 0, odd_port, 0);
+				odd_peer_index = eth_port_generate_ifindex(0, slot, 0, odd_port - 1, 0);
 				
 				if (0 == nam_combo_ethport_check(odd_index))
 				{
 					/*测试最后COMBO口的光口*/
 					{
-						odd_index = eth_port_generate_ifindex(0, slot, 0, odd_port);
+						odd_index = eth_port_generate_ifindex(0, slot, 0, odd_port, 0);
 						ret = nam_get_port_link_state(odd_index, &link_status);
         				if(0 != ret)
             			all_ret |= MANUFACTURE_TEST_PORTAPI_ERROR;
@@ -2236,19 +2234,19 @@ int test_all_panel_combo_port(int slot, FILE *fp, int is_combo_board, int is_cop
 		}
 		for (j = combo_first_port; j <= combo_last_port; j++)
 		{ 
-			eth_index = eth_port_generate_ifindex(0, slot, 0, j); 
+			eth_index = eth_port_generate_ifindex(0, slot, 0, j, 0); 
 			nam_set_ethport_enable(eth_index, 0);
 		}
 		sleep(2);/*等待端口down*/
 		for (j = combo_first_port; j <= combo_last_port; j++)
 		{
-			eth_index = eth_port_generate_ifindex(0, slot, 0, j); 
+			eth_index = eth_port_generate_ifindex(0, slot, 0, j, 0); 
 			nam_set_ethport_enable(eth_index, 0);
 			nam_set_eth_port_trans_media(eth_index, global_media_prefered);
 		}
 		for (j = combo_first_port; j <= combo_last_port; j++)
 		{ 
-			eth_index = eth_port_generate_ifindex(0, slot, 0, j); 
+			eth_index = eth_port_generate_ifindex(0, slot, 0, j, 0); 
 			nam_set_ethport_enable(eth_index, 1);
 		}
 		sleep(8);/*等待设置媒体介质*/
@@ -2256,10 +2254,10 @@ int test_all_panel_combo_port(int slot, FILE *fp, int is_combo_board, int is_cop
 		{
 			unsigned long link_status;
         	unsigned long peer_link_status;
-			eth_index = eth_port_generate_ifindex(0, slot, 0, j); 
+			eth_index = eth_port_generate_ifindex(0, slot, 0, j, 0); 
 
-        	eth_index = eth_port_generate_ifindex(0, slot, 0, j); 
-        	peer_index = eth_port_generate_ifindex(0, slot, 0, j+1); 
+        	eth_index = eth_port_generate_ifindex(0, slot, 0, j, 0); 
+        	peer_index = eth_port_generate_ifindex(0, slot, 0, j+1, 0); 
         	ret = nam_set_ethport_enable(eth_index, 1);
         	ret = nam_set_ethport_enable(peer_index, 1);
 
@@ -2467,7 +2465,7 @@ int test_panel_port_with_subboard(int slot, FILE *fp)
 	/*add port to vlan*/
 	for (j = 1; j < 3; j++)
 	{
-		eth_index = eth_port_generate_ifindex(0, j, 0, 0); 
+		eth_index = eth_port_generate_ifindex(0, j, 0, 0, 0); 
 		ret = nam_asic_vlan_entry_ports_del(1, eth_index, 0);
 		if(0 != ret)
 		{
@@ -2485,8 +2483,8 @@ int test_panel_port_with_subboard(int slot, FILE *fp)
 		}
 		
 	}
-    eth_index = eth_port_generate_ifindex(0, 1, 0, 0); 
-	peer_index = eth_port_generate_ifindex(0, 2, 0, 0); 
+    eth_index = eth_port_generate_ifindex(0, 1, 0, 0, 0); 
+	peer_index = eth_port_generate_ifindex(0, 2, 0, 0, 0); 
 	ret = nam_set_ethport_enable(eth_index, 1);
 	ret = nam_set_ethport_enable(peer_index, 1);
 	ret = nam_get_port_link_state(eth_index, &link_status);
@@ -2639,8 +2637,8 @@ int test_all_panel_port(int slot, FILE *fp)
 			continue;
 		}
 
-        eth_index = eth_port_generate_ifindex(0, slot, 0, j); 
-        peer_index = eth_port_generate_ifindex(0, slot, 0, j+1); 
+        eth_index = eth_port_generate_ifindex(0, slot, 0, j, 0); 
+        peer_index = eth_port_generate_ifindex(0, slot, 0, j+1, 0); 
         ret = nam_set_ethport_enable(eth_index, 1);
         ret = nam_set_ethport_enable(peer_index, 1);
 		if ((0 == nam_combo_ethport_check(eth_index)) && (0 == nam_combo_ethport_check(peer_index)))
@@ -2933,7 +2931,7 @@ int test_all_xaui_port(int slot, FILE *fp)
 
     for (j = 0; j < ETH_LOCAL_PORT_SUBSLOT_COUNT(slot, 0); j++)
     {
-        eth_index = eth_port_generate_ifindex(0, slot, 0, j); 
+        eth_index = eth_port_generate_ifindex(0, slot, 0, j, 0); 
         ret = nam_set_ethport_enable(eth_index, 0);
     }   
     for (j = 0; j < local_board_conn_type->plane_portnum; j++)
@@ -3191,7 +3189,7 @@ int test_subboard_port(int slot, int subslot, FILE *fp)
 		    vid_base = ETH_LOCAL_PORT_SUBSLOT_COUNT(slot, 0) + 2;
 			for (j = 0; j < 4; j++)
 			{
-				eth_index = eth_port_generate_ifindex(0, subslot, 0, j); 
+				eth_index = eth_port_generate_ifindex(0, subslot, 0, j, 0); 
 				ret = nam_asic_vlan_entry_ports_del(1, eth_index, 0);
 				if(0 != ret)
 				{
@@ -3212,8 +3210,8 @@ int test_subboard_port(int slot, int subslot, FILE *fp)
 			sleep(4);
 			for (j = 0; j < 4; j+=2)
 			{
-				eth_index = eth_port_generate_ifindex(0, subslot, 0, j); 
-				peer_index = eth_port_generate_ifindex(0, subslot, 0, j+1);		
+				eth_index = eth_port_generate_ifindex(0, subslot, 0, j, 0); 
+				peer_index = eth_port_generate_ifindex(0, subslot, 0, j+1, 0);		
 				ret = nam_set_ethport_enable(eth_index, 1);
 				ret = nam_set_ethport_enable(peer_index, 1);
 				ret = nam_get_port_link_state(eth_index, &link_status);
@@ -3288,7 +3286,7 @@ int test_subboard_port(int slot, int subslot, FILE *fp)
 		{
 		
 		   vid_base = ETH_LOCAL_PORT_SUBSLOT_COUNT(slot, 0) + sub_portnum + 2;
-		   eth_index = eth_port_generate_ifindex(0, subslot, 0, 0);
+		   eth_index = eth_port_generate_ifindex(0, subslot, 0, 0, 0);
 			
 			ret = nam_asic_vlan_entry_ports_del(1, eth_index, 0);
 			if(0 != ret)

@@ -639,6 +639,7 @@ unsigned int npd_get_global_index_by_devport
 	unsigned int slot_index = 0;
 	unsigned int sub_slot_index = 0;
 	unsigned int port_no = 0;
+	unsigned int	sub_port = 0;
 	unsigned int	retVal = 0;
     int module_type = 0;
 
@@ -674,21 +675,23 @@ unsigned int npd_get_global_index_by_devport
                      peer_plane, ASIC_SWITCH_TYPE);
                 port_no = ETH_LOCAL_NO2INDEX(peer_slot, port_no);
                 
-    	        *eth_g_index = ETH_GLOBAL_INDEX(chassis,peer_slot, sub_slot_index, port_no);
+    	        *eth_g_index = ETH_GLOBAL_INDEX(chassis,peer_slot, sub_slot_index, port_no, sub_port);
     			return 0;
             }
             return -1;
         }
         port_no = ETH_LOCAL_NO2INDEX(slot_index, PPAL_PHY_2_PANEL(module_type, devNum, portNum));
+		sub_port = PPAL_PHY_2_PANEL_SUBPORT(module_type, devNum, portNum);
     }
     else
     {
         port_no = ETH_LOCAL_NO2INDEX(slot_index, PHY_2_PANEL(devNum, portNum));
+		sub_port = PHY_2_PANEL_SUBPORT(devNum, portNum);
     }
 	if(PRODUCT_IS_BOX)
-	    *eth_g_index = ETH_GLOBAL_INDEX(chassis,sub_slot_index, 0, port_no);
+	    *eth_g_index = ETH_GLOBAL_INDEX(chassis,sub_slot_index, 0, port_no, sub_port);
 	else
-		*eth_g_index = ETH_GLOBAL_INDEX(chassis,slot_index, sub_slot_index, port_no);
+		*eth_g_index = ETH_GLOBAL_INDEX(chassis,slot_index, sub_slot_index, port_no, sub_port);
 	return retVal;
 }
 
@@ -724,6 +727,7 @@ unsigned int npd_get_global_index_by_modport
 	unsigned int slot_index = 0;
 	unsigned int sub_slot_index = 0;
 	unsigned int port_no = 0;
+	unsigned int	sub_port = 0;
 	unsigned int	unit = 0;
 	unsigned int	unit_port = 0;
 	unsigned int	retVal = 0;
@@ -774,7 +778,7 @@ unsigned int npd_get_global_index_by_modport
                  peer_plane, ASIC_SWITCH_TYPE);
             port_no = ETH_LOCAL_NO2INDEX(peer_slot, port_no);
             
-	        *eth_g_index = ETH_GLOBAL_INDEX(chassis,peer_slot, sub_slot_index, port_no);
+	        *eth_g_index = ETH_GLOBAL_INDEX(chassis,peer_slot, sub_slot_index, port_no, sub_port);
 			return 0;
 
         }
@@ -786,21 +790,24 @@ unsigned int npd_get_global_index_by_modport
     	if(sub_slot_index == 0)
     	{
             port_no = ETH_LOCAL_NO2INDEX(slot_index, PPAL_PHY_2_PANEL(module_type, unit, unit_port));
+			sub_port = PPAL_PHY_2_PANEL_SUBPORT(module_type, unit, unit_port);
     	}
     	else
     	{
             port_no = ETH_LOCAL_NO2INDEX(slot_index, PHY_2_PANEL(unit, unit_port));
+			sub_port = PHY_2_PANEL_SUBPORT(unit, unit_port);
     	}
     }
 	else
 	{
 	    port_no = ETH_LOCAL_NO2INDEX(slot_index, PPAL_PHY_2_PANEL(module_type, unit, unit_port));
+		sub_port = PPAL_PHY_2_PANEL_SUBPORT(module_type, unit, unit_port);
 	}
-	*eth_g_index = ETH_GLOBAL_INDEX(chassis,slot_index, sub_slot_index, port_no);
+	*eth_g_index = ETH_GLOBAL_INDEX(chassis,slot_index, sub_slot_index, port_no, sub_port);
 	if(PRODUCT_IS_BOX)
-	    *eth_g_index = ETH_GLOBAL_INDEX(chassis,sub_slot_index, 0, port_no);
+	    *eth_g_index = ETH_GLOBAL_INDEX(chassis,sub_slot_index, 0, port_no, sub_port);
 	else
-		*eth_g_index = ETH_GLOBAL_INDEX(chassis,slot_index, sub_slot_index, port_no);
+		*eth_g_index = ETH_GLOBAL_INDEX(chassis,slot_index, sub_slot_index, port_no, sub_port);
     
 
 	return retVal;
@@ -841,7 +848,7 @@ unsigned int npd_get_devport_by_global_index
 {
 	unsigned int ret = NPD_SUCCESS;
 	unsigned int slot_no = 0, slot_index = 0, sub_slot_index = 0;
-	unsigned int local_port_no = 0,port_index = 0;
+	unsigned int local_port_no = 0,port_index = 0, sub_port = 0;
 	int module_type;
 	int i = 0;
 
@@ -849,6 +856,7 @@ unsigned int npd_get_devport_by_global_index
 	slot_no			= CHASSIS_SLOT_INDEX2NO(slot_index);
 	port_index 		= ETH_LOCAL_INDEX_FROM_ETH_GLOBAL_INDEX(eth_g_index);
     sub_slot_index = SUBSLOT_INDEX_FROM_ETH_GLOBAL_INDEX(eth_g_index);
+	sub_port = npd_netif_eth_get_sub_port(eth_g_index);
     ret = eth_port_legal_check(eth_g_index);
     if(0 != ret)
         return NPD_FAIL;
@@ -904,8 +912,8 @@ unsigned int npd_get_devport_by_global_index
     		syslog_ax_c_slot_err("npd_get_devport_by_global_index: illegal slot %d, ifindex 0x%x\n",slot_no, eth_g_index);
     		return -NPD_FAIL;
     	}
-	    *devNum = PANEL_2_PHY_UNIT(local_port_no);
-	    *portNum = PANEL_2_PHY_PORT(local_port_no);
+	    *devNum = PANEL_SUBPORT_2_PHY_UNIT(local_port_no,sub_port);
+	    *portNum = PANEL_SUBPORT_2_PHY_PORT(local_port_no, sub_port);
     }
     else
     {
@@ -913,8 +921,8 @@ unsigned int npd_get_devport_by_global_index
 			return -NPD_FAIL;
 
 		
-        *devNum = PPAL_SUB_SLOT_PANEL_PORT_2_UNIT(sub_slot_index, port_index);
-        *portNum = PPAL_SUB_SLOT_PANEL_PORT_2_PORT(sub_slot_index, port_index);
+        *devNum = PPAL_SUB_SLOT_PANEL_PORT_AND_SUBPORT_2_UNIT(sub_slot_index, port_index, sub_port);
+        *portNum = PPAL_SUB_SLOT_PANEL_PORT_AND_SUBPORT_2_PORT(sub_slot_index, port_index, sub_port);
     }
     
 	return ret;	
@@ -929,7 +937,7 @@ unsigned int npd_get_modport_by_global_index
 {
 	unsigned int ret = NPD_SUCCESS;
 	unsigned int slot_no = 0, slot_index = 0, sub_slot_index = 0;
-	unsigned int local_port_no = 0,port_index = 0;
+	unsigned int local_port_no = 0,port_index = 0, sub_port = 0;
 	int module_type;
 	unsigned int unit_no = 0;
 	int i = 0;
@@ -946,6 +954,7 @@ unsigned int npd_get_modport_by_global_index
 	slot_no			= CHASSIS_SLOT_INDEX2NO(slot_index);
 	port_index 		= ETH_LOCAL_INDEX_FROM_ETH_GLOBAL_INDEX(eth_g_index);
     sub_slot_index = SUBSLOT_INDEX_FROM_ETH_GLOBAL_INDEX(eth_g_index);
+	sub_port = npd_netif_eth_get_sub_port(eth_g_index);
 	if (CHASSIS_SLOTNO_ISLEGAL(slot_no)) {
 		local_port_no	= ETH_LOCAL_INDEX2NO(slot_index,port_index);
 		module_type 	= MODULE_TYPE_ON_SLOT_INDEX(slot_index);
@@ -993,8 +1002,8 @@ unsigned int npd_get_modport_by_global_index
 	{
 		if(sub_slot_index)
 		{
-            unit_no = PPAL_SUB_SLOT_PANEL_PORT_2_UNIT(sub_slot_index, port_index);
-            *portNum = PPAL_SUB_SLOT_PANEL_PORT_2_PORT(sub_slot_index, port_index);
+            unit_no = PPAL_SUB_SLOT_PANEL_PORT_AND_SUBPORT_2_UNIT(sub_slot_index, port_index, sub_port);
+            *portNum = PPAL_SUB_SLOT_PANEL_PORT_AND_SUBPORT_2_PORT(sub_slot_index, port_index, sub_port);
 	        *modNum = UNIT_2_MODULE(SYS_LOCAL_MODULE_TYPE, SYS_LOCAL_MODULE_SLOT_INDEX, unit_no, *portNum);
             *portNum = UNIT_PORT_2_MODULE_PORT(SYS_LOCAL_MODULE_TYPE, unit_no, *portNum);
 			return NPD_SUCCESS;
@@ -1005,8 +1014,16 @@ unsigned int npd_get_modport_by_global_index
 	else
 	{
         module_type =  MODULE_TYPE_ON_SUBSLOT_INDEX(slot_index, sub_slot_index); 
-    	unit_no = PPAL_PANEL_2_PHY_UNIT(module_type, local_port_no);
-    	*portNum = PPAL_PANEL_2_PHY_PORT(module_type, local_port_no);
+		if(sub_port)
+		{
+    	    unit_no = PPAL_PANEL_SUBPORT_2_PHY_UNIT(module_type, local_port_no, sub_port);
+    	    *portNum = PPAL_PANEL_SUBPORT_2_PHY_PORT(module_type, local_port_no, sub_port);
+		}
+		else
+		{
+    	    unit_no = PPAL_PANEL_2_PHY_UNIT(module_type, local_port_no);
+    	    *portNum = PPAL_PANEL_2_PHY_PORT(module_type, local_port_no);
+		}
     	
     	*modNum = UNIT_2_MODULE(module_type, slot_index, unit_no, *portNum);
         *portNum = UNIT_PORT_2_MODULE_PORT(module_type, unit_no, *portNum);

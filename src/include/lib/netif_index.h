@@ -6,6 +6,7 @@
 #define MAX_CHASSIS_SLOT_COUNT 1
 #define MAX_SLOT_SUBBOARD_COUNT 1
 #define MAX_ETHPORT_PER_BOARD 64
+#define MAX_SUBPORT_PER_ETHPORT 1
 #define MAX_ETHPORT_PER_SYSTEM 64
 #define MAX_SWITCHPORT_PER_SYSTEM 72
 #define SUBBOARD_START_PORT   52
@@ -27,6 +28,7 @@
     #define MAX_CHASSIS_SLOT_COUNT 16
     #define MAX_SLOT_SUBBOARD_COUNT 5
     #define MAX_ETHPORT_PER_BOARD 64
+    #define MAX_SUBPORT_PER_ETHPORT 1
     #define SUBBOARD_START_PORT   52
     #define STACK_INTER_ETHPORT_START   16
     #define MAX_ETHPORT_PER_SUBBOARD 4
@@ -50,6 +52,7 @@
         #define MAX_CHASSIS_SLOT_COUNT 16
         #define MAX_SLOT_SUBBOARD_COUNT 5
         #define MAX_ETHPORT_PER_BOARD 64
+        #define MAX_SUBPORT_PER_ETHPORT 1
         #define SUBBOARD_START_PORT   52
         #define STACK_INTER_ETHPORT_START   16
         #define MAX_ETHPORT_PER_SUBBOARD 4
@@ -70,8 +73,9 @@
         #define MAX_CHASSIS_COUNT 1
         #define MAX_CHASSIS_SLOT_COUNT 1
         #define MAX_SLOT_SUBBOARD_COUNT 5
-        #define MAX_ETHPORT_PER_BOARD 128
-        #define SUBBOARD_START_PORT   128
+        #define MAX_ETHPORT_PER_BOARD 64
+        #define SUBBOARD_START_PORT   64
+        #define MAX_SUBPORT_PER_ETHPORT 4
         #define MAX_ETHPORT_PER_SUBBOARD 4
         #define MAX_ETHPORT_PER_SYSTEM 256
         #define MAX_SWITCHPORT_PER_SYSTEM 512
@@ -289,7 +293,7 @@ typedef union _NPD_NETIF_INDEX_U_
 } NPD_NETIF_INDEX_U;
 #define NPD_IFINDEX_TYPE(ifindex) ((ifindex & 0xf0000000)>>28)
 
-unsigned int eth_port_generate_ifindex(char chassis_id, char slot_id, char module_id, char port_id);
+unsigned int eth_port_generate_ifindex(char chassis_id, char slot_id, char module_id, char port_id, char sub_port);
 
 int wifi_port_array_index_from_ifindex_in(unsigned int netif_index);
 int wifi_port_array_index_to_ifindex_in(unsigned int wifi_arr_index);
@@ -320,6 +324,7 @@ unsigned long npd_netif_eth_get_chassis(unsigned long netif_index);
 unsigned long npd_netif_eth_get_slot(unsigned long netif_index);
 
 unsigned long npd_netif_eth_get_port(unsigned long netif_index);
+unsigned long npd_netif_eth_get_sub_port(unsigned long netif_index);
 
 unsigned long npd_netif_vlan_get_vid(unsigned long netif_index);
 unsigned long npd_netif_trunk_get_tid(unsigned long netif_index);

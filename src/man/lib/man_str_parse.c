@@ -1051,7 +1051,7 @@ int parse_chassis_slot_module_port_subport_no(char *str,unsigned char *chassis, 
 
 unsigned int parse_str_to_eth_index(char *str)
 {
-	int chassis = local_unitno, slotno = 0, moduleno = 0, portno = 0, subportno = 0;
+	int chassis = local_unitno, slotno = 0, moduleno = 0, portno = 0, subportno = 1;
 	int counter = 0;
 	int have_subport = 0;
 	char *str_temp = NULL;
@@ -2197,7 +2197,9 @@ int  man_web_interface_list_get(char * ifname[], int * ifnum)
                 || (0 == strncmp(temp, "mng", strlen("mng")))
 				|| (0 == strncmp(temp, "ctrl", strlen("ctrl")))
 				|| (0 == strncmp(temp, "lo", strlen("lo")))
-				|| (0 == strncmp(temp, "pimreg", strlen("pimreg"))))
+				|| (0 == strncmp(temp, "pimreg", strlen("pimreg")))
+				|| (0 == strncmp(temp, "sit", strlen("sit")))
+				|| (0 == strncmp(temp, "ip6tnl", strlen("ip6tnl"))))
 			{
 				memset(temp, 0, sizeof(temp));
 				continue;

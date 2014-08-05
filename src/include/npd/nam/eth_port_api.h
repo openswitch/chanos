@@ -12,7 +12,7 @@ extern sequence_table_index_t *g_eth_ports;
 #define ETH_PORT_IPG_FROM_GLOBAL_INDEX(eth_g_index) eth_port_sw_ipg_get(eth_g_index)
 #define ETH_PORT_LINK_TIME_CHANGE_FROM_GLOBAL_INDEX(eth_g_index) eth_port_sw_link_time_change_get(eth_g_index)
 
-#define ETH_GLOBAL_INDEX_FROM_SLOT_PORT_LOCAL_NO(slotno,portno) ETH_GLOBAL_INDEX_FROM_SLOT_PORT_LOCAL_INDEX(CHASSIS_SLOT_NO2INDEX(slotno),ETH_LOCAL_NO2INDEX(CHASSIS_SLOT_NO2INDEX(slotno),(portno)))
+#define ETH_GLOBAL_INDEX_FROM_SLOT_PORT_LOCAL_NO(slotno,portno) ETH_GLOBAL_INDEX_FROM_SLOT_PORT_LOCAL_INDEX(CHASSIS_SLOT_NO2INDEX(slotno),ETH_LOCAL_NO2INDEX(CHASSIS_SLOT_NO2INDEX(slotno),(portno)), 0)
 
 
 #define MODULE_DRIVER_TYPE_BY_IFINDEX(eth_g_index) npd_get_port_driver_type(eth_g_index)
@@ -20,12 +20,13 @@ extern sequence_table_index_t *g_eth_ports;
 
 #define SYS_ETH_PORT_ITER(eth_g_index) \
 { \
-	int i_i_i=0, j_j_j = 0, k_k_k = 0; \
+	int i_i_i=0, j_j_j = 0, k_k_k = 0, l_l_l = 0; \
 	for(i_i_i = 0; i_i_i < MAX_CHASSIS_COUNT; i_i_i++) \
 		for(j_j_j = 0; j_j_j < MAX_CHASSIS_SLOT_COUNT; j_j_j++) \
 			for(k_k_k = 0; k_k_k < ETH_LOCAL_PORT_COUNT(j_j_j); k_k_k++) \
-			{ \
-				eth_g_index = ETH_GLOBAL_INDEX(i_i_i, j_j_j, 0, k_k_k);
+    			for(l_l_l = 0; l_l_l < MAX_SUBPORT_PER_ETHPORT; l_l_l++) \
+    			{ \
+    				eth_g_index = ETH_GLOBAL_INDEX(i_i_i, j_j_j, 0, k_k_k, l_l_l);
 			
 #define SYS_ETH_PORT_ITER_END \
 			} \
@@ -33,11 +34,12 @@ extern sequence_table_index_t *g_eth_ports;
 
 #define LOCAL_CHASSIS_ETH_PORT_ITER(eth_g_index) \
 { \
-	int i_i_i=0, j_j_j = 0; \
+	int i_i_i=0, j_j_j = 0, k_k_k = 0; \
 	for(i_i_i = 0; i_i_i < MAX_CHASSIS_SLOT_COUNT; i_i_i++) \
 		for(j_j_j = 0; j_j_j < ETH_LOCAL_PORT_COUNT(i_i_i); j_j_j++) \
-		{ \
-			eth_g_index = ETH_GLOBAL_INDEX(SYS_LOCAL_CHASSIS_INDEX, i_i_i, 0, j_j_j);
+    		for(k_k_k = 0; k_k_k < MAX_SUBPORT_PER_ETHPORT; k_k_k++) \
+    		{ \
+    			eth_g_index = ETH_GLOBAL_INDEX(SYS_LOCAL_CHASSIS_INDEX, i_i_i, 0, j_j_j, k_k_k);
 		
 #define LOCAL_CHASSIS_ETH_PORT_ITER_END \
 		} \
@@ -45,10 +47,11 @@ extern sequence_table_index_t *g_eth_ports;
 
 #define LOCAL_SLOT_ETH_PORT_ITER(eth_g_index) \
 { \
-	int i_i_i=0; \
+	int i_i_i=0, j_j_j = 0; \
 	for(i_i_i = 0; i_i_i < MAX_ETHPORT_PER_BOARD; i_i_i++) \
-	{ \
-		eth_g_index = ETH_GLOBAL_INDEX(SYS_LOCAL_CHASSIS_INDEX, SYS_LOCAL_MODULE_SLOT_INDEX, 0, i_i_i);
+    	for(j_j_j = 0; j_j_j < MAX_ETHPORT_PER_BOARD; j_j_j++) \
+    	{ \
+    		eth_g_index = ETH_GLOBAL_INDEX(SYS_LOCAL_CHASSIS_INDEX, SYS_LOCAL_MODULE_SLOT_INDEX, 0, i_i_i, j_j_j);
 	
 #define LOCAL_CHASSIS_ETH_PORT_ITER_END \
 	} \
@@ -73,6 +76,7 @@ void npd_create_eth_port
 	unsigned int slot_index,
 	unsigned int sub_slot,
 	unsigned int eth_local_index,
+    unsigned int sub_port,
 	int state
 );
 
@@ -244,27 +248,10 @@ int npd_eth_port_counter_statistics
 	eth_port_stats_t *portPtr
 );
 
-int npd_eth_port_poll_add_member
-(
-	unsigned int eth_g_index
-);
-
-int npd_eth_port_poll_del_member
-(
-	unsigned int eth_g_index
-);
-
 void npd_eth_port_status_polling_thread
 (
 	void
 );
-
-unsigned int npd_eth_port_mask_link_interrupt_set
-(
-	unsigned int eth_g_index,
-	unsigned int enable
-) ;
-
 
 int npd_port_free_vlan(
     unsigned int eth_g_index,

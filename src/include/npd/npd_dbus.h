@@ -465,13 +465,6 @@ DBusMessage * npd_dbus_fdb_show_port_number
     DBusMessage *msg, 
     void *user_data
 ); 
-DBusMessage *npd_dbus_fdb_show_limit_item
-(
-   DBusConnection *conn, 
-   DBusMessage *msg,
-   void *user_data
-);
-
 DBusMessage * npd_system_debug_enable
 (
 	DBusConnection *conn, 
@@ -1447,13 +1440,6 @@ DBusMessage * npd_dbus_stp_get_port_speed
 	void *user_data
 );
 
-DBusMessage * npd_dbus_stp_get_port_duplex_mode
-(
-	DBusConnection *conn,
-	DBusMessage *msg, 
-	void *user_data
-);
-
 DBusMessage * npd_dbus_stp_set_stpid_for_vlan
 (
 	DBusConnection *conn,
@@ -1696,13 +1682,6 @@ DBusMessage * npd_dbus_rstp_slot_port_get
 	DBusMessage *msg, 
 	void *user_data
 ) ;
-
-DBusMessage * npd_dbus_rstp_get_one_port_index
-(
-	DBusConnection *conn, 
-	DBusMessage *msg, 
-	void *user_data
-);
 
 DBusMessage * npd_dbus_rstp_get_all_port_index
 (

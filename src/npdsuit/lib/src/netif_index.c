@@ -95,7 +95,7 @@ int eth_port_get_portno_by_ifindex(unsigned int eth_g_index)
 	return eth_ifindex.eth_if.port;
 }
 
-unsigned int eth_port_generate_ifindex(char chassis_id, char slot_id, char module_id, char port_id)
+unsigned int eth_port_generate_ifindex(char chassis_id, char slot_id, char module_id, char port_id, char sub_port)
 {
     NPD_NETIF_INDEX_U eth_ifindex;
     if(netif_system_is_box() == 1)
@@ -106,7 +106,7 @@ unsigned int eth_port_generate_ifindex(char chassis_id, char slot_id, char modul
     	eth_ifindex.eth_if.slot = chassis_id;
     	eth_ifindex.eth_if.sub_slot = slot_id;
     	eth_ifindex.eth_if.port = port_id;
-    	eth_ifindex.eth_if.reserved = 0;
+    	eth_ifindex.eth_if.reserved = sub_port;
     }
     else
     {
@@ -116,7 +116,7 @@ unsigned int eth_port_generate_ifindex(char chassis_id, char slot_id, char modul
     	eth_ifindex.eth_if.slot = slot_id;
     	eth_ifindex.eth_if.sub_slot = module_id;
     	eth_ifindex.eth_if.port = port_id;
-    	eth_ifindex.eth_if.reserved = 0;
+    	eth_ifindex.eth_if.reserved = sub_port;
     }
 	return eth_ifindex.netif_index;
 }
@@ -137,7 +137,11 @@ unsigned int generate_eth_index(char chassisno, char slotno, char moduleno, char
 	{
 		return 0;
 	}
-	if(portno < 0 || portno > MAX_ETHPORT_PER_BOARD)
+	if(portno <= 0 || portno > MAX_ETHPORT_PER_BOARD)
+	{
+		return 0;
+	}
+	if(subportno <= 0 || subportno > MAX_SUBPORT_PER_ETHPORT)
 	{
 		return 0;
 	}
@@ -149,7 +153,7 @@ unsigned int generate_eth_index(char chassisno, char slotno, char moduleno, char
     	eth_ifindex.eth_if.slot = chassisno - 1;
     	eth_ifindex.eth_if.sub_slot = slotno;
     	eth_ifindex.eth_if.port = portno -1;
-    	eth_ifindex.eth_if.reserved = subportno;
+    	eth_ifindex.eth_if.reserved = subportno-1;
     }
     else
     {
@@ -157,7 +161,7 @@ unsigned int generate_eth_index(char chassisno, char slotno, char moduleno, char
     	eth_ifindex.eth_if.slot = slotno - 1;
     	eth_ifindex.eth_if.sub_slot = moduleno;
     	eth_ifindex.eth_if.port = portno - 1;
-    	eth_ifindex.eth_if.reserved = subportno;
+    	eth_ifindex.eth_if.reserved = subportno-1;
     }
 	return eth_ifindex.netif_index;
 }
@@ -172,14 +176,14 @@ int dcli_eth_port_array_index_from_ifindex(unsigned int eth_g_index)
 	{
 		return -1;
 	}
-	eth_g_index_temp = (eth_ifindex.eth_if.chassis*MAX_CHASSIS_SLOT_COUNT*MAX_ETHPORT_PER_BOARD);
-	eth_g_index_temp += (eth_ifindex.eth_if.slot*MAX_ETHPORT_PER_BOARD);
+	eth_g_index_temp = (eth_ifindex.eth_if.chassis*MAX_CHASSIS_SLOT_COUNT*MAX_ETHPORT_PER_BOARD*MAX_SUBPORT_PER_ETHPORT);
+	eth_g_index_temp += (eth_ifindex.eth_if.slot*MAX_ETHPORT_PER_BOARD*MAX_SUBPORT_PER_ETHPORT);
     if(eth_ifindex.eth_if.sub_slot)
     {
-        eth_g_index_temp += SUBBOARD_START_PORT+(eth_ifindex.eth_if.sub_slot - 1)*MAX_ETHPORT_PER_SUBBOARD;
+        eth_g_index_temp += SUBBOARD_START_PORT+(eth_ifindex.eth_if.sub_slot - 1)*MAX_ETHPORT_PER_SUBBOARD*MAX_SUBPORT_PER_ETHPORT;
         
     }
-    eth_g_index_temp += (eth_ifindex.eth_if.port);
+    eth_g_index_temp += (eth_ifindex.eth_if.port*MAX_SUBPORT_PER_ETHPORT + eth_ifindex.eth_if.reserved);
 	return eth_g_index_temp;
 }
 
@@ -189,20 +193,22 @@ int dcli_eth_port_array_index_to_ifindex(unsigned int eth_arr_index)
     NPD_NETIF_INDEX_U eth_ifindex;
 	eth_ifindex.netif_index = 0;
 	eth_ifindex.eth_if.type = NPD_NETIF_ETH_TYPE;
-	eth_ifindex.eth_if.chassis = eth_arr_index/(MAX_CHASSIS_SLOT_COUNT*MAX_ETHPORT_PER_BOARD);
-	eth_arr_index -= (eth_ifindex.eth_if.chassis*(MAX_CHASSIS_SLOT_COUNT*MAX_ETHPORT_PER_BOARD));
-	eth_ifindex.eth_if.slot = eth_arr_index/(MAX_ETHPORT_PER_BOARD);
-	eth_arr_index -= (eth_ifindex.eth_if.slot*(MAX_ETHPORT_PER_BOARD));
-    if(eth_arr_index < SUBBOARD_START_PORT)
+	eth_ifindex.eth_if.chassis = eth_arr_index/(MAX_CHASSIS_SLOT_COUNT*MAX_ETHPORT_PER_BOARD*MAX_SUBPORT_PER_ETHPORT);
+	eth_arr_index -= (eth_ifindex.eth_if.chassis*(MAX_CHASSIS_SLOT_COUNT*MAX_ETHPORT_PER_BOARD*MAX_SUBPORT_PER_ETHPORT));
+	eth_ifindex.eth_if.slot = eth_arr_index/(MAX_ETHPORT_PER_BOARD*MAX_SUBPORT_PER_ETHPORT);
+	eth_arr_index -= (eth_ifindex.eth_if.slot*(MAX_ETHPORT_PER_BOARD*MAX_SUBPORT_PER_ETHPORT));
+    if(eth_arr_index/MAX_SUBPORT_PER_ETHPORT < SUBBOARD_START_PORT)
     {
         eth_ifindex.eth_if.sub_slot = 0;
-	    eth_ifindex.eth_if.port = eth_arr_index;
+	    eth_ifindex.eth_if.port = eth_arr_index/MAX_SUBPORT_PER_ETHPORT;
+	    eth_ifindex.eth_if.reserved = eth_arr_index%MAX_SUBPORT_PER_ETHPORT;
     }
     else
     {
-    	eth_ifindex.eth_if.sub_slot = ((eth_arr_index-SUBBOARD_START_PORT)/(MAX_ETHPORT_PER_SUBBOARD) + 1);
-    	eth_arr_index -= ((eth_ifindex.eth_if.sub_slot - 1)*(MAX_ETHPORT_PER_SUBBOARD) + SUBBOARD_START_PORT);
-    	eth_ifindex.eth_if.port = eth_arr_index;
+    	eth_ifindex.eth_if.sub_slot = ((eth_arr_index-SUBBOARD_START_PORT)/(MAX_ETHPORT_PER_SUBBOARD*MAX_SUBPORT_PER_ETHPORT) + 1);
+    	eth_arr_index -= ((eth_ifindex.eth_if.sub_slot - 1)*(MAX_ETHPORT_PER_SUBBOARD*MAX_SUBPORT_PER_ETHPORT) + SUBBOARD_START_PORT);
+    	eth_ifindex.eth_if.port = eth_arr_index/MAX_SUBPORT_PER_ETHPORT;
+	    eth_ifindex.eth_if.reserved = eth_arr_index%MAX_SUBPORT_PER_ETHPORT;
     }
 	return eth_ifindex.netif_index;
 }
@@ -245,7 +251,7 @@ unsigned long npd_netif_type_get(unsigned long netif_index)
 
 unsigned long npd_netif_eth_index(unsigned long chassis_id, unsigned long slot_id, unsigned long port_id)
 {
-    return eth_port_generate_ifindex(chassis_id, slot_id, 0, port_id);
+    return eth_port_generate_ifindex(chassis_id, slot_id, 0, port_id, 0);
 }
 
 unsigned long npd_netif_vlan_index(unsigned long vid)
@@ -305,6 +311,15 @@ unsigned long npd_netif_eth_get_port(unsigned long netif_index)
     unsigned long port_no = 0;
     npd_netif_index.netif_index = netif_index;
     port_no = npd_netif_index.eth_if.port;
+    return port_no;
+}
+
+unsigned long npd_netif_eth_get_sub_port(unsigned long netif_index)
+{
+    NPD_NETIF_INDEX_U npd_netif_index;
+    unsigned long port_no = 0;
+    npd_netif_index.netif_index = netif_index;
+    port_no = npd_netif_index.eth_if.reserved;
     return port_no;
 }
 
@@ -432,14 +447,14 @@ int eth_port_array_index_from_ifindex_in(unsigned int eth_g_index)
 	{
 		return -1;
 	}
-	eth_g_index_temp = (eth_ifindex.eth_if.chassis*MAX_CHASSIS_SLOT_COUNT*MAX_ETHPORT_PER_BOARD);
-	eth_g_index_temp += (eth_ifindex.eth_if.slot*MAX_ETHPORT_PER_BOARD);
+	eth_g_index_temp = (eth_ifindex.eth_if.chassis*MAX_CHASSIS_SLOT_COUNT*(MAX_ETHPORT_PER_BOARD * MAX_SUBPORT_PER_ETHPORT));
+	eth_g_index_temp += (eth_ifindex.eth_if.slot*(MAX_ETHPORT_PER_BOARD * MAX_SUBPORT_PER_ETHPORT));
     if(eth_ifindex.eth_if.sub_slot)
     {
-        eth_g_index_temp += SUBBOARD_START_PORT+(eth_ifindex.eth_if.sub_slot - 1)*MAX_ETHPORT_PER_SUBBOARD;
+        eth_g_index_temp += SUBBOARD_START_PORT+(eth_ifindex.eth_if.sub_slot - 1)*(MAX_ETHPORT_PER_SUBBOARD * MAX_SUBPORT_PER_ETHPORT);
         
     }
-	eth_g_index_temp += (eth_ifindex.eth_if.port);
+	eth_g_index_temp += (eth_ifindex.eth_if.port * MAX_SUBPORT_PER_ETHPORT + eth_ifindex.eth_if.reserved);
 	return eth_g_index_temp;
 }
 
@@ -448,20 +463,22 @@ int eth_port_array_index_to_ifindex_in(unsigned int eth_arr_index)
     NPD_NETIF_INDEX_U eth_ifindex;
 	eth_ifindex.netif_index = 0;
 	eth_ifindex.eth_if.type = NPD_NETIF_ETH_TYPE;
-	eth_ifindex.eth_if.chassis = eth_arr_index/(MAX_CHASSIS_SLOT_COUNT*MAX_ETHPORT_PER_BOARD);
-	eth_arr_index -= (eth_ifindex.eth_if.chassis*(MAX_CHASSIS_SLOT_COUNT*MAX_ETHPORT_PER_BOARD));
-	eth_ifindex.eth_if.slot = eth_arr_index/(MAX_ETHPORT_PER_BOARD);
-	eth_arr_index -= (eth_ifindex.eth_if.slot*(MAX_ETHPORT_PER_BOARD));
-    if(eth_arr_index < SUBBOARD_START_PORT)
+	eth_ifindex.eth_if.chassis = eth_arr_index/(MAX_CHASSIS_SLOT_COUNT*(MAX_ETHPORT_PER_BOARD * MAX_SUBPORT_PER_ETHPORT));
+	eth_arr_index -= (eth_ifindex.eth_if.chassis*(MAX_CHASSIS_SLOT_COUNT*(MAX_ETHPORT_PER_BOARD * MAX_SUBPORT_PER_ETHPORT)));
+	eth_ifindex.eth_if.slot = eth_arr_index/(MAX_ETHPORT_PER_BOARD * MAX_SUBPORT_PER_ETHPORT);
+	eth_arr_index -= (eth_ifindex.eth_if.slot*(MAX_ETHPORT_PER_BOARD * MAX_SUBPORT_PER_ETHPORT));
+    if((eth_arr_index/MAX_SUBPORT_PER_ETHPORT) < SUBBOARD_START_PORT)
     {
         eth_ifindex.eth_if.sub_slot = 0;
-	    eth_ifindex.eth_if.port = eth_arr_index;
+	    eth_ifindex.eth_if.port = eth_arr_index/MAX_SUBPORT_PER_ETHPORT;
+		eth_ifindex.eth_if.reserved = eth_arr_index%MAX_SUBPORT_PER_ETHPORT;
     }
     else
     {
-    	eth_ifindex.eth_if.sub_slot = ((eth_arr_index-SUBBOARD_START_PORT)/(MAX_ETHPORT_PER_SUBBOARD) + 1);
-    	eth_arr_index -= ((eth_ifindex.eth_if.sub_slot - 1)*(MAX_ETHPORT_PER_SUBBOARD) + SUBBOARD_START_PORT);
-    	eth_ifindex.eth_if.port = eth_arr_index;
+    	eth_ifindex.eth_if.sub_slot = ((eth_arr_index-SUBBOARD_START_PORT)/(MAX_ETHPORT_PER_SUBBOARD * MAX_SUBPORT_PER_ETHPORT) + 1);
+    	eth_arr_index -= ((eth_ifindex.eth_if.sub_slot - 1)*(MAX_ETHPORT_PER_SUBBOARD * MAX_SUBPORT_PER_ETHPORT) + SUBBOARD_START_PORT);
+    	eth_ifindex.eth_if.port = eth_arr_index/MAX_SUBPORT_PER_ETHPORT;
+		eth_ifindex.eth_if.reserved = eth_arr_index%MAX_SUBPORT_PER_ETHPORT;
     }
 	return eth_ifindex.netif_index;
 }
@@ -541,18 +558,40 @@ int npd_eth_index_to_name(unsigned int eth_g_index, char *name)
 	{
         if(netif_system_is_box() == 1)
         {
-   		    sprintf(name, "eth%d_%d_%d", eth_ifindex.eth_if.slot + 1, eth_ifindex.eth_if.sub_slot, eth_ifindex.eth_if.port + 1);
+            if(eth_ifindex.eth_if.reserved)
+            {
+   		        sprintf(name, "eth%d_%d_%d.%d", eth_ifindex.eth_if.slot + 1, eth_ifindex.eth_if.sub_slot, eth_ifindex.eth_if.port + 1, eth_ifindex.eth_if.reserved + 1);
+            }
+			else
+			{
+   		        sprintf(name, "eth%d_%d_%d", eth_ifindex.eth_if.slot + 1, eth_ifindex.eth_if.sub_slot, eth_ifindex.eth_if.port + 1);
+			}
         }
         else
         {
     		if(eth_ifindex.eth_if.sub_slot != 0)
     		{
-    		    sprintf(name, "eth%d_%d_%d_%d", eth_ifindex.eth_if.chassis+1, eth_ifindex.eth_if.slot + 1, 
-                    eth_ifindex.eth_if.sub_slot, (eth_ifindex.eth_if.port + 1));
+                if(eth_ifindex.eth_if.reserved)
+                {
+    		        sprintf(name, "eth%d_%d_%d_%d.%d", eth_ifindex.eth_if.chassis+1, eth_ifindex.eth_if.slot + 1, 
+                        eth_ifindex.eth_if.sub_slot, (eth_ifindex.eth_if.port + 1), eth_ifindex.eth_if.reserved + 1);
+            	}
+				else
+				{
+    		        sprintf(name, "eth%d_%d_%d_%d", eth_ifindex.eth_if.chassis+1, eth_ifindex.eth_if.slot + 1, 
+                        eth_ifindex.eth_if.sub_slot, (eth_ifindex.eth_if.port + 1));
+				}
     		}
     		else
     		{
-    		    sprintf(name, "eth%d_%d_%d", eth_ifindex.eth_if.chassis+1, eth_ifindex.eth_if.slot + 1,  eth_ifindex.eth_if.port + 1);
+                if(eth_ifindex.eth_if.reserved)
+                {
+    		       sprintf(name, "eth%d_%d_%d.%d", eth_ifindex.eth_if.chassis+1, eth_ifindex.eth_if.slot + 1,  eth_ifindex.eth_if.port + 1, eth_ifindex.eth_if.reserved + 1);
+                }
+				else
+				{
+    		       sprintf(name, "eth%d_%d_%d", eth_ifindex.eth_if.chassis+1, eth_ifindex.eth_if.slot + 1,  eth_ifindex.eth_if.port + 1);
+				}
     		}
         }
 		return 0;
@@ -657,13 +696,28 @@ int npd_netif_index_to_user_fullname(unsigned int netif_index, char *ifname)
         int slot = npd_netif_eth_get_slot(netif_index)+1;
 		int sub_slot = npd_netif_eth_get_subslot(netif_index);
         int port = npd_netif_eth_get_port(netif_index)+1;
+        int sub_port = npd_netif_eth_get_sub_port(netif_index)+1;
         if(netif_system_is_box() == 1)
         {
-            sprintf(ifname, "ethernet %d/%d/%d", chassisno, sub_slot, port);
+            if(sub_port == 1)
+            {
+                sprintf(ifname, "ethernet %d/%d/%d", chassisno, sub_slot, port);
+            }
+			else
+            {
+                sprintf(ifname, "ethernet %d/%d/%d.%d", chassisno, sub_slot, port, sub_port);
+            }
         }
 		else
 		{
-            sprintf(ifname, "ethernet %d/%d/%d", chassisno, slot, port);
+            if(sub_port == 1)
+            {
+                sprintf(ifname, "ethernet %d/%d/%d", chassisno, slot, port);
+            }
+			else
+            {
+                sprintf(ifname, "ethernet %d/%d/%d.%d", chassisno, slot, port, sub_port);
+            }
 		}
         return 0;
     }
@@ -729,12 +783,29 @@ int npd_netif_index_to_user_name(unsigned int netif_index, char *ifname)
         int slot = npd_netif_eth_get_slot(netif_index)+1;
 		int sub_slot = npd_netif_eth_get_subslot(netif_index);
         int port = npd_netif_eth_get_port(netif_index)+1;
+        int sub_port = npd_netif_eth_get_sub_port(netif_index)+1;
         if(netif_system_is_box() == 1)
         {
-            sprintf(ifname, "eth%d/%d/%d", chassisno, sub_slot, port);
+            if(sub_port == 1)
+            {
+                sprintf(ifname, "eth%d/%d/%d", chassisno, sub_slot, port);
+            }
+			else
+            {
+                sprintf(ifname, "eth%d/%d/%d.%d", chassisno, sub_slot, port, sub_port);
+            }
         }
 		else
-            sprintf(ifname, "eth%d/%d/%d", chassisno, slot, port);
+		{
+            if(sub_port == 1)
+            {
+                sprintf(ifname, "eth%d/%d/%d", chassisno, slot, port);
+            }
+			else
+            {
+                sprintf(ifname, "eth%d/%d/%d.%d", chassisno, slot, port, sub_port);
+            }
+		}
         return 0;
     }
     else if(NPD_NETIF_TRUNK_TYPE == npd_netif_type_get(netif_index))
@@ -776,9 +847,17 @@ int npd_netif_index_to_l3intf_name(unsigned int netif_index, char *ifname)
 			int chassisno = npd_netif_eth_get_chassis(netif_index)+1;
 	        int slot = npd_netif_eth_get_slot(netif_index)+1;
 	        int port = npd_netif_eth_get_port(netif_index)+1;
+	        int sub_port = npd_netif_eth_get_sub_port(netif_index)+1;
             if(netif_system_is_box() == 1)
                 slot = slot - 1;
-	        sprintf(ifname, "eth%d/%d/%d", chassisno, slot, port);
+			if(sub_port == 1)
+			{
+	            sprintf(ifname, "eth%d/%d/%d", chassisno, slot, port);
+			}
+			else
+			{
+	            sprintf(ifname, "eth%d/%d/%d.%d", chassisno, slot, port, sub_port);
+			}
 	        return 0;
 		}
 		case NPD_NETIF_VLAN_TYPE:
@@ -812,17 +891,38 @@ int parse_eth_index_to_name(unsigned int eth_g_index, char *name)
 	{
         if(netif_system_is_box() == 1)
         {
-		    sprintf(name, "%d/%d/%d",eth_ifindex.eth_if.slot + 1, eth_ifindex.eth_if.sub_slot, eth_ifindex.eth_if.port + 1);
+            if(eth_ifindex.eth_if.reserved)
+            {
+		        sprintf(name, "%d/%d/%d.%d",eth_ifindex.eth_if.slot + 1, eth_ifindex.eth_if.sub_slot, eth_ifindex.eth_if.port + 1, eth_ifindex.eth_if.reserved + 1);
+            }
+			else
+			{
+		        sprintf(name, "%d/%d/%d",eth_ifindex.eth_if.slot + 1, eth_ifindex.eth_if.sub_slot, eth_ifindex.eth_if.port + 1);
+			}
         }
         else
 		{
 			if(eth_ifindex.eth_if.sub_slot != 0)
 			{
-				sprintf(name, "%d/%d/%d/%d",eth_ifindex.eth_if.chassis + 1, eth_ifindex.eth_if.slot + 1, eth_ifindex.eth_if.sub_slot, eth_ifindex.eth_if.port + 1);
+                if(eth_ifindex.eth_if.reserved)
+                {
+				    sprintf(name, "%d/%d/%d/%d.%d",eth_ifindex.eth_if.chassis + 1, eth_ifindex.eth_if.slot + 1, eth_ifindex.eth_if.sub_slot, eth_ifindex.eth_if.port + 1, eth_ifindex.eth_if.reserved + 1);
+                }
+				else
+                {
+				    sprintf(name, "%d/%d/%d/%d",eth_ifindex.eth_if.chassis + 1, eth_ifindex.eth_if.slot + 1, eth_ifindex.eth_if.sub_slot, eth_ifindex.eth_if.port + 1);
+                }
 			}
 			else
 			{
-				sprintf(name, "%d/%d/%d",eth_ifindex.eth_if.chassis + 1, eth_ifindex.eth_if.slot + 1, eth_ifindex.eth_if.port + 1);
+                if(eth_ifindex.eth_if.reserved)
+                {
+    				sprintf(name, "%d/%d/%d.%d",eth_ifindex.eth_if.chassis + 1, eth_ifindex.eth_if.slot + 1, eth_ifindex.eth_if.port + 1, eth_ifindex.eth_if.reserved + 1);
+                }
+    			else
+                {
+    				sprintf(name, "%d/%d/%d",eth_ifindex.eth_if.chassis + 1, eth_ifindex.eth_if.slot + 1, eth_ifindex.eth_if.port + 1);
+                }
 			}
 		}
 		return 0;

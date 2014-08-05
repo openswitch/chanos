@@ -5,7 +5,6 @@
 #include "npd_database.h"
 #include "netif_index.h"
 
-extern unsigned int g_fiber_port_poll[];
 
 #define NPD_ETHPORT_SHOWRUN_CFG_SIZE	(3*1024) /* for all 24GE ports configuration */
 

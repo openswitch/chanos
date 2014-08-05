@@ -719,7 +719,7 @@ unsigned int npd_dldp_vlan_endis_config
 	NPD_DEV_EVENT_CMD_DLDP_T npdMsg_port;
 #ifdef CORRECT_DB
 
-	memset(eth_g_index, 0, sizeof(unsigned int) * MAX_ETHPORT_PER_BOARD * CHASSIS_SLOT_COUNT);
+	memset(eth_g_index, 0, sizeof(unsigned int) * MAX_ETHPORT_PER_BOARD*MAX_SUBPORT_PER_ETHPORT * CHASSIS_SLOT_COUNT);
 	memset(&npdMsg_vlan, 0, sizeof(NPD_DEV_EVENT_CMD_DLDP_T));
 	memset(&npdMsg_port, 0, sizeof(NPD_DEV_EVENT_CMD_DLDP_T));
 
@@ -852,7 +852,7 @@ unsigned int npd_dldp_vlan_endis_config
 		}
 
 		/* config tag ports */
-		memset(eth_g_index, 0, sizeof(unsigned int) * MAX_ETHPORT_PER_BOARD * CHASSIS_SLOT_COUNT);
+		memset(eth_g_index, 0, sizeof(unsigned int) * MAX_ETHPORT_PER_BOARD*MAX_SUBPORT_PER_ETHPORT * CHASSIS_SLOT_COUNT);
 		mbrCnt = NPD_DLDP_INIT_0;
 		ret = npd_vlan_member_port_index_get(vlanid,	/*vlanId			*/
 											 1, 		/*tagMode, tag	*/

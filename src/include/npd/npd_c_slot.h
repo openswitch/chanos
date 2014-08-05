@@ -290,9 +290,9 @@ extern product_param_t productinfo;
 
 #define ETH_LOCAL_INDEX_FROM_ETH_GLOBAL_INDEX(eth_g_index) npd_netif_eth_get_port(eth_g_index)
 
-#define ETH_GLOBAL_INDEX(chassis, slot, sub_slot, local) eth_port_generate_ifindex(chassis, slot, sub_slot, local)
+#define ETH_GLOBAL_INDEX(chassis, slot, sub_slot, local, sub_port) eth_port_generate_ifindex(chassis, slot, sub_slot, local, sub_port)
 
-#define ETH_GLOBAL_INDEX_FROM_SLOT_PORT_LOCAL_INDEX(slot_index,eth_local_index) ETH_GLOBAL_INDEX(0, slot_index, 0, eth_local_index)
+#define ETH_GLOBAL_INDEX_FROM_SLOT_PORT_LOCAL_INDEX(slot_index,eth_local_index, sub_port) ETH_GLOBAL_INDEX(0, slot_index, 0, eth_local_index, sub_port)
 
 #define SYS_MASTER_ACTIVE_SLOT_INDEX (productinfo.active_master_slot)
 #define SYS_SLOTNO_IS_ILLEGAL(slotno) (((slotno) > (SYS_CHASSIS_SLOTNUM))||((slotno) < 1))
