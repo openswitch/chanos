@@ -746,7 +746,7 @@ int npd_ndisc_packet_rx_process
 	/* pointer to the 1st exthdr */
 	nexthdr = layer3->ip6_nxt;
 	/* available length */
-	len = layer3->ip6_plen;
+	len = ntohs(layer3->ip6_plen);
 
 	//initiate ndisc ctrl information
 	memset(&ndisc_ctrl_info, 0, sizeof(ndisc_ctrl_info));
@@ -2960,9 +2960,9 @@ int npd_ndisc_ipv6_checksum(struct ip6_hdr *iphdr)
 	ip6_csum_psedudo.nexthdr = (unsigned int)iphdr->ip6_nxt;
 	
 	memset(buffer,0,256);
-	memcpy(buffer, icmp6hdr, iphdr->ip6_plen);
-	memcpy(buffer+iphdr->ip6_plen, &ip6_csum_psedudo, sizeof(struct ipv6_checksum_pseudo));
-	csum = npd_iphdr_checksum((unsigned short*)buffer, sizeof(struct ipv6_checksum_pseudo)+iphdr->ip6_plen);
+	memcpy(buffer, icmp6hdr, ntohs(iphdr->ip6_plen));
+	memcpy(buffer+ntohs(iphdr->ip6_plen), &ip6_csum_psedudo, sizeof(struct ipv6_checksum_pseudo));
+	csum = npd_iphdr_checksum((unsigned short*)buffer, sizeof(struct ipv6_checksum_pseudo)+ntohs(iphdr->ip6_plen));
 	
 	icmp6hdr->icmp6_cksum = csum;
 	return 0;
@@ -3003,14 +3003,14 @@ int npd_ndisc_solicit_send(struct ndisc_snooping_item_s *item, ip6_addr *gateway
 	layer3 = (struct ip6_hdr *)(layer2 + 1);
 	*(unsigned int *)layer3 = htonl(0x60000000);
 	layer3->ip6_plen = htons(len);
-	layer3->ip6_nxt     = htons(IPPROTO_ICMPV6);
-	layer3->ip6_hlim   = htons(255);
+	layer3->ip6_nxt     = IPPROTO_ICMPV6;
+	layer3->ip6_hlim   = 255;
 	memcpy(&layer3->ip6_src, gateway, sizeof(ip6_addr));
 	memcpy(&layer3->ip6_dst, &item->ipAddr, sizeof(ip6_addr));
 		
 	/* icmp6 */
 	hdr = (struct icmp6_hdr *)(layer3 + 1);
-	hdr->icmp6_type     = htons(ND_NEIGHBOR_SOLICIT);
+	hdr->icmp6_type     = ND_NEIGHBOR_SOLICIT;
 	hdr->icmp6_code     = 0;
 	hdr->icmp6_cksum    = 0;
 		
