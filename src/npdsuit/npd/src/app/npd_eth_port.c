@@ -1244,6 +1244,7 @@ int eth_port_sw_attr_update(unsigned int eth_g_index, unsigned int type, unsigne
                 break;
             case ETH_SPEED:
 				ret = ETHPORT_RETURN_CODE_ERR_NONE;
+#if 0
 				if (value == 40000)
 				{
 				    if(g_ptr->port_type == ETH_XGE_QSFP)/*change 10G to 40G*/
@@ -1277,9 +1278,92 @@ int eth_port_sw_attr_update(unsigned int eth_g_index, unsigned int type, unsigne
 					    break;
 					}
 				}
+#endif
+				switch (value)
+				{
+					case 10:
+						if(g_ptr->port_type != ETH_FE_TX && g_ptr->port_type != ETH_GTX
+							&& g_ptr->port_type != ETH_GE_COMBO)
+						{
+						    ret = ETHPORT_RETURN_CODE_NOT_SUPPORT;
+							npd_key_database_unlock();
+                            return ret;
+						}
+						g_ptr->attr_bitmap &= (~((1 << ETH_AUTONEG_BIT) & ETH_ATTR_AUTONEG));
+                        g_ptr->attr_bitmap &= 0xFFFF0FFF;
+                        g_ptr->attr_bitmap |= ((PORT_SPEED_10_E << ETH_SPEED_BIT) & ETH_ATTR_SPEED_MASK);/*bit12~15 represent 16 kinds of speed*/
+						break;
+					case 100:
+						if(g_ptr->port_type != ETH_FE_TX && g_ptr->port_type != ETH_GTX
+							&& g_ptr->port_type != ETH_GE_COMBO && g_ptr->port_type != ETH_GE_SFP
+							&& g_ptr->port_type != ETH_FE_FIBER)
+						{
+						    ret = ETHPORT_RETURN_CODE_NOT_SUPPORT;
+							npd_key_database_unlock();
+                            return ret;
+						}
+						g_ptr->attr_bitmap &= (~((1 << ETH_AUTONEG_BIT) & ETH_ATTR_AUTONEG));
+                        g_ptr->attr_bitmap &= 0xFFFF0FFF;
+                        g_ptr->attr_bitmap |= ((PORT_SPEED_100_E << ETH_SPEED_BIT) & ETH_ATTR_SPEED_MASK);/*bit12~15 represent 16 kinds of speed*/
+					    break;
+					case 1000:
+						if(g_ptr->port_type != ETH_GTX && g_ptr->port_type != ETH_GE_COMBO 
+							&& g_ptr->port_type != ETH_GE_SFP && g_ptr->port_type != ETH_XGTX
+							&& g_ptr->port_type != ETH_XGE_SFPPLUS && g_ptr->port_type != ETH_XGE_XFP)
+						{
+						    ret = ETHPORT_RETURN_CODE_NOT_SUPPORT;
+							npd_key_database_unlock();
+                            return ret;
+						}
+						if(g_ptr->port_type == ETH_GTX || g_ptr->port_type == ETH_GE_COMBO)
+						{
+						    g_ptr->attr_bitmap &= (~((1 << ETH_AUTONEG_BIT) & ETH_ATTR_AUTONEG));
+						}
+                        g_ptr->attr_bitmap &= 0xFFFF0FFF;
+                        g_ptr->attr_bitmap |= ((PORT_SPEED_1000_E << ETH_SPEED_BIT) & ETH_ATTR_SPEED_MASK);/*bit12~15 represent 16 kinds of speed*/
+						break;
+					case 10000:
+						if(g_ptr->port_type != ETH_XGE_XFP && g_ptr->port_type != ETH_XGTX 
+							&& g_ptr->port_type != ETH_XGE_SFPPLUS && g_ptr->port_type != ETH_XGE_FIBER
+							&& g_ptr->port_type != ETH_XGE_QSFP && g_ptr->port_type != ETH_40G_QSFP)
+						{
+						    ret = ETHPORT_RETURN_CODE_NOT_SUPPORT;
+							npd_key_database_unlock();
+                            return ret;
+						}
+    				    if(g_ptr->port_type == ETH_40G_QSFP)/*change 40G to 10G*/
+    				    {
+    				        npd_port_4xg_to_xg(eth_g_index);
+    						ret = ETHPORT_RETURN_CODE_ERR_NONE;
+                            npd_key_database_unlock();
+                            return ret;
+    				    }
+                        g_ptr->attr_bitmap &= 0xFFFF0FFF;
+                        g_ptr->attr_bitmap |= ((PORT_SPEED_10000_E << ETH_SPEED_BIT) & ETH_ATTR_SPEED_MASK);/*bit12~15 represent 16 kinds of speed*/
+						break;
+					case 40000:
+						if(g_ptr->port_type != ETH_40G_QSFP && g_ptr->port_type != ETH_40G_CFP
+							&& g_ptr->port_type != ETH_XGE_QSFP)
+						{
+						    ret = ETHPORT_RETURN_CODE_NOT_SUPPORT;
+							npd_key_database_unlock();
+                            return ret;
+						}
+    				    if(g_ptr->port_type == ETH_XGE_QSFP)/*change 10G to 40G*/
+    				    {
+    				        npd_port_xg_to_4xg(eth_g_index);
+    						ret = ETHPORT_RETURN_CODE_ERR_NONE;
+                            npd_key_database_unlock();
+                            return ret;
+    				    }
+						break;
+					default:
+						ret = ETHPORT_RETURN_CODE_NOT_SUPPORT;
+						break;
+				}
+#if 0
 				if(g_ptr->attr_bitmap & ETH_ATTR_AUTONEG)
 				{
-
                     if (value == 10000)
                     {
                         if(g_ptr->port_type == ETH_XGE_SFPPLUS || g_ptr->port_type == ETH_XGE_FIBER 
@@ -1390,7 +1474,7 @@ int eth_port_sw_attr_update(unsigned int eth_g_index, unsigned int type, unsigne
                     }
                 }
 
-
+#endif
                 break;
 
             case DUMOD:
@@ -1507,12 +1591,14 @@ int eth_port_sw_attr_update(unsigned int eth_g_index, unsigned int type, unsigne
                          g_ptr->attr_bitmap &= 0xFFFF0FFF;
                          g_ptr->attr_bitmap |= ((PORT_SPEED_1000_E << ETH_SPEED_BIT) & ETH_ATTR_SPEED_MASK); /*SPEED 1000*/
                     }
+				#if 0
                     else if(g_ptr->port_type == ETH_XGE_SFPPLUS || g_ptr->port_type == ETH_XGE_FIBER 
                         || g_ptr->port_type == ETH_XGE_XFP)
                     {
                        g_ptr->attr_bitmap &= 0xFFFF0FFF;
                        g_ptr->attr_bitmap |= ((PORT_SPEED_10000_E << ETH_SPEED_BIT) & ETH_ATTR_SPEED_MASK);/*bit12~15 represent 16 kinds of speed*/
                     }
+				#endif
                     g_ptr->attr_bitmap &= (~((1 << ETH_DUPLEX_BIT) & ETH_ATTR_DUPLEX));                  /*FULL DUPLEX*/
                     g_ptr->attr_bitmap &= (~((1 << ETH_BACKPRESSURE_BIT) & ETH_ATTR_BACKPRESSURE));      /*back pressure disable*/                 /*FULL DUPLEX*/
                     
@@ -1523,13 +1609,15 @@ int eth_port_sw_attr_update(unsigned int eth_g_index, unsigned int type, unsigne
                 	if (eee_state != ETH_ATTR_EEE_ENABLE)
                 	{
                     	g_ptr->attr_bitmap &= (~((1 << ETH_AUTONEG_BIT) & ETH_ATTR_AUTONEG));
+						#if 0
                     	g_ptr->attr_bitmap &= 0xFFFF0FFF;
                     	if(g_ptr->port_type == ETH_XGE_SFPPLUS || g_ptr->port_type == ETH_XGE_FIBER 
                     	|| g_ptr->port_type == ETH_XGTX || g_ptr->port_type == ETH_XGE_XFP)
                     	{
                        		g_ptr->attr_bitmap |= ((PORT_SPEED_10000_E << ETH_SPEED_BIT) & ETH_ATTR_SPEED_MASK); /*SPEED 10000*/
                     	}
-						else if((g_ptr->port_type == ETH_GE_FIBER) || (g_ptr->port_type == ETH_GE_SFP))
+						else 
+						if((g_ptr->port_type == ETH_GE_FIBER) || (g_ptr->port_type == ETH_GE_SFP))
 						{
                        		g_ptr->attr_bitmap |= ((PORT_SPEED_1000_E << ETH_SPEED_BIT) & ETH_ATTR_SPEED_MASK); /*SPEED 10000*/
 						}
@@ -1537,6 +1625,7 @@ int eth_port_sw_attr_update(unsigned int eth_g_index, unsigned int type, unsigne
                     	{
                         	g_ptr->attr_bitmap |= ((PORT_SPEED_100_E << ETH_SPEED_BIT) & ETH_ATTR_SPEED_MASK); /*SPEED 100*/
                     	}
+						#endif
                     	//g_ptr->attr_bitmap &= (~((1 << ETH_FLOWCTRL_BIT) & ETH_ATTR_FLOWCTRL));           /*DISABLE FLOWCTRL*/
                     	g_ptr->attr_bitmap &= (~((1 << ETH_DUPLEX_BIT) & ETH_ATTR_DUPLEX));                  /*FULL DUPLEX*/
                     	g_ptr->attr_bitmap &= (~((1 << ETH_BACKPRESSURE_BIT) & ETH_ATTR_BACKPRESSURE));   /*DISABLEBACKPRESSURE*/
@@ -2259,7 +2348,40 @@ long npd_eth_port_insert(void *data)
                 }
             }        
 		}
+        else
+		{
+            speedMode = (new_port->attr_bitmap & ETH_ATTR_SPEED_MASK) >> ETH_SPEED_BIT;
 
+            if (speedMode == PORT_SPEED_1000_E)
+            {
+                speed = 1000;
+            }
+            else if (speedMode == PORT_SPEED_10000_E)
+            {
+                speed = 10000;
+            }
+            else if (speedMode == PORT_SPEED_40G_E)
+            {
+                speed = 40000;
+            }
+            else if (speedMode == PORT_SPEED_100G_E)
+            {
+                speed = 100000;
+            }
+            if(speed >= 1000)
+            {
+                ret = npd_set_port_speed(new_port->eth_port_ifindex, speed);
+
+                if (NPD_SUCCESS != ret)
+                    retval = NPD_FAIL;
+
+                if (NPD_SUCCESS != ret)
+                {
+                    npd_syslog_dbg("ret is not 0: %s(%d): %s\r\n",
+                                   __FILE__, __LINE__, "npd_set_port_speed");
+                }
+            }
+		}
         ret = npd_get_port_link_status(new_port->eth_port_ifindex, (int *)&link_status);
 
 		/* Added by wangquan */
@@ -2694,6 +2816,44 @@ long npd_eth_port_update(void *newdata, void *olddata)
                 }
             }
         }
+		else
+		{
+            if ((new_port->attr_bitmap & ETH_ATTR_SPEED_MASK) !=
+                    (old_port->attr_bitmap & ETH_ATTR_SPEED_MASK))
+            {
+                speedMode = (new_port->attr_bitmap & ETH_ATTR_SPEED_MASK) >> ETH_SPEED_BIT;
+
+                if (speedMode == PORT_SPEED_1000_E)
+                {
+                    speed = 1000;
+                }
+                else if (speedMode == PORT_SPEED_10000_E)
+                {
+                    speed = 10000;
+                }
+                else if (speedMode == PORT_SPEED_40G_E)
+                {
+                    speed = 40000;
+                }
+                else if (speedMode == PORT_SPEED_100G_E)
+                {
+                    speed = 100000;
+                }
+                if(speed >= 1000)
+                {
+                    ret = npd_set_port_speed(new_port->eth_port_ifindex, speed);
+    
+                    if (NPD_SUCCESS != ret)
+                        retval = NPD_FAIL;
+    
+                    if (NPD_SUCCESS != ret)
+                    {
+                        npd_syslog_dbg("ret is not 0: %s(%d): %s\r\n",
+                                       __FILE__, __LINE__, "npd_set_port_speed");
+                    }
+                }
+            }
+		}
         ret = npd_get_port_link_status(new_port->eth_port_ifindex, &link_status);
 
 		/* Added by wangquan */
@@ -4350,7 +4510,6 @@ int npd_get_eth_port_stat(unsigned int eth_g_index, eth_port_stats_t *ptr)
             }
             else
             {
-                syslog_ax_eth_port_dbg("save counter info\n");
                 ret = npd_eth_port_counter_statistics(eth_g_index, ptr);
 
                 if (0 != ret)

@@ -64,6 +64,8 @@ long ds5652_board_sal_config_init_defaults(void)
 	unsigned char devNum = 0, portNum = 0; 
 	memset(phy_addr_map, 0xff, sizeof(phy_addr_map));
 	memset(phy_info_map, 0x0, sizeof(phy_info_map));
+	appDemoDbEntryAdd("boardIdx", 27);/*LION2 board*/
+	appDemoDbEntryAdd("boardRevId", 1);
     return 0;
 }
 

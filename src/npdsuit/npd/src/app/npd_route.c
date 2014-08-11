@@ -120,9 +120,9 @@ unsigned char get_route_info( struct rttbl_info *pRT_info,struct rtmsg * pRTmsgD
 									pRTmsgData->rtm_protocol, pRTmsgData->rtm_scope,
 									pRTmsgData->rtm_type, pRTmsgData->rtm_flags);
 
-	if(((AF_INET != pRTmsgData->rtm_family) && (AF_INET6 != pRTmsgData->rtm_family)) || (RT_TABLE_LOCAL == pRTmsgData->rtm_table))
+	if(((AF_INET != pRTmsgData->rtm_family) && (AF_INET6 != pRTmsgData->rtm_family))|| (RT_TABLE_LOCAL == pRTmsgData->rtm_table))
 	{
-	    syslog_ax_route_dbg("");
+	    syslog_ax_route_dbg("Unknown family or unknown table type.\r\n");
 		return -1;
 	}
 	pRT_info->rtm_family = pRTmsgData->rtm_family;
@@ -298,7 +298,8 @@ void npd_route_notify_event(
 	
     switch(evt)
     {	    
-		case PORT_NOTIFIER_L3LINKDOWN:			
+		case PORT_NOTIFIER_L3LINKDOWN:
+			dbtable_hash_traversal(npd_route_haship_index, FALSE, &routeEntry, npd_route_cmp_by_ifindex, npd_route_delete);
 #if 0
 			dbtable_hash_traversal(npd_route_haship_index, FALSE, &routeEntry, npd_route_cmp_by_ifindex, npd_route_delete);
 #ifdef HAVE_IGMP_SNP
