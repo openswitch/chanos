@@ -229,7 +229,7 @@ unsigned long * parse_portlist( char * portlist )
                     chassis = 0;
                     slot = chassis;
 
-                    ulIfindex = generate_eth_index(chassis, slot, 0, ulPortS, 0);
+                    ulIfindex = generate_eth_index(chassis, slot, 0, ulPortS, 1);
                     if ( 0 != ulIfindex )
                     {
                         ulInterfaceList[ iflist_i ] = ulIfindex;
@@ -296,7 +296,7 @@ unsigned long * parse_portlist( char * portlist )
                         && !DCLI_SYS_ISCASCADE)
                         return 0;
                     /*for box system, we use chassis no as slot to generate eth index*/
-                    ulIfindex = generate_eth_index(chassis, slot, sub_slot, ulPortS, 0);
+                    ulIfindex = generate_eth_index(chassis, slot, sub_slot, ulPortS, 1);
                     if ( 0 != ulIfindex )
                     {
                         ulInterfaceList[ iflist_i ] = ulIfindex;
@@ -361,7 +361,7 @@ unsigned long * parse_portlist( char * portlist )
                     /*for box system, we use chassis no as slot to generate eth index*/
                     for ( i = i_s;i <= i_e;i++ )
                     {
-                        ulIfindex = generate_eth_index(chassis, slot, sub_slot, i, 0);
+                        ulIfindex = generate_eth_index(chassis, slot, sub_slot, i, 1);
                         if ( 0 != ulIfindex )
                         {
                             ulInterfaceList[ iflist_i ] = ulIfindex;

@@ -121,6 +121,12 @@ NPD_ETHPORT_ATTRIBUTE_S	ethport_default_attr_mib[] = {	\
 db_table_t *eth_ports_db;
 sequence_table_index_t *g_eth_ports;
 
+array_table_index_t *npd_eth_cfg_index = NULL;
+
+db_table_t         *npd_eth_cfgtbl = NULL;
+
+int npd_eth_port_rate_poll_enable = 1;
+
 extern void (*netif_notify_remote_event_callback)(void *private_data, int private_data_len);
 NPD_ETH_PORT_NOTIFIER_FUNC	portNotifier = NULL;
 npd_msg_list_t *npd_port_event_list = NULL;
@@ -339,10 +345,46 @@ int npd_eth_port_hton(void *data)
 	return 0;
 }
 
+int npd_eth_cfgtbl_handle_ntoh(void *data)
+{
+    struct npd_eth_cfg_s *ethCfg = (struct npd_eth_cfg_s *)data;
+    ethCfg->rate_poll_enable = ntohl(ethCfg->rate_poll_enable);
+    return 0;
+}
+
+int npd_eth_cfgtbl_handle_hton(void *data)
+{
+    struct npd_eth_cfg_s *ethCfg = (struct npd_eth_cfg_s *)data;
+    ethCfg->rate_poll_enable = htonl(ethCfg->rate_poll_enable);
+    return 0;
+}
+
+
+long npd_eth_cfgtbl_handle_update(void *newItem, void *oldItem)
+{
+    struct npd_eth_cfg_s* npd_eth_cfg_new = (struct npd_eth_cfg_s*)newItem;
+    struct npd_eth_cfg_s* npd_eth_cfg_old = (struct npd_eth_cfg_s*)oldItem;
+
+    if (npd_eth_cfg_new->rate_poll_enable != npd_eth_cfg_old->rate_poll_enable)
+    {
+        npd_eth_port_rate_poll_enable = npd_eth_cfg_new->rate_poll_enable;
+    }
+    return 0;
+}
+
+long npd_eth_cfgtbl_handle_insert(void *newItem)
+{
+    struct npd_eth_cfg_s* npd_eth_cfg_new = (struct npd_eth_cfg_s*)newItem;
+	npd_eth_port_rate_poll_enable = npd_eth_cfg_new->rate_poll_enable;
+    return 0;
+}
 
 void npd_init_eth_ports(void)
 {
+    int ret = 0;
+	int npd_eth_cfg_global_no = 0;
     char name[16];
+	struct npd_eth_cfg_s npd_eth_cfg_default;
     strcpy(name, "ETH_PORT_DB");
     create_dbtable(name, MAX_ETH_GLOBAL_INDEX, sizeof(struct eth_port_s),
                    npd_eth_port_update, NULL, npd_eth_port_insert,  npd_eth_port_delete, NULL, NULL, NULL, 
@@ -354,6 +396,42 @@ void npd_init_eth_ports(void)
     {
         syslog_ax_eth_port_dbg("memory alloc error for eth port init!!!\n");
         return;
+    }
+
+    ret = create_dbtable("npdEthCfg", 1, sizeof(struct npd_eth_cfg_s),\
+                         npd_eth_cfgtbl_handle_update,
+                         NULL,
+                         npd_eth_cfgtbl_handle_insert,
+                         NULL,
+                         NULL,
+                         NULL,
+                         NULL,
+                         npd_eth_cfgtbl_handle_ntoh,
+                         npd_eth_cfgtbl_handle_hton,
+                         DB_SYNC_ALL,
+                         &npd_eth_cfgtbl);
+
+    if (0 != ret || npd_eth_cfgtbl == NULL)
+    {
+        syslog_ax_fdb_err("create npd fdb configuration table fail\n");
+        return NPD_FAIL;
+    }
+
+    ret = dbtable_create_array_index("eth_cfg", npd_eth_cfgtbl, &npd_eth_cfg_index);
+
+    if (0 != ret)
+    {
+        syslog_ax_fdb_err("create npd ethernet port configuration table index fail\n");
+        return NPD_FAIL;
+    }
+
+    npd_eth_cfg_default.rate_poll_enable = npd_eth_port_rate_poll_enable;
+    ret = dbtable_array_insert(npd_eth_cfg_index, &npd_eth_cfg_global_no, &npd_eth_cfg_default);
+
+    if (ret != 0)
+    {
+        syslog_ax_fdb_err("Insert ethernet prot default configuration failed.\n");
+        return NPD_FAIL;
     }
 
     register_netif_notifier(&eth_port_notifier);
@@ -1319,6 +1397,11 @@ int eth_port_sw_attr_update(unsigned int eth_g_index, unsigned int type, unsigne
 						{
 						    g_ptr->attr_bitmap &= (~((1 << ETH_AUTONEG_BIT) & ETH_ATTR_AUTONEG));
 						}
+						else if(g_ptr->port_type == ETH_GE_SFP || g_ptr->port_type == ETH_XGE_SFPPLUS)
+						{
+						    g_ptr->attr_bitmap |= ((1 << ETH_AUTONEG_BIT) & ETH_ATTR_AUTONEG);
+						}
+						
                         g_ptr->attr_bitmap &= 0xFFFF0FFF;
                         g_ptr->attr_bitmap |= ((PORT_SPEED_1000_E << ETH_SPEED_BIT) & ETH_ATTR_SPEED_MASK);/*bit12~15 represent 16 kinds of speed*/
 						break;
@@ -6034,6 +6117,80 @@ int npd_ethport_desc(unsigned int netif_index, char *desc)
     return COMMON_SUCCESS;
 }
 
+DBusMessage * npd_dbus_config_eth_port_rate_poll(DBusConnection *conn, DBusMessage *msg, void *user_data)
+{
+    DBusMessage* 	reply = NULL;
+    DBusMessageIter	iter = {0};
+    DBusError 		err;
+    unsigned int	ret = NPD_DBUS_ERROR;
+    int 	rate_poll_enable;
+    struct npd_eth_cfg_s npd_eth_cfg_set = {0};
+	
+    syslog_ax_acl_dbg("Entering config ethernet port rate poll!\n");
+    dbus_error_init(&err);
+
+    if (!(dbus_message_get_args(msg, &err,
+                                DBUS_TYPE_UINT32,&rate_poll_enable,
+                                DBUS_TYPE_INVALID)))
+    {
+        syslog_ax_eth_port_err("Unable to get input args ");
+
+        if (dbus_error_is_set(&err))
+        {
+            syslog_ax_eth_port_err("%s raised: %s",err.name,err.message);
+            dbus_error_free(&err);
+        }
+
+        return NULL;
+    }
+
+    if (npd_eth_port_rate_poll_enable != rate_poll_enable)
+    {
+        npd_eth_cfg_set.rate_poll_enable = rate_poll_enable;
+        ret = dbtable_array_update(npd_eth_cfg_index, 0, &npd_eth_cfg_set, &npd_eth_cfg_set);
+        if (ret != 0)
+        {
+            syslog_ax_eth_port_err("Failed to %s rate poll: %d\n",rate_poll_enable? "enable": "disable", ret);
+            ret=NPD_DBUS_ERROR;
+        }
+        else
+        {
+            ret = NPD_DBUS_SUCCESS;
+        }
+    }
+
+    reply = dbus_message_new_method_return(msg);
+    dbus_message_iter_init_append(reply, &iter);
+    dbus_message_iter_append_basic(&iter,DBUS_TYPE_UINT32,&ret);
+    return reply;
+}
+DBusMessage * npd_dbus_show_eth_port_rate_poll(DBusConnection *conn, DBusMessage *msg, void *user_data)
+{
+    DBusMessage* 	reply = NULL;
+    DBusMessageIter	iter = {0};
+    DBusError 		err;
+    unsigned int	ret = NPD_DBUS_ERROR;
+    int 	rate_poll_enable;
+    struct npd_eth_cfg_s npd_eth_cfg_set = {0};
+
+    dbus_error_init(&err);
+
+    ret = dbtable_array_get(npd_eth_cfg_index, 0, &npd_eth_cfg_set);
+
+    if (ret != 0)
+    {
+        rate_poll_enable = 0;
+    }
+    else
+    {
+        rate_poll_enable = npd_eth_cfg_set.rate_poll_enable;
+    }
+    reply = dbus_message_new_method_return(msg);
+    dbus_message_iter_init_append(reply, &iter);
+    dbus_message_iter_append_basic(&iter,DBUS_TYPE_UINT32,&rate_poll_enable);
+    return reply;
+}
+
 int combo_port_active_medium_get(unsigned int eth_g_index, int *active_medium)
 {
 	int ret = 0;
@@ -6159,53 +6316,125 @@ int npd_ethport_show_running(void *data, char *string, int* size)
     }
 
     /*  Auto-Nego - all AN options disable we need one command control*/
-    if (an_state != ethport_attr_default(local_port_type)->autoNego)
-    {
-        enter_node = 1;
-        sprintf(tmpCommand, an_state ? " auto-negotiation\n": " no auto-negotiation\n");
-        length = length+strlen(tmpCommand);
-
-        if (length < *size)
-            strcat(tmpBuf, tmpCommand);
-        else
-            goto error;
-    }
-
-    if (an_state != ETH_ATTR_ON)
-    {
-        enter_node = 1;
-		if(speed == PORT_SPEED_1000_E)
+	if(local_port_type == ETH_XGE_SFPPLUS)
+	{
+	    if(speed != ethport_attr_default(local_port_type)->speed)
+	    {
+    		if(speed == PORT_SPEED_1000_E)
+    		{
+                enter_node = 1;
+                sprintf(tmpCommand," speed 1000\n");
+                length = length+strlen(tmpCommand);
+        
+                if (length < *size)
+                    strcat(tmpBuf, tmpCommand);
+                else
+                    goto error;
+    		}
+    		if(an_state != ETH_ATTR_ON)
+    		{
+                enter_node = 1;
+                sprintf(tmpCommand," no auto-negotiation\n");
+                length = length+strlen(tmpCommand);
+        
+                if (length < *size)
+                    strcat(tmpBuf, tmpCommand);
+                else
+                    goto error;
+    		}
+	    }
+	}
+	else if(local_port_type == ETH_GE_SFP)
+	{
+		if(speed == PORT_SPEED_100_E)
 		{
-            sprintf(tmpCommand," speed 1000\n");
-		}
-		else if(speed == PORT_SPEED_100_E)
-		{
+            enter_node = 1;
             sprintf(tmpCommand," speed 100\n");
+            length = length+strlen(tmpCommand);
+    
+            if (length < *size)
+                strcat(tmpBuf, tmpCommand);
+            else
+                goto error;
 		}
-		else if(speed == PORT_SPEED_10_E)
+		else
 		{
-            sprintf(tmpCommand," speed 10\n");
+    		if(an_state != ETH_ATTR_ON)
+    		{
+                enter_node = 1;
+                sprintf(tmpCommand," no auto-negotiation\n");
+                length = length+strlen(tmpCommand);
+        
+                if (length < *size)
+                    strcat(tmpBuf, tmpCommand);
+                else
+                    goto error;
+    		}
 		}
-		else if(speed == PORT_SPEED_10000_E)
-		{
-            sprintf(tmpCommand," speed 10000\n");
-		}
-		else if(speed == PORT_SPEED_40G_E)
-		{
-            sprintf(tmpCommand," speed 40G\n");
-		}
-		else if(speed == PORT_SPEED_100G_E)
-		{
-            sprintf(tmpCommand," speed 100G\n");
-		}
-        length = length+strlen(tmpCommand);
-
-        if (length < *size)
-            strcat(tmpBuf, tmpCommand);
-        else
-            goto error;
-    }
-
+	}
+	else
+	{
+        if (an_state != ethport_attr_default(local_port_type)->autoNego)
+        {
+            enter_node = 1;
+            sprintf(tmpCommand, an_state ? " auto-negotiation\n": " no auto-negotiation\n");
+            length = length+strlen(tmpCommand);
+    
+            if (length < *size)
+                strcat(tmpBuf, tmpCommand);
+            else
+                goto error;
+        }
+    
+        if (an_state != ETH_ATTR_ON)
+        {
+            enter_node = 1;
+    		if(speed == PORT_SPEED_1000_E)
+    		{
+                sprintf(tmpCommand," speed 1000\n");
+    		}
+    		else if(speed == PORT_SPEED_100_E)
+    		{
+                sprintf(tmpCommand," speed 100\n");
+    		}
+    		else if(speed == PORT_SPEED_10_E)
+    		{
+                sprintf(tmpCommand," speed 10\n");
+    		}
+    		else if(speed == PORT_SPEED_10000_E)
+    		{
+                sprintf(tmpCommand," speed 10000\n");
+    		}
+    		else if(speed == PORT_SPEED_40G_E)
+    		{
+                sprintf(tmpCommand," speed 40G\n");
+    		}
+    		else if(speed == PORT_SPEED_100G_E)
+    		{
+                sprintf(tmpCommand," speed 100G\n");
+    		}
+            length = length+strlen(tmpCommand);
+    
+            if (length < *size)
+                strcat(tmpBuf, tmpCommand);
+            else
+                goto error;
+        }
+    	else
+    	{
+    		if(speed == PORT_SPEED_1000_E)
+    		{
+                enter_node = 1;
+                sprintf(tmpCommand," speed 1000\n");
+                length = length+strlen(tmpCommand);
+    
+                if (length < *size)
+                    strcat(tmpBuf, tmpCommand);
+                else
+                    goto error;
+    		}
+    	}
+	}
     /* duplex - if not auto-nego duplex and duplex mode not default*/
     if ((an_state != ETH_ATTR_ON) && (duplex != ethport_attr_default(local_port_type)->duplex))
     {
@@ -9330,7 +9559,7 @@ void* eth_port_rate_poll_thread(void)
 	eth_port_stats_t portCnt;
 	unsigned int rateInput,rateOutput;
 	eth_port_stats_t *port_counter_info = NULL;
-	int minute_roll = 0;
+	unsigned int minute_roll = 0;
     static unsigned int eth_port_delay_event_count = 0;
 
     while(!npd_startup_end)
@@ -9340,7 +9569,7 @@ void* eth_port_rate_poll_thread(void)
 	while(1)
 	{
 		eth_port_delay_event_count++;
-		if(eth_port_delay_event_count%60 == 1)
+		if(eth_port_delay_event_count%60 == 1 && (npd_eth_port_rate_poll_enable == 1))
 		{
             for (j = 0; j < MAX_ETHPORT_PER_BOARD*MAX_SUBPORT_PER_ETHPORT; j++)
             {

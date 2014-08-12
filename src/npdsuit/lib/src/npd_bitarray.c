@@ -1082,7 +1082,7 @@ int portlist_str_2_pbmp(const char *string, npd_pbmp_t bmp)
                     chassis = 0;
                     slot = chassis;
 
-                    ulIfindex = generate_eth_index(chassis, slot, 0, ulPortS, 0);
+                    ulIfindex = generate_eth_index(chassis, slot, 0, ulPortS, 1);
                     if ( 0 != ulIfindex )
                     {
                         int array_index;
@@ -1149,7 +1149,7 @@ int portlist_str_2_pbmp(const char *string, npd_pbmp_t bmp)
                     digit_temp[ temp_i ] = 0;
                     ulPortS = ( unsigned long )strtoul(digit_temp,&endptr,10);
 
-                    ulIfindex = generate_eth_index(chassis, slot, sub_slot, ulPortS, 0);
+                    ulIfindex = generate_eth_index(chassis, slot, sub_slot, ulPortS, 1);
                     if ( 0 != ulIfindex )
                     {
                         unsigned int array_index;
@@ -1214,7 +1214,7 @@ int portlist_str_2_pbmp(const char *string, npd_pbmp_t bmp)
                     /*for box system, we use chassis no as slot to generate eth index*/
                     for ( i = i_s;i <= i_e;i++ )
                     {
-                        ulIfindex = generate_eth_index(chassis, slot, sub_slot, i, 0);
+                        ulIfindex = generate_eth_index(chassis, slot, sub_slot, i, 1);
                         if ( 0 != ulIfindex )
                         {
                             unsigned int array_index;

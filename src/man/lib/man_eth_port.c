@@ -22,6 +22,85 @@
 
 extern DBusConnection *dcli_dbus_connection;
 
+int man_set_eth_port_rate_poll(int rate_poll_enable)
+{
+	DBusMessage *query = NULL, *reply = NULL;
+	DBusError err = {0};
+	unsigned int op_ret;
+
+	query = dbus_message_new_method_call(
+							NPD_DBUS_BUSNAME,		\
+							NPD_DBUS_ETHPORTS_OBJPATH ,	\
+							NPD_DBUS_ETHPORTS_INTERFACE ,		\
+							NPD_DBUS_ETHPORTS_INTERFACE_METHOD_CONFIG_RATE_POLL);
+	dbus_error_init(&err);
+	dbus_message_append_args(query,
+							 DBUS_TYPE_UINT32,&rate_poll_enable,
+							 DBUS_TYPE_INVALID);
+	reply = dbus_connection_send_with_reply_and_block (dcli_dbus_connection,query,-1, &err);
+	dbus_message_unref(query);
+	if (NULL == reply)
+	{
+		if (dbus_error_is_set(&err))
+		{
+			dbus_error_free(&err);
+		}
+		return ETHPORT_RETURN_CODE_ERR_GENERAL;
+	}
+	if (!(dbus_message_get_args ( reply, &err,
+		DBUS_TYPE_UINT32,&op_ret,
+		DBUS_TYPE_INVALID)))
+	{
+		if (dbus_error_is_set(&err)) 
+		{
+			dbus_error_free(&err);
+		}
+		dbus_message_unref(reply);
+		return ETHPORT_RETURN_CODE_ERR_GENERAL;	
+		
+	} 
+	dbus_message_unref(reply);
+	return op_ret;
+}
+
+int man_get_eth_port_rate_poll(int *rate_poll_enable)
+{
+	
+	DBusMessage *query = NULL, *reply = NULL;
+	DBusError err;
+	query = dbus_message_new_method_call(
+							NPD_DBUS_BUSNAME,		\
+							NPD_DBUS_ETHPORTS_OBJPATH ,	\
+							NPD_DBUS_ETHPORTS_INTERFACE ,		\
+							NPD_DBUS_ETHPORTS_INTERFACE_METHOD_SHOW_RATE_POLL);
+	
+	dbus_error_init(&err);
+	reply = dbus_connection_send_with_reply_and_block (dcli_dbus_connection,query,-1, &err);
+	dbus_message_unref(query);
+	if (NULL == reply) 
+	{
+		if (dbus_error_is_set(&err)) 
+		{
+			dbus_error_free(&err);
+		}
+		return ETHPORT_RETURN_CODE_ERR_GENERAL;
+	}
+	if (!(dbus_message_get_args ( reply, &err,
+		DBUS_TYPE_UINT32, rate_poll_enable,
+		DBUS_TYPE_INVALID)))
+	{						
+		if (dbus_error_is_set(&err)) 
+		{
+			dbus_error_free(&err);
+		}
+		dbus_message_unref(reply);
+		return ETHPORT_RETURN_CODE_ERR_GENERAL;
+	} 
+
+	dbus_message_unref(reply);
+	return ETHPORT_RETURN_CODE_ERR_NONE;
+}
+
 int dcli_eth_port_get_next_g_index(unsigned int eth_g_index, unsigned int *out_eth_g_index)
 {
 	DBusMessage *query = NULL, *reply = NULL;

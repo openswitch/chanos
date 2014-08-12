@@ -2160,7 +2160,14 @@ static DBusHandlerResult npd_dbus_ethports_message_handler (DBusConnection *conn
     		{
     			reply = npd_dbus_config_port_interface_mode(connection,message,user_data);
     		} 
-    		/* add by yinlm@autelan.com for queue wrr and sp */
+    		else if (dbus_message_is_method_call(message,NPD_DBUS_ETHPORTS_INTERFACE,NPD_DBUS_ETHPORTS_INTERFACE_METHOD_CONFIG_RATE_POLL)) 
+    		{
+    			reply = npd_dbus_config_eth_port_rate_poll(connection,message,user_data);
+    		} 
+    		else if (dbus_message_is_method_call(message,NPD_DBUS_ETHPORTS_INTERFACE,NPD_DBUS_ETHPORTS_INTERFACE_METHOD_SHOW_RATE_POLL)) 
+    		{
+    			reply = npd_dbus_show_eth_port_rate_poll(connection,message,user_data);
+    		} 
     		else if (dbus_message_is_method_call(message,NPD_DBUS_ETHPORTS_INTERFACE,NPD_DBUS_ETHPORTS_INTERFACE_METHOD_SHOW_ETHPORT_IPG)) 
     		{
     			reply = npd_dbus_show_ethport_ipg(connection,message,user_data);

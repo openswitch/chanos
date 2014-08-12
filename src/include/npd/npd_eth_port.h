@@ -31,4 +31,9 @@ typedef struct
 	int event;
 } npd_port_event_t;
 
+struct npd_eth_cfg_s
+{
+    int rate_poll_enable;
+};
+
 #endif

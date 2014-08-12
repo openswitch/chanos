@@ -3437,24 +3437,10 @@ enum npd_dbus_result_no_e {
  ***********************************************************************/
 #define NPD_DBUS_ETHPORTS_INTERFACE_METHOD_CONFIG_ETHPORT_INTERFACE   "config_eth_mode_interface"
 
+#define NPD_DBUS_ETHPORTS_INTERFACE_METHOD_CONFIG_RATE_POLL 	"config_eth_rate_poll"
 
-/************************************************************************
- * DESCRIPTION:
- * 	arg lists for method NPD_DBUS_ETHPORTS_INTERFACE_METHOD_CONFIG_ETHPORT_MODE
- *
- * INPUT:
- *		byte   - slot_no    // slot number
- * 		byte   - port_no  // port number on slot
- *		uint32- mode		// port mode
- *
- * OUTPUT:
- * 		NONE
- *
- * RETURN
- *		NPD_SUCCESS
- *		NPD_FAILURE
- *
- ***********************************************************************/
+#define NPD_DBUS_ETHPORTS_INTERFACE_METHOD_SHOW_RATE_POLL 	"show_eth_rate_poll"
+
 #define NPD_DBUS_ETHPORTS_INTERFACE_METHOD_CONFIG_BUFFER_MODE 	"config_buffer_mode"
 
 /************************************************************************
