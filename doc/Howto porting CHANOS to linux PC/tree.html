@@ -1,0 +1,80 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="css/main.css" />
+<script type="text/javascript" src="js/main.js"></script>
+<title>CHANOS说明文档</title>
+</head>
+<body>
+	<div class="frame">
+		<div class="leftfr"><div class="lefttp"><a href="index.html" class="lefttp"><p class="lefttp">返回主页</p></a></div></div>
+		<div class="midfr">
+			<div class="hc1fr">
+				<p class="hc1">文件结构</p>
+				<div class="hc2fr">
+					<p class="hc2">dev文件夹</p>
+					<p class="cc1">工程文件夹，其中包括了编译配置文件和源代码等。</p>
+					<div class="hc3fr">
+						<p class="hc3">Makefile</p>
+						<p class="cc1">工程总Makefile，包含了npd、npdlib、nam、quagga、quaggalib、dcli、manlib、tipc_api等和工程相关的编译目标的编译步骤和配置以及一些供它自己和其他级文件夹下的Makefile调用的变量。工程编译时的起点。</p>
+					</div>
+					<div class="hc3fr">
+						<p class="hc3">mkx86.sh</p>
+						<p class="cc1">编译特定板家族的镜像（或安装包）的脚本文件。通过对变量的赋值，从而通知总Makefile要编译的是哪一个板家族的镜像（或安装包）</p>
+					</div>
+					<div class="hc3fr">
+						<p class="hc3">make文件夹</p>
+						<p class="cc1">存放的各个板家族的编译配置文件。由于各个板家族的CPU、编译方式、生成镜像（或安装包）方式等不尽相同。所以，需要分别对各个板家族进行分别配置。</p>
+					</div>
+					<div class="hc3fr">
+						<p class="hc3">src文件夹</p>
+						<p class="cc1">存放的是工程的源代码。</p>
+						<div class="hc4fr">
+							<p class="hc4">accapi文件夹</p>
+							<p class="cc1">存放的是各个模块的头文件。</p>
+						</div>
+						<div class="hc4fr">
+							<p class="hc4">man文件夹</p>
+							<p class="cc1">存放的是manlib、dcli和webui等模块的源代码。</p>
+							<div class="hc5fr">
+								<p class="hc5">cli文件夹</p>
+								<p class="cc1">dcli模块源代码。</p>
+							</div>
+							<div class="hc5fr">
+								<p class="hc5">lib文件夹</p>
+								<p class="cc1">manlib模块源代码。</p>
+							</div>
+						</div>
+						<div class="hc4fr">
+							<p class="hc4">npdsuit文件夹</p>
+							<p class="cc1">npd、npdlib和nam等模块源代码。</p>
+							<div class="hc5fr">
+								<p class="hc5">lib文件夹</p>
+								<p class="cc1">npdlib模块源代码。</p>
+							</div>
+							<div class="hc5fr">
+								<p class="hc5">nam_[family_name]文件夹</p>
+								<p class="cc1">nam模块源代码。</p>
+							</div>
+							<div class="hc5fr">
+								<p class="hc5">npd文件夹</p>
+								<p class="cc1">npd模块源代码。</p>
+							</div>
+						</div>
+						<div class="hc4fr">
+							<p class="hc4">quagga文件夹</p>
+							<p class="cc1">存放的是quagga的源文件。</p>
+						</div>
+						<div class="hc4fr">
+							<p class="hc4">tipc_api文件夹</p>
+							<p class="cc1">存放的是tipc_api模块的源代码。</p>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="middn"><a href="index.html" class="middn"><p class="middn">返回主页</p></a></div>
+		</div>
+	</div>
+</body>
+<script type='text/javascript'>window.onload = defInit;</script>
+</html>

@@ -1,0 +1,240 @@
+@charset "utf-8";
+
+/*!
+	@version:	1.0.13
+	@date:		2013-02-03
+	@author:	jaffrykee@hotmail.com
+	@note:		For dev-doc.
+	@ads:		贤狼浏览器，棒棒棒！
+*/
+
+*
+{
+	margin:0;
+	padding:0px;
+	border:0;
+	font-family:'微软雅黑';
+	font-size:14px;
+	text-align: left;
+}/* CSS Document */
+
+body
+{
+	background-color:#E8F4FF;
+}
+
+div
+{
+	margin:0px;
+	padding:10px;
+	border:solid;
+	border-color:#6699FF;
+	border-width:0px;
+	background-color:#FFFFFF;
+}
+
+div.frame
+{
+	margin:0px;
+	padding:0px;
+	border-left:solid;
+	border-left-width:2px;
+	border-left-color:#A8D4FF;
+	border-right:solid;
+	border-right-width:2px;
+	border-right-color:#A8D4FF;
+	width:1200px;
+	margin-left:auto; 
+	margin-right:auto;
+}
+
+div.leftfr
+{
+	margin:0px;
+	padding:0px;
+	width:20%;
+	height:100%;
+	float:left;
+	background-color:#DDEEFF;
+}
+
+div.midfr
+{
+	height:100%;
+	width:80%;
+	margin-left:auto; 
+	margin-right:auto;
+	overflow:auto;
+	margin:0;
+	padding:0px;
+	border:0;
+}
+
+div.fullfr
+{
+	height:100%;
+	margin-left:auto; 
+	margin-right:auto;
+	overflow:auto;
+	margin:0;
+	padding:0px;
+	border:0;
+}
+
+p
+{
+	padding:3px;
+	font-size:12px;
+	background-color:#DDEEFF;
+}
+
+a
+{
+	text-decoration:none;
+	font-size:12px;
+	color:#000000;
+}
+
+div.codeNumFr
+{
+	margin:10px;
+	padding:0px;
+	border:0px;
+	max-height:500px;
+	overflow:auto;
+}
+
+div.numfr
+{
+	margin:0;
+	padding:0px;
+	border:0;
+	width:5%;
+	float:left;
+}
+
+div.codefr
+{
+	white-space:nowrap;
+	margin:0;
+	padding:0px;
+	border:0;
+/*	float:right;*/
+}
+
+.bottomfr
+{
+}
+
+a:hover
+{
+	text-decoration:underline;
+}
+
+div.middn
+{
+}
+
+p.middn
+{
+	font-size:18px;
+	text-align:right;
+	background-color:#0080FF;
+}
+
+a.middn
+{
+	font-size:18px;
+	font-weight:bold;
+	color:#FFFFFF;
+}
+
+div.lefttp
+{
+	background-color:#DDEEFF;
+}
+
+p.lefttp
+{
+	font-size:18px;
+	text-align:left;
+	background-color:#0080FF;
+}
+
+a.lefttp
+{
+	font-size:18px;
+	font-weight:bold;
+	color:#FFFFFF;
+}
+
+div.hc1fr{}
+div.hc2fr{}
+div.hc3fr{}
+div.hc4fr{}
+
+p.hc1
+{
+	font-size:20px;
+	font-weight:bold;
+	color:#FFFFFF;
+	background-color:#0080FF;
+/*	background-color:#80C0FF;*/
+}
+
+p.hc2
+{
+	font-size:16px;
+	background-color:#94CAFF;
+}
+
+p.hc3
+{
+	font-size:15px;
+	background-color:#A8D4FF;
+}
+
+p.hc4
+{
+	font-size:14px;
+	background-color:#BCDEFF;
+}
+
+p.hc5
+{
+	font-size:14px;
+	background-color:#D0E8FF;
+}
+
+p.cc1
+{
+	font-size:14px;
+	background-color:#FFFFFF;
+}
+
+a.ac1
+{
+	font-size:14px;
+}
+
+p.code
+{
+	font-family:Consolas;
+	font-size:12px;
+}
+
+code.code
+{
+	margin:0px;
+	padding:3px;
+	font-family:Consolas;
+	font-size:12px;
+}
+
+p.num
+{
+	font-family:Consolas;
+	font-size:12px;
+	text-align:right;
+	background-color:#CDCDCD;
+}

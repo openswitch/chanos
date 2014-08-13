@@ -1,0 +1,2512 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<script type="text/javascript" src="js/main.js"></script>
+<script type='text/javascript'>window.onload = defInit;</script>
+<link rel="stylesheet" type="text/css" href="css/main.css" />
+<title>CHANOS说明文档</title>
+</head>
+<body>
+	<div class="frame">
+		<div class="leftfr"><div class="lefttp"><a href="index.html" class="lefttp"><p class="lefttp">返回主页</p></a></div></div>
+		<div class="midfr">
+			<div class="hc1fr">
+				<p class="hc1">如何添加硬件</p>
+				<p class="cc1">本文以x86平台的硬件添加过程为例，来描述如何为CHANOS添加新的硬件。</p>
+				<div class="hc2fr">
+					<p class="hc2">准备工作</p>
+					<div class="hc3fr">
+						<p class="hc3">编译环境与目标环境</p>
+						<p class="cc1">本文实例的编译环境是x86平台下的虚拟机，Ubuntu10.0.4版本，使用编译环境自带的gcc编译器，目标环境与编译环境相同。</p>
+					</div>
+					<div class="hc3fr">
+						<p class="hc3">硬件名称</p>
+						<p class="cc1">首先要确定一下所要添加硬件的名称。硬件的划分结构分两级，一个是硬件家族（或称板家族，其名称用family_name指代），另外一个则是硬件型号（或称板型号，其名称用board_name指代）。一个板家族包含多个板型号，同时，一个板家族的各个型号共用同一个编译配置（Makefile参数）和rootfs（即deb中的fateroot和image中的文件系统）。也就是说，同一个板家族的各个型号，在编译和封包阶段是完全一样的。</p>
+						<p class="cc1">在这里，x86平台的硬件（PC机），我们将它的family_name定为x86，而board_name我们将它定为pcx8601。因为是演示用，所以这个板家族x86中我们就只有一个板型号pcx8601了。但并不是说一个板家族只有一种板型号。</p>
+					</div>
+				</div>
+				<div class="hc2fr">
+					<p class="hc2">编译配置文件的修改<!--及其相关配置的简要说明和修改--></p>
+					<div class="hc3fr">
+						<p class="hc3">dev/Makefile（1）<!--的开始部分（不需修改）--></p>
+						<p class="cc1">下面这段代码是dev目录下的Makefile（也是整个工程的总Makefile）的开始的一小部分。</p>
+						<div id="Makefile_1" class="codeNumFr">
+							<div class="codefr">
+								<p class="code"># </p>
+								<p class="code"># </p>
+								<p class="code"># This file intends for make software system </p>
+								<p class="code"></p>
+								<p class="code">export MAKE=make</p>
+								<p class="code"></p>
+								<p class="code">export PROJECT_TOP_DIR=${shell pwd}</p>
+								<p class="code"></p>
+								<p class="code">ifeq ($(PRODUCT_SERIES),)</p>
+								<p class="code">export PRODUCT_SERIES=x86</p>
+								<p class="code">endif</p>
+								<p class="code"></p>
+								<p class="code">ifeq ($(TARGET_NAME),)</p>
+								<p class="code">export TARGET_NAME=$(PRODUCT_SERIES)</p>
+								<p class="code">endif</p>
+								<p class="code"></p>
+								<p class="code">export PROJECT_BUILD_DIR=$(PROJECT_TOP_DIR)/build/$(TARGET_NAME)</p>
+								<p class="code">$(shell \</p>
+								<p class="code">if [ ! -d $(PROJECT_TOP_DIR)/build ]; then \</p>
+								<p class="code">	mkdir $(PROJECT_TOP_DIR)/build; \</p>
+								<p class="code">        fi \</p>
+								<p class="code">)</p>
+								<p class="code">$(shell \</p>
+								<p class="code">if [ ! -d $(PROJECT_BUILD_DIR) ]; then \</p>
+								<p class="code">	mkdir $(PROJECT_BUILD_DIR); \</p>
+								<p class="code">        fi \</p>
+								<p class="code">)</p>
+								<p class="code">export BUILD_TARGET_DIR=$(PROJECT_TOP_DIR)/../$(TARGET_NAME)</p>
+								<p class="code">export BUILD_SYSROOT_DIR=$(BUILD_TARGET_DIR)/sysroot</p>
+								<p class="code">export BUILD_ROOTFS_DIR=$(BUILD_TARGET_DIR)/rootfs/files</p>
+								<p class="code">export BUILD_BUILDROOT_DIR=$(BUILD_TARGET_DIR)/buildroot</p>
+								<p class="code"></p>
+								<p class="code">export USER_ADDITION_LIB_ROOT_PATH=$(BUILD_SYSROOT_DIR)</p>
+								<p class="code">export PROJECT_TOP_SRC=$(PROJECT_TOP_DIR)/src</p>
+								<p class="code">#export PROJECT_TOP_SRC=$(PROJECT_TOP_DIR)/src-2.2.1.0006-20121023</p>
+								<p class="code">#export PROJECT_TOP_SRC=$(PROJECT_TOP_DIR)/src-2.3.1.0002-20130508</p>
+								<p class="code">#export PROJECT_TOP_SRC=$(PROJECT_TOP_DIR)/src-2.4.1.0001-20140228</p>
+								<p class="code">include $(PROJECT_TOP_DIR)/make/make.common</p>
+							</div>
+						</div>
+						<p class="cc1">从<a class="ac1" href="#_ac__Makefile_1_8">第7行</a>，容易看出“PROJECT_TOP_DIR”代表的是该Makefile所在的目录。而“PRODUCT_SERIES”代表的是将要编译的板家族（从9-11行可以看出，如果没有传入“PRODUCT_SERIES”参数。那么，默认的值是“x86”）。“PROJECT_BUILD_DIR”是工程编译临时文件的存放目录。“BUILD_TARGET_DIR”则是工程编译目标文件的存放目录：“BUILD_SYSROOT_DIR”里存放的是工程编译时需要用到的文件，但这些文件不需要拷贝到目标硬件；“BUILD_BUILDROOT_DIR”是工程编译的时候生成的目标文件所存放的目录；“BUILD_ROOTFS_DIR”是将来要拷贝到目标硬件的所有文件所在的目录。“USER_ADDITION_LIB_ROOT_PATH”是用户自定义的，编译时需要依赖的文件所放的目录（头文件等），从34行可以看出，其就是“BUILD_SYSROOT_DIR”。“PROJECT_TOP_SRC”，一目了然，就是源代码目录的设定了。最后第39行，“make.common”这个文件主要记录了不同板家族配置文件所在的目录，也就是说通过“Makefile”的“PRODUCT_SERIES”参数的传入，就可以加入特定的板家族配置，具体的细节在下面的“make/make.common”小节再展开。</p>
+					</div>
+					<div class="hc3fr">
+						<p class="hc3">dev/mkx86.sh<!--（需创建）--></p>
+						<p class="cc1">为了告诉Makefile我们要编译的是x86这个板家族的目标，所以我们需要创建一个脚本文件，来传递“PRODUCT_SERIES”参数给Makefile。下面就是x86板家族的对应脚本文件内容：</p>
+						<div class="codeNumFr">
+							<div class="codefr">
+								<p class="code">#=========    dev/mkx86.sh    =========</p>
+								<p class="code">#!/bin/bash</p>
+								<p class="code"></p>
+								<p class="code">if [ $# -eq 0 ] ; then</p>
+								<p class="code">	make rebuild_img PRODUCT_SERIES=x86</p>
+								<p class="code">else</p>
+								<p class="code">	make $1 PRODUCT_SERIES=x86</p>
+								<p class="code">fi</p>
+							</div>
+						</div>
+						<p class="cc1">当我们运行这个脚本的时候，Makefile就会载入“PRODUCT_SERIES”参数，从而编译x86这个板家族。每当我们加入一个新的板家族的时候，都需要写一个新的mk*.sh。</p>
+					</div>
+					<div class="hc3fr">
+						<p class="hc3">dev/make/</p>
+						<p class="cc1">这个目录放的是总Makefile的补充配置，虽然也是全工程有效的一些配置，但是是不同硬件的特定配置，不同于总Makefile是各个硬件通用的。</p>
+						<div class="hc4fr">
+							<p class="hc4">dev/make/make.common<!--（不需修改）--></p>
+							<p class="cc1">本文件作为make目录的核心配置文件，起到了通过“PRODUCT_SERIES”参数来确定所需要的对应硬件配置文件，并且将make文件夹下所有的对应配置文件包含在总Makefile中的作用。</p>
+							<div class="codeNumFr">
+								<div class="codefr">
+									<p class="code">#=========    dev/make/make.common    =========</p>
+									<p class="code">include $(PROJECT_TOP_DIR)/make/$(PRODUCT_SERIES)/make.$(PRODUCT_SERIES)</p>
+									<p class="code"></p>
+									<p class="code">include $(PROJECT_TOP_DIR)/make/make.modules</p>
+									<p class="code">include $(PROJECT_TOP_DIR)/make/make.tools</p>
+									<p class="code">include $(PROJECT_TOP_DIR)/make/make.rules</p>
+									<p class="code">include $(PROJECT_TOP_DIR)/make/make.board</p>
+									<p class="code">include $(PROJECT_TOP_DIR)/make/$(PRODUCT_SERIES)/make.kernel.$(PRODUCT_SERIES)</p>
+								</div>
+							</div>
+							<p class="cc1">从上边的代码，我们可以看出，本文件主要做的工作就是包含各个配置文件，而make.common又是包含于dev/Makefile的。所以，最后这些文件的内容都包含在了dev/Makefile中了。在后面的章节中，会介绍这些文件的作用以及它们都需要做哪些改动。</p>
+						</div>
+						<div class="hc4fr">
+							<p class="hc4">dev/make/x86/make.x86<!--（需创建）--></p>
+							<p class="cc1">为了能够加入只有x86板家族才会生效的编译配置，我们需要在“dev/make/x86/”目录下，创建“make.x86”这一文件。本文件通过dev/make/make.common包含于dev/Makefile，从而作为总Makefile中x86板家族目标的特定配置文件。</p>
+							<div class="codeNumFr">
+								<div class="codefr">
+									<p class="code">#=========    dev/make/x86/make.x86    =========</p>
+									<p class="code">#export LINUX_VERSION=2.6.27.7</p>
+									<p class="code">export CPU_ARCH=x86</p>
+									<p class="code">export ENDIAN_SUFFIX=</p>
+									<p class="code">export LIBC_TYPE=glibc</p>
+									<p class="code">export DRV_LIB_FLAG=X86</p>
+									<p class="code">export SDK_TYPE=x86</p>
+									<p class="code">#export SDK_PLATFORM=nsx64</p>
+									<p class="code">export SDK_VERSION=0.1</p>
+									<p class="code"></p>
+									<p class="code">include $(PROJECT_TOP_DIR)/make/$(PRODUCT_SERIES)/make.modules.$(PRODUCT_SERIES)</p>
+								</div>
+							</div>
+							<p class="cc1">从上边的代码，我们可以看出，本文件主要做的工作就是各个变量的设置：“LINUX_VERSION”的意思是，该硬件所用的linux内核的版本，不过因为本例不涉及内核的编译（仅仅是应用层的安装，内核仍用原有系统的），所以这里直接将这里注释掉了。如果需要内核模块的的编译，或者需要重新编译整个内核并导入镜像的话，那么这里就需要写上对应的内核版本了；“CPU_ARCH”表示的是硬件的CPU体系架构。对于x86板家族来说，这里写的是“x86”，当然写“i386”、“i686”都可以。因为这里不是给系统看的，而是给另外的一处选择编译器的文件看的（“make.tools.x86.glibc”），保证前后一致即可。对于这个文件我会在下面的“dev/make/make.tools.x86.glibc”小节提到。；“LIBC_TYPE”这个也是和编译器的选择有关，也在后面的“dev/make/make.tools.x86.glibc”小节介绍。</p>
+							<p class="cc1">在文件的最后，我们可以看到，他包含了另一个文件：dev/make/x86/make.modules.x86。这一文件会在下一节介绍。</p>
+						</div>
+						<div class="hc4fr">
+							<p class="hc4">dev/make/x86/make.modules.x86<!--（需创建）--></p>
+							<p class="cc1">为了能够设置x86板家族支持的功能模块，我们需要将这一配置加入到预编译配置中，而在x86板家族关于所支持功能模块的预编译配置所要凭依的文件就是“make.modules.x86”了。所以，我们要创建这一文件，并将需要支持的模块配置加入其中。</p>
+							<div class="codeNumFr">
+								<div class="codefr">
+									<p class="code">#=========    dev/make/x86/make.modules.x86    =========</p>
+									<p class="code">export PROJECT_TOP_SRC=$(PROJECT_TOP_DIR)/src</p>
+									<p class="code">AUTEWARE_MODULES_LIST=SYSLOG PAM NPD_IPV6 LOGIN_FILTER WEBMNG \</p>
+									<p class="code">			BRIDGE_STP MIRROR QOS ACL IGMP_SNP \</p>
+									<p class="code">			ARP_INSPECTION ROUTE_POLICY VRRP MVLAN DHCP_CLIENT \</p>
+									<p class="code">			LLDP GVRP LACP DHCP_RELAY DHCP_SNP \</p>
+									<p class="code">			DHCP PIM DVMRP BGP ISIS FIREWALL \</p>
+									<p class="code">			RIP OSPF RMAP DOT1X RADIUS WCPSS \</p>
+									<p class="code">			ROUTE EHTERNET_EEE CHASSIS_SUPPORT \</p>
+									<p class="code">			UDLD ZEBRA FDB_SW_SYNC AAA DIAG DEBUG MAN_SNMP \</p>
+									<p class="code">			POWER_MONITOR FAN_MONITOR TEMPERATURE_MONITOR NTP\</p>
+									<p class="code">			MLD_SNP STACK_INTF ANTI_ATTACK PORTAL \</p>
+									<p class="code">			X86_MODULES \</p>
+								</div>
+							</div>
+							<p class="cc1">这里的“AUTEWARE_MODULES_LIST”表示了该板家族所支持的所有模块。对于编译的影响就是加入了以下这些模块相应的宏定义，这样在预编译相应的源文件的时候，会加入相应的代码。例如，这里的“X86_MODULES”，那么，在源代码中就等于加入了“HAVE_X86_MODULES”的宏定义。不过，具体加入的地方，在下一节“dev/make/make.modules”进行说明。</p>
+						</div>
+						<div class="hc4fr">
+							<p class="hc4">dev/make/make.modules<!--（不需修改）--></p>
+							<p class="cc1">本文件的主要作用是设置工程全局的加入功能模块相关编译参数。</p>
+							<div class="codeNumFr">
+								<div class="codefr">
+									<p class="code">#=========    dev/make/make.modules    =========</p>
+									<p class="code">export INCLUDE_AUTEWARE_MODULES += $(foreach module,$(AUTEWARE_MODULES_LIST), -DHAVE_$(module))</p>
+									<p class="code"></p>
+									<p class="code">ifneq (,$(findstring DEBUG,$(AUTEWARE_MODULES_LIST)))</p>
+									<p class="code">export INCLUDE_AUTEWARE_MODULES += -g</p>
+									<p class="code">endif</p>
+								</div>
+							</div>
+							<p class="cc1">这里的“AUTEWARE_MODULES_LIST”是从“dev/make/x86/make.modules.x86”获取到的。通过代码第2行的这句话，可以将每一个x86板家族需要的模块宏定义加入到编译预处理中。然后第4行开始的判断是，如果有“DEBUG”模块的话，就加入“-g”参数。</p>
+						</div>
+						<div class="hc4fr">
+							<p class="hc4">dev/make/make.tools<!--（不需修改）--></p>
+							<p class="cc1">对于本文件，我们只讨论其加入特定硬件编译器的部分，下面这段代码是该文件开头的一小部分：</p>
+							<div class="codeNumFr">
+								<div class="codefr">
+									<p class="code">#=========    dev/make/make.tools    =========</p>
+									<p class="code"></p>
+									<p class="code">include $(PROJECT_TOP_DIR)/make/make.tools.$(CPU_ARCH)$(ENDIAN_SUFFIX).$(LIBC_TYPE)</p>
+									<p class="code"></p>
+								</div>
+							</div>
+							<p class="cc1">这里的第3行，表示了要加入的特定编译器配置，“CPU_ARCH”和“LIBC_TYPE”在“dev/make/x86/make.x86”这一节已经有了具体介绍，在这里就不再冗述。对于x86板家族要加入的编译器设置是，make.tools.x86.glibc这一文件，具体的说明，在下一小节具体说明。</p>
+						</div>
+						<div class="hc4fr">
+							<p class="hc4">dev/make/make.tools.x86.glibc<!--（需创建）--></p>
+							<p class="cc1">由于不同硬件平台的编译环境不同，所以，需要创建不同平台的板家族的编译环境配置文件。本文件是通过上一小节说明的“dev/make/make.tools”文件来包含在总Makefile的。对于x86平台，我们用系统自带的gcc编译器就可以了。对于其他平台的硬件设备，需要使用对应的交叉编译器。</p>
+							<div class="codeNumFr">
+								<div class="codefr">
+									<p class="code">export COMPILER_PREFIX=</p>
+									<p class="code">export COMPILER_HOST_PREFIX=</p>
+									<p class="code">#export PATH:=/workspace26/i386-env/cross-tools/bin:${PATH}</p>
+									<p class="code">#export TARGET_LINUX_VERSION=2.6.27</p>
+									<p class="code"></p>
+									<p class="code">export CFLAGS += </p>
+									<p class="code">export LDFLAGS += </p>
+								</div>
+							</div>
+							<p class="cc1">首先“COMPILER_PREFIX”是编译器的前缀，例如：如果编译器是mips-linux-gcc，那个他的“COMPILER_PREFIX”就是“mips-gcc-”。而“COMPILER_HOST_PREFIX”也是前缀，只不过去掉了最后的那个“-”。“CFLAGS +=”里面是要追加的“CFLAGS”选项，这个是本工程全局要追加的，适用于所有模块。“LDFLAGS”和“PATH”与“CFLAGS”相类似，“TARGET_LINUX_VERSION”可以决定所使用的linux内核源代码版本。对于x86平台，因为编译环境就是X86平台的PC机或虚拟机，gcc和内核直接用系统自带的就好。所以，本例中，这个文件没有特别需要配置的东西。</p>
+						</div><!--	h4 glibc end-->
+						<div class="hc4fr">
+							<p class="hc4">dev/make/x86/make.kernel.x86<!--（需创建）--></p>
+							<p class="cc1">对于不用板家族，他们的生成目标文件的方式与格式等都不尽相同，所以我们需要创建一个x86板家族的生成配置文件。</p>
+							<div class="codeNumFr">
+								<div class="codefr">
+									<p class="code">deb:quagga dcli nam nbm npd</p>
+									<p class="code">	@echo "Preparing product info"</p>
+									<p class="code">	cp ${BUILD_ROOTFS_DIR}/opt/*  ${BUILD_ROOTFS_DIR}/usr/ -r</p>
+									<p class="code">	chmod 775 ${BUILD_ROOTFS_DIR} -R</p>
+									<p class="code">	dpkg -b ${BUILD_ROOTFS_DIR} aw.deb</p>
+									<p class="code"></p>
+									<p class="code">image:</p>
+									<p class="code">	@echo "Preparing product info"</p>
+									<p class="code">	cp ${BUILD_ROOTFS_DIR}/opt/*  ${BUILD_ROOTFS_DIR}/usr/ -r</p>
+									<p class="code">	chmod 775 ${BUILD_ROOTFS_DIR} -R</p>
+									<p class="code">	dpkg -b ${BUILD_ROOTFS_DIR} aw.deb</p>
+								</div>
+							</div>
+							<p class="cc1">因为，本例只是生成应用层面的软件包（deb格式）。所以，并不涉及到kernel的的编译。我们只需要设定好如何生成deb包即可。代码第3行，我们可以通过“dev/Makefile的开始部分”这一节知道，“BUILD_ROOTFS_DIR”是将来要拷贝到目标硬件的所有文件所在的目录，因为“/usr/”目录是linux的默认lib和bin目录，所以要将相应文件拷到这里。然后代码第4行，之所以改为755的文件权限，是因为做deb包时候的要求。然后第5行，就可以进行deb包的打包工作了。对于deb包的其他配置，可以参照下面有关“rootfs”的相关章节。</p>
+						</div><!-- h4 kernel end-->						
+					</div><!--	h3 dev/make end-->
+					<div class="hc3fr">
+						<p class="hc3">quagga模块<!--部分的编译配置修改--></p>
+						<p class="cc1">quagga模块主要负责的是本工程的Shell界面部分以及网络的三层等功能。本节就来介绍如何修改quagga模块的编译选项。</p>
+						<div class="hc4fr">
+							<p class="hc4">dev/Makefile（2）<!--的quagga和quaggalib目标（不需修改）--></p>
+							<p class="cc1">下面这段代码表示的是quagga模块在dev/Makefile中的两个主要的编译目标：quaggalib和quagga（bin）的编译内容（部分省略）：</p>
+							<div class="codeNumFr">
+								<div class="codefr">
+									<p class="code">quaggalib:manlib</p>
+									<p class="code">	@echo "Building quaggalib suit ..."</p>
+									<p class="code">	chmod 777 ${QUAGGA_MOD} -R</p>
+									<p class="code">	if [ ! -d ${PROJECT_BUILD_DIR}/quagga ] ; then \</p>
+									<p class="code">		cd ${QUAGGA_MOD} ; \</p>
+									<p class="code">		./configpkg ${TARGET_NAME} quaggalib; \</p>
+									<p class="code">		cd - ; \</p>
+									<p class="code">	fi</p>
+									<p class="code">	$(MAKE) -C ${PROJECT_BUILD_DIR}/quagga/lib</p>
+									<p class="code">	rm -rf ${BUILD_ROOTFS_DIR}/opt/lib/libzcommon.so* </p>
+									<p class="code">	rm -rf ${BUILD_ROOTFS_DIR}/opt/lib/libzebra.so* </p>
+									<p class="code">	rm -rf ${BUILD_ROOTFS_DIR}/opt/lib/libospf.so*</p>
+									<p class="code">	if [ ! -d ${LIB_EXPORT_DIR} ]; then mkdir ${LIB_EXPORT_DIR}; fi</p>
+									<p class="code"></p>
+									<p class="code">#................</p>
+									<p class="code">#省略部分</p>
+									<p class="code">#................</p>
+									<p class="code"></p>
+									<p class="code">quagga:libnpdlib</p>
+									<p class="code">	@echo "Building quagga suit ..."</p>
+									<p class="code">	chmod 777 ${QUAGGA_MOD} -R</p>
+									<p class="code">	if [ ! -d ${PROJECT_BUILD_DIR}/$@ ] ; then \</p>
+									<p class="code">		cd ${QUAGGA_MOD} ; \</p>
+									<p class="code">		./configpkg ${TARGET_NAME} $@; \</p>
+									<p class="code">		cd - ; \</p>
+									<p class="code">	fi</p>
+									<p class="code">	$(MAKE) -C ${PROJECT_BUILD_DIR}/$@</p>
+									<p class="code">	rm -rf $(BIN_EXPORT_DIR)/zebra</p>
+									<p class="code">	rm -rf $(BIN_EXPORT_DIR)/vtysh</p>
+									<p class="code"></p>
+									<p class="code">#................</p>
+									<p class="code">#省略部分</p>
+									<p class="code">#................</p>
+									<p class="code"></p>
+								</div>
+							</div><!-- code end-->
+							<div class="cc1">从上面代码的第6行和第24行可以看到，“quaggalib”和“quagga”两个目标传给“dev/src/quagga/configpkg”的参数。第一个参数“TARGET_NAME”，也就是“x86”是一样的，不同的是第二个参数，也就是通过这一参数，来判断要编译的是“quaggalib”还是“quagga”。从而让“configpkg”正确的配置编译依赖检查与Makefile的生成，以便以上两个目标之后进行的正式编译与生成能够正确执行。关于“configpkg”的修改，在下一节来具体展开。</div>
+						</div><!-- h4 dev/Makefile quagga end-->
+						<div class="hc4fr">
+							<p class="hc4">dev/src/quagga/configpkg<!--（需要修改）--></p>
+							<p class="cc1">quagga模块对于添加新硬件的时候，需要修改的地方主要就是这个文件。这个文件的主要作用就是判断硬件是何种硬件平台，从而进行相应配置。所以，当我们加入了一个新的硬件平台的硬件的时候，就需要加入一个新的判断，以及该判断分支下所要做的相应配置操作。</p>
+							<p class="cc1">在这一文件的最后，有形如以下代码的判断分支部分（中间部分省略）。</p>
+							<div class="codeNumFr">
+								<div class="codefr">
+									<p class="code"></p>
+									<p class="code">#................</p>
+									<p class="code">#省略部分</p>
+									<p class="code">#................</p>
+									<p class="code"></p>
+									<p class="code">if [ $# -gt 0 ]</p>
+									<p class="code">then</p>
+									<p class="code">	if [ $1 = 'topsec' ]</p>
+									<p class="code">	then </p>
+									<p class="code">		echo "config for TOPSEC with Intel 686 cpu"</p>
+									<p class="code">		config_x86</p>
+									<p class="code">	elif [ $1 = 'as9600' ]</p>
+									<p class="code">	then</p>
+									<p class="code">		echo "config for AS9600 with mips cpu"</p>
+									<p class="code">		config_mips</p>
+									<p class="code"></p>
+									<p class="code">#................</p>
+									<p class="code">#省略部分</p>
+									<p class="code">#................</p>
+									<p class="code"></p>
+									<p class="code">	elif [ $1 = 'ds5600' ]</p>
+									<p class="code">	then</p>
+									<p class="code">		echo "config for ds5600 with Marvell Armada XP cpu"</p>
+									<p class="code">		config_armadaxp</p>
+									<p class="code">	else</p>
+									<p class="code">		echo "unknow cpu type"</p>
+									<p class="code">	fi</p>
+									<p class="code">else</p>
+									<p class="code">	echo "Didn't specify cpu type, take mips as the default actions."</p>
+									<p class="code">	config_mips</p>
+									<p class="code"></p>
+									<p class="code">fi</p>
+								</div>
+							</div><!-- code end -->
+							<p class="cc1">所以我们只需要加上：</p>
+							<div class="codeNumFr">
+								<div class="codefr">
+									<p class="code">	elif [ $1 = 'x86' ]</p>
+									<p class="code">	then</p>
+									<p class="code">		echo "config for x86 with i686 cpu"</p>
+									<p class="code">		config_x86_2</p>
+								</div>
+							</div>
+							<p class="cc1">这一判断，即可进入“config_x86_2”这一函数，从而进行相应配置。这之后的工作就是编写“config_x86_2”这一函数了。</p>
+							<p class="cc1">下面是config_x86_2的实现：</p>
+							<div class="codeNumFr">
+								<div class="codefr">
+									<p class="code">config_x86_2()</p>
+									<p class="code">{</p>
+									<p class="code">	#################################################</p>
+									<p class="code">	#  Check whether dependent libs are ready</p>
+									<p class="code">	if [ -z "$USER_ADDITION_LIB_ROOT_PATH" ]; then</p>
+									<p class="code">	  echo "USER_ADDITION_LIB_ROOT_PATH is empty, please setup i686 libs first."</p>
+									<p class="code">	  exit -1</p>
+									<p class="code">	else</p>
+									<p class="code">	  echo "USER_ADDITION_LIB_ROOT_PATH is "$USER_ADDITION_LIB_ROOT_PATH</p>
+									<p class="code">	fi</p>
+									<p class="code"></p>
+									<p class="code">	#####################################################################</p>
+									<p class="code">	# Use include and library provided by cross-compiler, only add additional path which is not included by gcc suit</p>
+									<p class="code">	LDFLAGS+=" -L"$BUILD_ROOTFS_DIR"/opt/lib -L"$BUILD_ROOTFS_DIR"/usr/lib -L"$BUILD_ROOTFS_DIR"/lib -L"$USER_ADDITION_LIB_ROOT_PATH"/lib "</p>
+									<p class="code">	LDFLAGS+=" -lxml2 -lz "$DCLI_EXPORT_LIB" "</p>
+									<p class="code">	CPPFLAGS+="  "$INCLUDE_AUTEWARE_MODULES" -I"$USER_ADDITION_LIB_ROOT_PATH"/include "$DCLI_EXPORT_INCLUDE" "</p>
+									<p class="code">	CFLAGS+="  "$INCLUDE_AUTEWARE_MODULES" -I"$USER_ADDITION_LIB_ROOT_PATH"/include "$DCLI_EXPORT_INCLUDE" -DDB_INDEX -DDB_INDEX_NEW"</p>
+									<p class="code">	CFLAGS+=" -I"$ACCAPI_DIR" "</p>
+									<p class="code">	CFLAGS+=" -I"$MANAPI_DIR" "</p>
+									<p class="code">	echo $LDFLAGS</p>
+									<p class="code">	#echo $CPPFLAGS</p>
+									<p class="code">	export LDFLAGS</p>
+									<p class="code">	export CPPFLAGS</p>
+									<p class="code">	export CFLAGS</p>
+									<p class="code">	#LIBS+=" "$DCLI_EXPORT_LIBS" -ldbus-1 "</p>
+									<p class="code">	if [ $2 = 'quagga' ]</p>
+									<p class="code">	then</p>
+									<p class="code">		LIBS+=" -lnpdlib -ltipc_api "</p>
+									<p class="code">		export LIBS</p>
+									<p class="code">	fi</p>
+									<p class="code">	[ -d $PROJECT_BUILD_DIR/quagga ] || mkdir $PROJECT_BUILD_DIR/quagga</p>
+									<p class="code">	pushd $PROJECT_BUILD_DIR/quagga</p>
+									<p class="code">	##################Disable features that will not be used.</p>
+									<p class="code">	#../debsrc/quagga-0.99.16/configure --host=i686-unknown-linux-gnu --enable-vtysh --with-libpam --disable-watchquagga</p>
+									<p class="code">	ac_cv_func_realloc_0_nonnull=yes ac_cv_func_malloc_0_nonnull=yes ${PROJECT_TOP_SRC}/${QUAGGA_SRC}/configure --host=i686-unknown-linux-gnu --enable-vtysh --enable-pie=no --enable-zebra --disable-ipv6 --disable-doc --disable-bgpd --disable-ripd --disable-ripngd --disable-ospfd --disable-watchquagga --disable-ospfapi --disable-ospfclient --disable-pie --disable-rtadv --disable-time-check --disable-user --enable-netlink --disable-snmp --disable-doc --disable-group --disable-vty-group --enable-configfile-mask=0666 --enable-logfile-mask=0666 --enable-multipath=8 --sysconfdir=/etc</p>
+									<p class="code">	popd</p>
+									<p class="code">}</p>
+								</div>
+							</div><!-- code end -->
+							<p class="cc1">虽然看起来很多，但其实需要修改的地方很少，对于新的硬件平台，只需要将其中和x86有关的内容换成对应的硬件平台就好了。</p>
+						</div><!-- h4 quagga_configpkg end -->
+						<div class="hc4fr">
+							<p class="hc4">quagga的编译</p>
+							<p class="cc1">quagga的编译配置设置好后，我们就可以先编译quagga模块了。下面对于编译过程中可能会遇到的问题，一一进行说明。</p>
+							<p class="cc1">编译quagga目标的命令是：</p>
+							<div class="codeNumFr">
+								<div class="codefr">
+									<p class="code">user@ubuntu:~/work/dev$./mkx86.sh quagga</p>
+								</div>
+							</div><!-- codefr end -->
+							<p class="cc1">./<a href="#hc3_1_2_2">mkx86.sh</a>就是我们之前创建的脚本文件，可以告诉Makefile我们要编译的是哪一个板家族的目标。quagga就是我们具体要生成的目标。运行后，可能会出现以下错误提示：</p>
+							<div class="codeNumFr">
+								<div class="codefr">
+									<p class="code">/usr/bin/ld: cannot find -ldbus-1</p>
+									<p class="code">collect2: ld returned 1 exit status</p>
+									<p class="code">make[1]: *** [man] Error 1</p>
+									<p class="code">make[1]: Leaving directory `/home/user/work/dev/src/man/lib'</p>
+									<p class="code">make: *** [manlib] Error 2</p>
+								</div>
+							</div><!-- codefr end -->
+							<p class="cc1">这是由于quagga编译过程中没有找到的dbus库造成的，只需要建立一个名为“libdbus-1.so”的软连接，然后指向现有版本的dbus库即可，以下是操作范例，实际情况可能会有出入（需要root权限）。</p>
+							<div class="codeNumFr">
+								<div class="codefr">
+									<p class="code">root@ubuntu:/lib#&nbsp;ll&nbsp;libdbus-1.so*</p>
+									<p class="code">lrwxrwxrwx&nbsp;1&nbsp;root&nbsp;root&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;18&nbsp;2014-06-05&nbsp;02:25&nbsp;libdbus-1.so.3&nbsp;-&gt;&nbsp;libdbus-1.so.3.4.0</p>
+									<p class="code">-rw-r--r--&nbsp;1&nbsp;root&nbsp;root&nbsp;227000&nbsp;2010-03-30&nbsp;08:07&nbsp;libdbus-1.so.3.4.0</p>
+									<p class="code">root@ubuntu:/lib#&nbsp;ln&nbsp;-s&nbsp;./libdbus-1.so.3&nbsp;libdbus-1.so</p>
+									<p class="code">root@ubuntu:/lib#&nbsp;ll&nbsp;libdbus-1.so*</p>
+									<p class="code">lrwxrwxrwx&nbsp;1&nbsp;root&nbsp;root&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;16&nbsp;2014-08-07&nbsp;01:41&nbsp;libdbus-1.so&nbsp;-&gt;&nbsp;./libdbus-1.so.3</p>
+									<p class="code">lrwxrwxrwx&nbsp;1&nbsp;root&nbsp;root&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;18&nbsp;2014-06-05&nbsp;02:25&nbsp;libdbus-1.so.3&nbsp;-&gt;&nbsp;libdbus-1.so.3.4.0</p>
+									<p class="code">-rw-r--r--&nbsp;1&nbsp;root&nbsp;root&nbsp;227000&nbsp;2010-03-30&nbsp;08:07&nbsp;libdbus-1.so.3.4.0</p>
+									<p class="code">root@ubuntu:/lib#&nbsp;</p>
+								</div>
+							</div><!-- codefr end -->
+							<p class="cc1">完成以上操作就不会出现dbus库缺失的问题了，如果是从错误状态下重新编译的话，需要先执行：</p>
+							<div class="codeNumFr">
+								<div class="codefr">
+									<p class="code">user@ubuntu:~/work/dev$./mkx86.sh cleanquagga</p>
+								</div>
+							</div><!-- codefr end -->
+							<p class="cc1">完成后就可以重新执行“./mkx86.sh quagga”命令了。下一个常见的问题是：</p>
+							<div class="codeNumFr">
+								<div class="codefr">
+									<p class="code">checking for gawk... gawk</p>
+									<p class="code">checking for i686-unknown-linux-gnu-gcc... gcc</p>
+									<p class="code">checking whether the C compiler works... no</p>
+									<p class="code">configure: error: in `/home/user/work/dev/build/x86/quagga':</p>
+									<p class="code">configure: error: C compiler cannot create executables</p>
+									<p class="code">See `config.log' for more details.</p>
+									<p class="code">/home/user/work/dev/src/quagga</p>
+									<p class="code">/home/user/work/dev</p>
+									<p class="code">make -C /home/user/work/dev/build/x86/quagga/lib</p>
+									<p class="code">make: *** /home/user/work/dev/build/x86/quagga/lib: No such file or directory.  Stop.</p>
+									<p class="code">make: *** [quaggalib] Error 2</p>
+								</div>
+							</div><!-- codefr end -->
+							<p class="cc1">通过提示我们似乎看不错问题出在那里，不过通过第6行的提示，我们可以去看一下“config.log”这个文件。这个文件的具体位置是：“dev/build/x86/quagga/config.log”，以下是这一错误状态下，“config.log”的内容范例（实际情况可能会有出入）：</p>
+							<div class="codeNumFr" id="quagga_config_log">
+								<div class="codefr">
+									<p class="code">This&nbsp;file&nbsp;contains&nbsp;any&nbsp;messages&nbsp;produced&nbsp;by&nbsp;compilers&nbsp;while</p>
+									<p class="code">running&nbsp;configure,&nbsp;to&nbsp;aid&nbsp;debugging&nbsp;if&nbsp;configure&nbsp;makes&nbsp;a&nbsp;mistake.</p>
+									<p class="code"></p>
+									<p class="code">It&nbsp;was&nbsp;created&nbsp;by&nbsp;Quagga&nbsp;configure&nbsp;0.99.17,&nbsp;which&nbsp;was</p>
+									<p class="code">generated&nbsp;by&nbsp;GNU&nbsp;Autoconf&nbsp;2.65.&nbsp;&nbsp;Invocation&nbsp;command&nbsp;line&nbsp;was</p>
+									<p class="code"></p>
+									<p class="code">&nbsp;&nbsp;$&nbsp;/home/user/work/dev/src/quagga/debsrc/quagga-0.99.16/configure&nbsp;--host=i686-unknown-linux-gnu&nbsp;--enable-vtysh&nbsp;--enable-pie=no&nbsp;--enable-zebra&nbsp;--disable-ipv6&nbsp;--disable-doc&nbsp;--disable-bgpd&nbsp;--disable-ripd&nbsp;--disable-ripngd&nbsp;--disable-ospfd&nbsp;--disable-watchquagga&nbsp;--disable-ospfapi&nbsp;--disable-ospfclient&nbsp;--disable-pie&nbsp;--disable-rtadv&nbsp;--disable-time-check&nbsp;--disable-user&nbsp;--enable-netlink&nbsp;--disable-snmp&nbsp;--disable-doc&nbsp;--disable-group&nbsp;--disable-vty-group&nbsp;--enable-configfile-mask=0666&nbsp;--enable-logfile-mask=0666&nbsp;--enable-multipath=8&nbsp;--sysconfdir=/etc</p>
+									<p class="code"></p>
+									<p class="code">##&nbsp;---------&nbsp;##</p>
+									<p class="code">##&nbsp;Platform.&nbsp;##</p>
+									<p class="code">##&nbsp;---------&nbsp;##</p>
+									<p class="code"></p>
+									<p class="code">hostname&nbsp;=&nbsp;ubuntu</p>
+									<p class="code">uname&nbsp;-m&nbsp;=&nbsp;i686</p>
+									<p class="code">uname&nbsp;-r&nbsp;=&nbsp;2.6.32-21-generic</p>
+									<p class="code">uname&nbsp;-s&nbsp;=&nbsp;Linux</p>
+									<p class="code">uname&nbsp;-v&nbsp;=&nbsp;#32-Ubuntu&nbsp;SMP&nbsp;Fri&nbsp;Apr&nbsp;16&nbsp;08:10:02&nbsp;UTC&nbsp;2010</p>
+									<p class="code"></p>
+									<p class="code">/usr/bin/uname&nbsp;-p&nbsp;=&nbsp;unknown</p>
+									<p class="code">/bin/uname&nbsp;-X&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;unknown</p>
+									<p class="code"></p>
+									<p class="code">/bin/arch&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;unknown</p>
+									<p class="code">/usr/bin/arch&nbsp;-k&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;unknown</p>
+									<p class="code">/usr/convex/getsysinfo&nbsp;=&nbsp;unknown</p>
+									<p class="code">/usr/bin/hostinfo&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;unknown</p>
+									<p class="code">/bin/machine&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;unknown</p>
+									<p class="code">/usr/bin/oslevel&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;unknown</p>
+									<p class="code">/bin/universe&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;unknown</p>
+									<p class="code"></p>
+									<p class="code">PATH:&nbsp;/usr/local/sbin</p>
+									<p class="code">PATH:&nbsp;/usr/local/bin</p>
+									<p class="code">PATH:&nbsp;/usr/sbin</p>
+									<p class="code">PATH:&nbsp;/usr/bin</p>
+									<p class="code">PATH:&nbsp;/sbin</p>
+									<p class="code">PATH:&nbsp;/bin</p>
+									<p class="code">PATH:&nbsp;/usr/games</p>
+									<p class="code"></p>
+									<p class="code"></p>
+									<p class="code">##&nbsp;-----------&nbsp;##</p>
+									<p class="code">##&nbsp;Core&nbsp;tests.&nbsp;##</p>
+									<p class="code">##&nbsp;-----------&nbsp;##</p>
+									<p class="code"></p>
+									<p class="code">configure:2632:&nbsp;checking&nbsp;build&nbsp;system&nbsp;type</p>
+									<p class="code">configure:2646:&nbsp;result:&nbsp;i686-pc-linux-gnu</p>
+									<p class="code">configure:2666:&nbsp;checking&nbsp;host&nbsp;system&nbsp;type</p>
+									<p class="code">configure:2679:&nbsp;result:&nbsp;i686-unknown-linux-gnu</p>
+									<p class="code">configure:2699:&nbsp;checking&nbsp;target&nbsp;system&nbsp;type</p>
+									<p class="code">configure:2712:&nbsp;result:&nbsp;i686-unknown-linux-gnu</p>
+									<p class="code">configure:2755:&nbsp;checking&nbsp;for&nbsp;a&nbsp;BSD-compatible&nbsp;install</p>
+									<p class="code">configure:2823:&nbsp;result:&nbsp;/usr/bin/install&nbsp;-c</p>
+									<p class="code">configure:2834:&nbsp;checking&nbsp;whether&nbsp;build&nbsp;environment&nbsp;is&nbsp;sane</p>
+									<p class="code">configure:2884:&nbsp;result:&nbsp;yes</p>
+									<p class="code">configure:2933:&nbsp;checking&nbsp;for&nbsp;i686-unknown-linux-gnu-strip</p>
+									<p class="code">configure:2960:&nbsp;result:&nbsp;strip</p>
+									<p class="code">configure:3025:&nbsp;checking&nbsp;for&nbsp;a&nbsp;thread-safe&nbsp;mkdir&nbsp;-p</p>
+									<p class="code">configure:3064:&nbsp;result:&nbsp;/bin/mkdir&nbsp;-p</p>
+									<p class="code">configure:3077:&nbsp;checking&nbsp;for&nbsp;gawk</p>
+									<p class="code">configure:3093:&nbsp;found&nbsp;/usr/bin/gawk</p>
+									<p class="code">configure:3104:&nbsp;result:&nbsp;gawk</p>
+									<p class="code">configure:3115:&nbsp;checking&nbsp;whether&nbsp;make&nbsp;sets&nbsp;$(MAKE)</p>
+									<p class="code">configure:3137:&nbsp;result:&nbsp;yes</p>
+									<p class="code">configure:3222:&nbsp;checking&nbsp;for&nbsp;gawk</p>
+									<p class="code">configure:3238:&nbsp;found&nbsp;/usr/bin/gawk</p>
+									<p class="code">configure:3250:&nbsp;result:&nbsp;gawk</p>
+									<p class="code">configure:3308:&nbsp;checking&nbsp;for&nbsp;i686-unknown-linux-gnu-gcc</p>
+									<p class="code">configure:3335:&nbsp;result:&nbsp;gcc</p>
+									<p class="code">configure:3604:&nbsp;checking&nbsp;for&nbsp;C&nbsp;compiler&nbsp;version</p>
+									<p class="code">configure:3613:&nbsp;gcc&nbsp;--version&nbsp;&gt;&amp;5</p>
+									<p class="code">gcc&nbsp;(Ubuntu&nbsp;4.4.3-4ubuntu5)&nbsp;4.4.3</p>
+									<p class="code">Copyright&nbsp;(C)&nbsp;2009&nbsp;Free&nbsp;Software&nbsp;Foundation,&nbsp;Inc.</p>
+									<p class="code">This&nbsp;is&nbsp;free&nbsp;software;&nbsp;see&nbsp;the&nbsp;source&nbsp;for&nbsp;copying&nbsp;conditions.&nbsp;&nbsp;There&nbsp;is&nbsp;NO</p>
+									<p class="code">warranty;&nbsp;not&nbsp;even&nbsp;for&nbsp;MERCHANTABILITY&nbsp;or&nbsp;FITNESS&nbsp;FOR&nbsp;A&nbsp;PARTICULAR&nbsp;PURPOSE.</p>
+									<p class="code"></p>
+									<p class="code">configure:3624:&nbsp;$?&nbsp;=&nbsp;0</p>
+									<p class="code">configure:3613:&nbsp;gcc&nbsp;-v&nbsp;&gt;&amp;5</p>
+									<p class="code">Using&nbsp;built-in&nbsp;specs.</p>
+									<p class="code">Target:&nbsp;i486-linux-gnu</p>
+									<p class="code">Configured&nbsp;with:&nbsp;../src/configure&nbsp;-v&nbsp;--with-pkgversion='Ubuntu&nbsp;4.4.3-4ubuntu5'&nbsp;--with-bugurl=file:///usr/share/doc/gcc-4.4/README.Bugs&nbsp;--enable-languages=c,c++,fortran,objc,obj-c++&nbsp;--prefix=/usr&nbsp;--enable-shared&nbsp;--enable-multiarch&nbsp;--enable-linker-build-id&nbsp;--with-system-zlib&nbsp;--libexecdir=/usr/lib&nbsp;--without-included-gettext&nbsp;--enable-threads=posix&nbsp;--with-gxx-include-dir=/usr/include/c++/4.4&nbsp;--program-suffix=-4.4&nbsp;--enable-nls&nbsp;--enable-clocale=gnu&nbsp;--enable-libstdcxx-debug&nbsp;--enable-plugin&nbsp;--enable-objc-gc&nbsp;--enable-targets=all&nbsp;--disable-werror&nbsp;--with-arch-32=i486&nbsp;--with-tune=generic&nbsp;--enable-checking=release&nbsp;--build=i486-linux-gnu&nbsp;--host=i486-linux-gnu&nbsp;--target=i486-linux-gnu</p>
+									<p class="code">Thread&nbsp;model:&nbsp;posix</p>
+									<p class="code">gcc&nbsp;version&nbsp;4.4.3&nbsp;(Ubuntu&nbsp;4.4.3-4ubuntu5)&nbsp;</p>
+									<p class="code">configure:3624:&nbsp;$?&nbsp;=&nbsp;0</p>
+									<p class="code">configure:3613:&nbsp;gcc&nbsp;-V&nbsp;&gt;&amp;5</p>
+									<p class="code">gcc:&nbsp;'-V'&nbsp;option&nbsp;must&nbsp;have&nbsp;argument</p>
+									<p class="code">configure:3624:&nbsp;$?&nbsp;=&nbsp;1</p>
+									<p class="code">configure:3613:&nbsp;gcc&nbsp;-qversion&nbsp;&gt;&amp;5</p>
+									<p class="code">gcc:&nbsp;unrecognized&nbsp;option&nbsp;'-qversion'</p>
+									<p class="code">gcc:&nbsp;no&nbsp;input&nbsp;files</p>
+									<p class="code">configure:3624:&nbsp;$?&nbsp;=&nbsp;1</p>
+									<p class="code">configure:3644:&nbsp;checking&nbsp;whether&nbsp;the&nbsp;C&nbsp;compiler&nbsp;works</p>
+									<p class="code">configure:3666:&nbsp;gcc&nbsp;&nbsp;&nbsp;&nbsp;-DHAVE_SYSLOG&nbsp;&nbsp;-DHAVE_PAM&nbsp;&nbsp;-DHAVE_NPD_IPV6&nbsp;&nbsp;-DHAVE_LOGIN_FILTER&nbsp;&nbsp;-DHAVE_WEBMNG&nbsp;&nbsp;-DHAVE_BRIDGE_STP&nbsp;&nbsp;-DHAVE_MIRROR&nbsp;&nbsp;-DHAVE_QOS&nbsp;&nbsp;-DHAVE_ACL&nbsp;&nbsp;-DHAVE_IGMP_SNP&nbsp;&nbsp;-DHAVE_ARP_INSPECTION&nbsp;&nbsp;-DHAVE_ROUTE_POLICY&nbsp;&nbsp;-DHAVE_VRRP&nbsp;&nbsp;-DHAVE_MVLAN&nbsp;&nbsp;-DHAVE_DHCP_CLIENT&nbsp;&nbsp;-DHAVE_LLDP&nbsp;&nbsp;-DHAVE_GVRP&nbsp;&nbsp;-DHAVE_LACP&nbsp;&nbsp;-DHAVE_DHCP_RELAY&nbsp;&nbsp;-DHAVE_DHCP_SNP&nbsp;&nbsp;-DHAVE_DHCP&nbsp;&nbsp;-DHAVE_PIM&nbsp;&nbsp;-DHAVE_DVMRP&nbsp;&nbsp;-DHAVE_BGP&nbsp;&nbsp;-DHAVE_ISIS&nbsp;&nbsp;-DHAVE_FIREWALL&nbsp;&nbsp;-DHAVE_RIP&nbsp;&nbsp;-DHAVE_OSPF&nbsp;&nbsp;-DHAVE_RMAP&nbsp;&nbsp;-DHAVE_DOT1X&nbsp;&nbsp;-DHAVE_RADIUS&nbsp;&nbsp;-DHAVE_WCPSS&nbsp;&nbsp;-DHAVE_ROUTE&nbsp;&nbsp;-DHAVE_EHTERNET_EEE&nbsp;&nbsp;-DHAVE_CHASSIS_SUPPORT&nbsp;&nbsp;-DHAVE_UDLD&nbsp;&nbsp;-DHAVE_ZEBRA&nbsp;&nbsp;-DHAVE_FDB_SW_SYNC&nbsp;&nbsp;-DHAVE_AAA&nbsp;&nbsp;-DHAVE_DIAG&nbsp;&nbsp;-DHAVE_DEBUG&nbsp;&nbsp;-DHAVE_MAN_SNMP&nbsp;&nbsp;-DHAVE_POWER_MONITOR&nbsp;&nbsp;-DHAVE_FAN_MONITOR&nbsp;&nbsp;-DHAVE_TEMPERATURE_MONITOR&nbsp;&nbsp;-DHAVE_NTP&nbsp;&nbsp;-DHAVE_MLD_SNP&nbsp;&nbsp;-DHAVE_STACK_INTF&nbsp;&nbsp;-DHAVE_ANTI_ATTACK&nbsp;&nbsp;-DHAVE_PORTAL&nbsp;&nbsp;-DHAVE_X86_MODULES&nbsp;-g&nbsp;-I/home/user/work/dev/../x86/sysroot/include&nbsp;&nbsp;-DDB_INDEX&nbsp;-DDB_INDEX_NEW&nbsp;-I/home/user/work/dev/src/accapi&nbsp;&nbsp;-I/home/user/work/dev/src/accapi/man&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-DHAVE_SYSLOG&nbsp;&nbsp;-DHAVE_PAM&nbsp;&nbsp;-DHAVE_NPD_IPV6&nbsp;&nbsp;-DHAVE_LOGIN_FILTER&nbsp;&nbsp;-DHAVE_WEBMNG&nbsp;&nbsp;-DHAVE_BRIDGE_STP&nbsp;&nbsp;-DHAVE_MIRROR&nbsp;&nbsp;-DHAVE_QOS&nbsp;&nbsp;-DHAVE_ACL&nbsp;&nbsp;-DHAVE_IGMP_SNP&nbsp;&nbsp;-DHAVE_ARP_INSPECTION&nbsp;&nbsp;-DHAVE_ROUTE_POLICY&nbsp;&nbsp;-DHAVE_VRRP&nbsp;&nbsp;-DHAVE_MVLAN&nbsp;&nbsp;-DHAVE_DHCP_CLIENT&nbsp;&nbsp;-DHAVE_LLDP&nbsp;&nbsp;-DHAVE_GVRP&nbsp;&nbsp;-DHAVE_LACP&nbsp;&nbsp;-DHAVE_DHCP_RELAY&nbsp;&nbsp;-DHAVE_DHCP_SNP&nbsp;&nbsp;-DHAVE_DHCP&nbsp;&nbsp;-DHAVE_PIM&nbsp;&nbsp;-DHAVE_DVMRP&nbsp;&nbsp;-DHAVE_BGP&nbsp;&nbsp;-DHAVE_ISIS&nbsp;&nbsp;-DHAVE_FIREWALL&nbsp;&nbsp;-DHAVE_RIP&nbsp;&nbsp;-DHAVE_OSPF&nbsp;&nbsp;-DHAVE_RMAP&nbsp;&nbsp;-DHAVE_DOT1X&nbsp;&nbsp;-DHAVE_RADIUS&nbsp;&nbsp;-DHAVE_WCPSS&nbsp;&nbsp;-DHAVE_ROUTE&nbsp;&nbsp;-DHAVE_EHTERNET_EEE&nbsp;&nbsp;-DHAVE_CHASSIS_SUPPORT&nbsp;&nbsp;-DHAVE_UDLD&nbsp;&nbsp;-DHAVE_ZEBRA&nbsp;&nbsp;-DHAVE_FDB_SW_SYNC&nbsp;&nbsp;-DHAVE_AAA&nbsp;&nbsp;-DHAVE_DIAG&nbsp;&nbsp;-DHAVE_DEBUG&nbsp;&nbsp;-DHAVE_MAN_SNMP&nbsp;&nbsp;-DHAVE_POWER_MONITOR&nbsp;&nbsp;-DHAVE_FAN_MONITOR&nbsp;&nbsp;-DHAVE_TEMPERATURE_MONITOR&nbsp;&nbsp;-DHAVE_NTP&nbsp;&nbsp;-DHAVE_MLD_SNP&nbsp;&nbsp;-DHAVE_STACK_INTF&nbsp;&nbsp;-DHAVE_ANTI_ATTACK&nbsp;&nbsp;-DHAVE_PORTAL&nbsp;&nbsp;-DHAVE_X86_MODULES&nbsp;-g&nbsp;-I/home/user/work/dev/../x86/sysroot/include&nbsp;&nbsp;&nbsp;&nbsp;-L/home/user/work/dev/../x86/rootfs/files/opt/lib&nbsp;-L/home/user/work/dev/../x86/rootfs/files/usr/lib&nbsp;-L/home/user/work/dev/../x86/rootfs/files/lib&nbsp;-L/home/user/work/dev/../x86/sysroot/lib&nbsp;&nbsp;-lxml2&nbsp;-lz&nbsp;&nbsp;&nbsp;conftest.c&nbsp;&nbsp;&gt;&amp;5</p>
+									<p class="code">/usr/bin/ld:&nbsp;cannot&nbsp;find&nbsp;-lxml2</p>
+									<p class="code">collect2:&nbsp;ld&nbsp;returned&nbsp;1&nbsp;exit&nbsp;status</p>
+									<p class="code">configure:3670:&nbsp;$?&nbsp;=&nbsp;1</p>
+									<p class="code">configure:3708:&nbsp;result:&nbsp;no</p>
+									<p class="code">configure:&nbsp;failed&nbsp;program&nbsp;was:</p>
+									<p class="code">|&nbsp;/*&nbsp;confdefs.h&nbsp;*/</p>
+									<p class="code">|&nbsp;#define&nbsp;PACKAGE_NAME&nbsp;"Quagga"</p>
+									<p class="code">|&nbsp;#define&nbsp;PACKAGE_TARNAME&nbsp;"quagga"</p>
+									<p class="code">|&nbsp;#define&nbsp;PACKAGE_VERSION&nbsp;"0.99.17"</p>
+									<p class="code">|&nbsp;#define&nbsp;PACKAGE_STRING&nbsp;"Quagga&nbsp;0.99.17"</p>
+									<p class="code">|&nbsp;#define&nbsp;PACKAGE_BUGREPORT&nbsp;"https://bugzilla.quagga.net"</p>
+									<p class="code">|&nbsp;#define&nbsp;PACKAGE_URL&nbsp;""</p>
+									<p class="code">|&nbsp;#define&nbsp;PACKAGE&nbsp;"quagga"</p>
+									<p class="code">|&nbsp;#define&nbsp;VERSION&nbsp;"0.99.17"</p>
+									<p class="code">|&nbsp;/*&nbsp;end&nbsp;confdefs.h.&nbsp;&nbsp;*/</p>
+									<p class="code">|&nbsp;</p>
+									<p class="code">|&nbsp;int</p>
+									<p class="code">|&nbsp;main&nbsp;()</p>
+									<p class="code">|&nbsp;{</p>
+									<p class="code">|&nbsp;</p>
+									<p class="code">|&nbsp;&nbsp;&nbsp;;</p>
+									<p class="code">|&nbsp;&nbsp;&nbsp;return&nbsp;0;</p>
+									<p class="code">|&nbsp;}</p>
+									<p class="code">configure:3713:&nbsp;error:&nbsp;in&nbsp;`/home/user/work/dev/build/x86/quagga':</p>
+									<p class="code">configure:3717:&nbsp;error:&nbsp;C&nbsp;compiler&nbsp;cannot&nbsp;create&nbsp;executables</p>
+									<p class="code">See&nbsp;`config.log'&nbsp;for&nbsp;more&nbsp;details.</p>
+									<p class="code"></p>
+									<p class="code">##&nbsp;----------------&nbsp;##</p>
+									<p class="code">##&nbsp;Cache&nbsp;variables.&nbsp;##</p>
+									<p class="code">##&nbsp;----------------&nbsp;##</p>
+									<p class="code"></p>
+									<p class="code">ac_cv_build=i686-pc-linux-gnu</p>
+									<p class="code">ac_cv_env_CC_set=set</p>
+									<p class="code">ac_cv_env_CC_value=gcc</p>
+									<p class="code">ac_cv_env_CFLAGS_set=set</p>
+									<p class="code">ac_cv_env_CFLAGS_value='&nbsp;&nbsp;&nbsp;-DHAVE_SYSLOG&nbsp;&nbsp;-DHAVE_PAM&nbsp;&nbsp;-DHAVE_NPD_IPV6&nbsp;&nbsp;-DHAVE_LOGIN_FILTER&nbsp;&nbsp;-DHAVE_WEBMNG&nbsp;&nbsp;-DHAVE_BRIDGE_STP&nbsp;&nbsp;-DHAVE_MIRROR&nbsp;&nbsp;-DHAVE_QOS&nbsp;&nbsp;-DHAVE_ACL&nbsp;&nbsp;-DHAVE_IGMP_SNP&nbsp;&nbsp;-DHAVE_ARP_INSPECTION&nbsp;&nbsp;-DHAVE_ROUTE_POLICY&nbsp;&nbsp;-DHAVE_VRRP&nbsp;&nbsp;-DHAVE_MVLAN&nbsp;&nbsp;-DHAVE_DHCP_CLIENT&nbsp;&nbsp;-DHAVE_LLDP&nbsp;&nbsp;-DHAVE_GVRP&nbsp;&nbsp;-DHAVE_LACP&nbsp;&nbsp;-DHAVE_DHCP_RELAY&nbsp;&nbsp;-DHAVE_DHCP_SNP&nbsp;&nbsp;-DHAVE_DHCP&nbsp;&nbsp;-DHAVE_PIM&nbsp;&nbsp;-DHAVE_DVMRP&nbsp;&nbsp;-DHAVE_BGP&nbsp;&nbsp;-DHAVE_ISIS&nbsp;&nbsp;-DHAVE_FIREWALL&nbsp;&nbsp;-DHAVE_RIP&nbsp;&nbsp;-DHAVE_OSPF&nbsp;&nbsp;-DHAVE_RMAP&nbsp;&nbsp;-DHAVE_DOT1X&nbsp;&nbsp;-DHAVE_RADIUS&nbsp;&nbsp;-DHAVE_WCPSS&nbsp;&nbsp;-DHAVE_ROUTE&nbsp;&nbsp;-DHAVE_EHTERNET_EEE&nbsp;&nbsp;-DHAVE_CHASSIS_SUPPORT&nbsp;&nbsp;-DHAVE_UDLD&nbsp;&nbsp;-DHAVE_ZEBRA&nbsp;&nbsp;-DHAVE_FDB_SW_SYNC&nbsp;&nbsp;-DHAVE_AAA&nbsp;&nbsp;-DHAVE_DIAG&nbsp;&nbsp;-DHAVE_DEBUG&nbsp;&nbsp;-DHAVE_MAN_SNMP&nbsp;&nbsp;-DHAVE_POWER_MONITOR&nbsp;&nbsp;-DHAVE_FAN_MONITOR&nbsp;&nbsp;-DHAVE_TEMPERATURE_MONITOR&nbsp;&nbsp;-DHAVE_NTP&nbsp;&nbsp;-DHAVE_MLD_SNP&nbsp;&nbsp;-DHAVE_STACK_INTF&nbsp;&nbsp;-DHAVE_ANTI_ATTACK&nbsp;&nbsp;-DHAVE_PORTAL&nbsp;&nbsp;-DHAVE_X86_MODULES&nbsp;-g&nbsp;-I/home/user/work/dev/../x86/sysroot/include&nbsp;&nbsp;-DDB_INDEX&nbsp;-DDB_INDEX_NEW&nbsp;-I/home/user/work/dev/src/accapi&nbsp;&nbsp;-I/home/user/work/dev/src/accapi/man&nbsp;'</p>
+									<p class="code">ac_cv_env_CPPFLAGS_set=set</p>
+									<p class="code">ac_cv_env_CPPFLAGS_value='&nbsp;&nbsp;&nbsp;-DHAVE_SYSLOG&nbsp;&nbsp;-DHAVE_PAM&nbsp;&nbsp;-DHAVE_NPD_IPV6&nbsp;&nbsp;-DHAVE_LOGIN_FILTER&nbsp;&nbsp;-DHAVE_WEBMNG&nbsp;&nbsp;-DHAVE_BRIDGE_STP&nbsp;&nbsp;-DHAVE_MIRROR&nbsp;&nbsp;-DHAVE_QOS&nbsp;&nbsp;-DHAVE_ACL&nbsp;&nbsp;-DHAVE_IGMP_SNP&nbsp;&nbsp;-DHAVE_ARP_INSPECTION&nbsp;&nbsp;-DHAVE_ROUTE_POLICY&nbsp;&nbsp;-DHAVE_VRRP&nbsp;&nbsp;-DHAVE_MVLAN&nbsp;&nbsp;-DHAVE_DHCP_CLIENT&nbsp;&nbsp;-DHAVE_LLDP&nbsp;&nbsp;-DHAVE_GVRP&nbsp;&nbsp;-DHAVE_LACP&nbsp;&nbsp;-DHAVE_DHCP_RELAY&nbsp;&nbsp;-DHAVE_DHCP_SNP&nbsp;&nbsp;-DHAVE_DHCP&nbsp;&nbsp;-DHAVE_PIM&nbsp;&nbsp;-DHAVE_DVMRP&nbsp;&nbsp;-DHAVE_BGP&nbsp;&nbsp;-DHAVE_ISIS&nbsp;&nbsp;-DHAVE_FIREWALL&nbsp;&nbsp;-DHAVE_RIP&nbsp;&nbsp;-DHAVE_OSPF&nbsp;&nbsp;-DHAVE_RMAP&nbsp;&nbsp;-DHAVE_DOT1X&nbsp;&nbsp;-DHAVE_RADIUS&nbsp;&nbsp;-DHAVE_WCPSS&nbsp;&nbsp;-DHAVE_ROUTE&nbsp;&nbsp;-DHAVE_EHTERNET_EEE&nbsp;&nbsp;-DHAVE_CHASSIS_SUPPORT&nbsp;&nbsp;-DHAVE_UDLD&nbsp;&nbsp;-DHAVE_ZEBRA&nbsp;&nbsp;-DHAVE_FDB_SW_SYNC&nbsp;&nbsp;-DHAVE_AAA&nbsp;&nbsp;-DHAVE_DIAG&nbsp;&nbsp;-DHAVE_DEBUG&nbsp;&nbsp;-DHAVE_MAN_SNMP&nbsp;&nbsp;-DHAVE_POWER_MONITOR&nbsp;&nbsp;-DHAVE_FAN_MONITOR&nbsp;&nbsp;-DHAVE_TEMPERATURE_MONITOR&nbsp;&nbsp;-DHAVE_NTP&nbsp;&nbsp;-DHAVE_MLD_SNP&nbsp;&nbsp;-DHAVE_STACK_INTF&nbsp;&nbsp;-DHAVE_ANTI_ATTACK&nbsp;&nbsp;-DHAVE_PORTAL&nbsp;&nbsp;-DHAVE_X86_MODULES&nbsp;-g&nbsp;-I/home/user/work/dev/../x86/sysroot/include&nbsp;&nbsp;'</p>
+									<p class="code">ac_cv_env_CPP_set=</p>
+									<p class="code">ac_cv_env_CPP_value=</p>
+									<p class="code">ac_cv_env_GAWK_set=</p>
+									<p class="code">ac_cv_env_GAWK_value=</p>
+									<p class="code">ac_cv_env_LDFLAGS_set=set</p>
+									<p class="code">ac_cv_env_LDFLAGS_value='&nbsp;-L/home/user/work/dev/../x86/rootfs/files/opt/lib&nbsp;-L/home/user/work/dev/../x86/rootfs/files/usr/lib&nbsp;-L/home/user/work/dev/../x86/rootfs/files/lib&nbsp;-L/home/user/work/dev/../x86/sysroot/lib&nbsp;&nbsp;-lxml2&nbsp;-lz&nbsp;&nbsp;'</p>
+									<p class="code">ac_cv_env_LIBS_set=</p>
+									<p class="code">ac_cv_env_LIBS_value=</p>
+									<p class="code">ac_cv_env_build_alias_set=</p>
+									<p class="code">ac_cv_env_build_alias_value=</p>
+									<p class="code">ac_cv_env_host_alias_set=set</p>
+									<p class="code">ac_cv_env_host_alias_value=i686-unknown-linux-gnu</p>
+									<p class="code">ac_cv_env_target_alias_set=</p>
+									<p class="code">ac_cv_env_target_alias_value=</p>
+									<p class="code">ac_cv_func_malloc_0_nonnull=yes</p>
+									<p class="code">ac_cv_func_realloc_0_nonnull=yes</p>
+									<p class="code">ac_cv_host=i686-unknown-linux-gnu</p>
+									<p class="code">ac_cv_path_install='/usr/bin/install&nbsp;-c'</p>
+									<p class="code">ac_cv_path_mkdir=/bin/mkdir</p>
+									<p class="code">ac_cv_prog_AWK=gawk</p>
+									<p class="code">ac_cv_prog_CC=gcc</p>
+									<p class="code">ac_cv_prog_GAWK=gawk</p>
+									<p class="code">ac_cv_prog_STRIP=strip</p>
+									<p class="code">ac_cv_prog_make_make_set=yes</p>
+									<p class="code">ac_cv_target=i686-unknown-linux-gnu</p>
+									<p class="code"></p>
+									<p class="code">##&nbsp;-----------------&nbsp;##</p>
+									<p class="code">##&nbsp;Output&nbsp;variables.&nbsp;##</p>
+									<p class="code">##&nbsp;-----------------&nbsp;##</p>
+									<p class="code"></p>
+									<p class="code">ACLOCAL='${SHELL}&nbsp;/home/user/work/dev/src/quagga/debsrc/quagga-0.99.16/missing&nbsp;--run&nbsp;aclocal-1.11'</p>
+									<p class="code">AMDEPBACKSLASH=''</p>
+									<p class="code">AMDEP_FALSE=''</p>
+									<p class="code">AMDEP_TRUE=''</p>
+									<p class="code">AMTAR='${SHELL}&nbsp;/home/user/work/dev/src/quagga/debsrc/quagga-0.99.16/missing&nbsp;--run&nbsp;tar'</p>
+									<p class="code">AR='ar'</p>
+									<p class="code">AUTOCONF='${SHELL}&nbsp;/home/user/work/dev/src/quagga/debsrc/quagga-0.99.16/missing&nbsp;--run&nbsp;autoconf'</p>
+									<p class="code">AUTOHEADER='${SHELL}&nbsp;/home/user/work/dev/src/quagga/debsrc/quagga-0.99.16/missing&nbsp;--run&nbsp;autoheader'</p>
+									<p class="code">AUTOMAKE='${SHELL}&nbsp;/home/user/work/dev/src/quagga/debsrc/quagga-0.99.16/missing&nbsp;--run&nbsp;automake-1.11'</p>
+									<p class="code">AWK='gawk'</p>
+									<p class="code">BGPD=''</p>
+									<p class="code">CC='gcc'</p>
+									<p class="code">CCDEPMODE=''</p>
+									<p class="code">CFLAGS='&nbsp;&nbsp;&nbsp;-DHAVE_SYSLOG&nbsp;&nbsp;-DHAVE_PAM&nbsp;&nbsp;-DHAVE_NPD_IPV6&nbsp;&nbsp;-DHAVE_LOGIN_FILTER&nbsp;&nbsp;-DHAVE_WEBMNG&nbsp;&nbsp;-DHAVE_BRIDGE_STP&nbsp;&nbsp;-DHAVE_MIRROR&nbsp;&nbsp;-DHAVE_QOS&nbsp;&nbsp;-DHAVE_ACL&nbsp;&nbsp;-DHAVE_IGMP_SNP&nbsp;&nbsp;-DHAVE_ARP_INSPECTION&nbsp;&nbsp;-DHAVE_ROUTE_POLICY&nbsp;&nbsp;-DHAVE_VRRP&nbsp;&nbsp;-DHAVE_MVLAN&nbsp;&nbsp;-DHAVE_DHCP_CLIENT&nbsp;&nbsp;-DHAVE_LLDP&nbsp;&nbsp;-DHAVE_GVRP&nbsp;&nbsp;-DHAVE_LACP&nbsp;&nbsp;-DHAVE_DHCP_RELAY&nbsp;&nbsp;-DHAVE_DHCP_SNP&nbsp;&nbsp;-DHAVE_DHCP&nbsp;&nbsp;-DHAVE_PIM&nbsp;&nbsp;-DHAVE_DVMRP&nbsp;&nbsp;-DHAVE_BGP&nbsp;&nbsp;-DHAVE_ISIS&nbsp;&nbsp;-DHAVE_FIREWALL&nbsp;&nbsp;-DHAVE_RIP&nbsp;&nbsp;-DHAVE_OSPF&nbsp;&nbsp;-DHAVE_RMAP&nbsp;&nbsp;-DHAVE_DOT1X&nbsp;&nbsp;-DHAVE_RADIUS&nbsp;&nbsp;-DHAVE_WCPSS&nbsp;&nbsp;-DHAVE_ROUTE&nbsp;&nbsp;-DHAVE_EHTERNET_EEE&nbsp;&nbsp;-DHAVE_CHASSIS_SUPPORT&nbsp;&nbsp;-DHAVE_UDLD&nbsp;&nbsp;-DHAVE_ZEBRA&nbsp;&nbsp;-DHAVE_FDB_SW_SYNC&nbsp;&nbsp;-DHAVE_AAA&nbsp;&nbsp;-DHAVE_DIAG&nbsp;&nbsp;-DHAVE_DEBUG&nbsp;&nbsp;-DHAVE_MAN_SNMP&nbsp;&nbsp;-DHAVE_POWER_MONITOR&nbsp;&nbsp;-DHAVE_FAN_MONITOR&nbsp;&nbsp;-DHAVE_TEMPERATURE_MONITOR&nbsp;&nbsp;-DHAVE_NTP&nbsp;&nbsp;-DHAVE_MLD_SNP&nbsp;&nbsp;-DHAVE_STACK_INTF&nbsp;&nbsp;-DHAVE_ANTI_ATTACK&nbsp;&nbsp;-DHAVE_PORTAL&nbsp;&nbsp;-DHAVE_X86_MODULES&nbsp;-g&nbsp;-I/home/user/work/dev/../x86/sysroot/include&nbsp;&nbsp;-DDB_INDEX&nbsp;-DDB_INDEX_NEW&nbsp;-I/home/user/work/dev/src/accapi&nbsp;&nbsp;-I/home/user/work/dev/src/accapi/man&nbsp;'</p>
+									<p class="code">CONFDATE=''</p>
+									<p class="code">CPP=''</p>
+									<p class="code">CPPFLAGS='&nbsp;&nbsp;&nbsp;-DHAVE_SYSLOG&nbsp;&nbsp;-DHAVE_PAM&nbsp;&nbsp;-DHAVE_NPD_IPV6&nbsp;&nbsp;-DHAVE_LOGIN_FILTER&nbsp;&nbsp;-DHAVE_WEBMNG&nbsp;&nbsp;-DHAVE_BRIDGE_STP&nbsp;&nbsp;-DHAVE_MIRROR&nbsp;&nbsp;-DHAVE_QOS&nbsp;&nbsp;-DHAVE_ACL&nbsp;&nbsp;-DHAVE_IGMP_SNP&nbsp;&nbsp;-DHAVE_ARP_INSPECTION&nbsp;&nbsp;-DHAVE_ROUTE_POLICY&nbsp;&nbsp;-DHAVE_VRRP&nbsp;&nbsp;-DHAVE_MVLAN&nbsp;&nbsp;-DHAVE_DHCP_CLIENT&nbsp;&nbsp;-DHAVE_LLDP&nbsp;&nbsp;-DHAVE_GVRP&nbsp;&nbsp;-DHAVE_LACP&nbsp;&nbsp;-DHAVE_DHCP_RELAY&nbsp;&nbsp;-DHAVE_DHCP_SNP&nbsp;&nbsp;-DHAVE_DHCP&nbsp;&nbsp;-DHAVE_PIM&nbsp;&nbsp;-DHAVE_DVMRP&nbsp;&nbsp;-DHAVE_BGP&nbsp;&nbsp;-DHAVE_ISIS&nbsp;&nbsp;-DHAVE_FIREWALL&nbsp;&nbsp;-DHAVE_RIP&nbsp;&nbsp;-DHAVE_OSPF&nbsp;&nbsp;-DHAVE_RMAP&nbsp;&nbsp;-DHAVE_DOT1X&nbsp;&nbsp;-DHAVE_RADIUS&nbsp;&nbsp;-DHAVE_WCPSS&nbsp;&nbsp;-DHAVE_ROUTE&nbsp;&nbsp;-DHAVE_EHTERNET_EEE&nbsp;&nbsp;-DHAVE_CHASSIS_SUPPORT&nbsp;&nbsp;-DHAVE_UDLD&nbsp;&nbsp;-DHAVE_ZEBRA&nbsp;&nbsp;-DHAVE_FDB_SW_SYNC&nbsp;&nbsp;-DHAVE_AAA&nbsp;&nbsp;-DHAVE_DIAG&nbsp;&nbsp;-DHAVE_DEBUG&nbsp;&nbsp;-DHAVE_MAN_SNMP&nbsp;&nbsp;-DHAVE_POWER_MONITOR&nbsp;&nbsp;-DHAVE_FAN_MONITOR&nbsp;&nbsp;-DHAVE_TEMPERATURE_MONITOR&nbsp;&nbsp;-DHAVE_NTP&nbsp;&nbsp;-DHAVE_MLD_SNP&nbsp;&nbsp;-DHAVE_STACK_INTF&nbsp;&nbsp;-DHAVE_ANTI_ATTACK&nbsp;&nbsp;-DHAVE_PORTAL&nbsp;&nbsp;-DHAVE_X86_MODULES&nbsp;-g&nbsp;-I/home/user/work/dev/../x86/sysroot/include&nbsp;&nbsp;'</p>
+									<p class="code">CURSES=''</p>
+									<p class="code">CYGPATH_W='echo'</p>
+									<p class="code">DEFS=''</p>
+									<p class="code">DEPDIR=''</p>
+									<p class="code">DOC=''</p>
+									<p class="code">DSYMUTIL=''</p>
+									<p class="code">DUMPBIN=''</p>
+									<p class="code">ECHO_C=''</p>
+									<p class="code">ECHO_N='-n'</p>
+									<p class="code">ECHO_T=''</p>
+									<p class="code">EGREP=''</p>
+									<p class="code">EXEEXT=''</p>
+									<p class="code">FGREP=''</p>
+									<p class="code">GAWK='gawk'</p>
+									<p class="code">GREP=''</p>
+									<p class="code">HAVE_LIBPCREPOSIX=''</p>
+									<p class="code">IF_METHOD=''</p>
+									<p class="code">IF_PROC=''</p>
+									<p class="code">INCLUDES=''</p>
+									<p class="code">INSTALL_DATA='${INSTALL}&nbsp;-m&nbsp;644'</p>
+									<p class="code">INSTALL_PROGRAM='${INSTALL}'</p>
+									<p class="code">INSTALL_SCRIPT='${INSTALL}'</p>
+									<p class="code">INSTALL_STRIP_PROGRAM='$(install_sh)&nbsp;-c&nbsp;-s'</p>
+									<p class="code">IOCTL_METHOD=''</p>
+									<p class="code">IPFORWARD=''</p>
+									<p class="code">ISISD=''</p>
+									<p class="code">ISIS_TOPOLOGY_DIR=''</p>
+									<p class="code">ISIS_TOPOLOGY_INCLUDES=''</p>
+									<p class="code">ISIS_TOPOLOGY_LIB=''</p>
+									<p class="code">KERNEL_METHOD=''</p>
+									<p class="code">LD='ld'</p>
+									<p class="code">LDFLAGS='&nbsp;-L/home/user/work/dev/../x86/rootfs/files/opt/lib&nbsp;-L/home/user/work/dev/../x86/rootfs/files/usr/lib&nbsp;-L/home/user/work/dev/../x86/rootfs/files/lib&nbsp;-L/home/user/work/dev/../x86/sysroot/lib&nbsp;&nbsp;-lxml2&nbsp;-lz&nbsp;&nbsp;'</p>
+									<p class="code">LIBAUTELAN=''</p>
+									<p class="code">LIBCAP=''</p>
+									<p class="code">LIBM=''</p>
+									<p class="code">LIBOBJS=''</p>
+									<p class="code">LIBPAM=''</p>
+									<p class="code">LIBREADLINE=''</p>
+									<p class="code">LIBS=''</p>
+									<p class="code">LIBTOOL=''</p>
+									<p class="code">LIB_IPV6=''</p>
+									<p class="code">LIB_REGEX=''</p>
+									<p class="code">LIPO=''</p>
+									<p class="code">LN_S=''</p>
+									<p class="code">LTLIBOBJS=''</p>
+									<p class="code">MAKEINFO='${SHELL}&nbsp;/home/user/work/dev/src/quagga/debsrc/quagga-0.99.16/missing&nbsp;--run&nbsp;makeinfo'</p>
+									<p class="code">MKDIR_P='/bin/mkdir&nbsp;-p'</p>
+									<p class="code">MULTIPATH_NUM=''</p>
+									<p class="code">NM='nm'</p>
+									<p class="code">NMEDIT=''</p>
+									<p class="code">OBJDUMP='objdump'</p>
+									<p class="code">OBJEXT=''</p>
+									<p class="code">OSPF6D=''</p>
+									<p class="code">OSPFAPI=''</p>
+									<p class="code">OSPFCLIENT=''</p>
+									<p class="code">OSPFD=''</p>
+									<p class="code">OTHER_METHOD=''</p>
+									<p class="code">OTOOL64=''</p>
+									<p class="code">OTOOL=''</p>
+									<p class="code">PACKAGE='quagga'</p>
+									<p class="code">PACKAGE_BUGREPORT='https://bugzilla.quagga.net'</p>
+									<p class="code">PACKAGE_NAME='Quagga'</p>
+									<p class="code">PACKAGE_STRING='Quagga&nbsp;0.99.17'</p>
+									<p class="code">PACKAGE_TARNAME='quagga'</p>
+									<p class="code">PACKAGE_URL=''</p>
+									<p class="code">PACKAGE_VERSION='0.99.17'</p>
+									<p class="code">PATH_SEPARATOR=':'</p>
+									<p class="code">PERL=''</p>
+									<p class="code">PICFLAGS=''</p>
+									<p class="code">PILDFLAGS=''</p>
+									<p class="code">RANLIB='ranlib'</p>
+									<p class="code">RIPD=''</p>
+									<p class="code">RIPNGD=''</p>
+									<p class="code">RTREAD_METHOD=''</p>
+									<p class="code">RT_METHOD=''</p>
+									<p class="code">SED=''</p>
+									<p class="code">SET_MAKE=''</p>
+									<p class="code">SHELL='/bin/bash'</p>
+									<p class="code">SNMP_INCLUDES=''</p>
+									<p class="code">SOLARIS=''</p>
+									<p class="code">STRIP='strip'</p>
+									<p class="code">VERSION='0.99.17'</p>
+									<p class="code">VTYSH=''</p>
+									<p class="code">WATCHQUAGGA=''</p>
+									<p class="code">ZEBRA=''</p>
+									<p class="code">ac_ct_CC=''</p>
+									<p class="code">ac_ct_DUMPBIN=''</p>
+									<p class="code">am__EXEEXT_FALSE=''</p>
+									<p class="code">am__EXEEXT_TRUE=''</p>
+									<p class="code">am__fastdepCC_FALSE=''</p>
+									<p class="code">am__fastdepCC_TRUE=''</p>
+									<p class="code">am__include=''</p>
+									<p class="code">am__isrc='&nbsp;-I$(srcdir)'</p>
+									<p class="code">am__leading_dot='.'</p>
+									<p class="code">am__quote=''</p>
+									<p class="code">am__tar='${AMTAR}&nbsp;chof&nbsp;-&nbsp;"$$tardir"'</p>
+									<p class="code">am__untar='${AMTAR}&nbsp;xf&nbsp;-'</p>
+									<p class="code">bindir='${exec_prefix}/bin'</p>
+									<p class="code">build='i686-pc-linux-gnu'</p>
+									<p class="code">build_alias=''</p>
+									<p class="code">build_cpu='i686'</p>
+									<p class="code">build_os='linux-gnu'</p>
+									<p class="code">build_vendor='pc'</p>
+									<p class="code">datadir='${datarootdir}'</p>
+									<p class="code">datarootdir='${prefix}/share'</p>
+									<p class="code">docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'</p>
+									<p class="code">dvidir='${docdir}'</p>
+									<p class="code">enable_group='no'</p>
+									<p class="code">enable_user='no'</p>
+									<p class="code">enable_vty_group='no'</p>
+									<p class="code">exampledir='/etc'</p>
+									<p class="code">exec_prefix='NONE'</p>
+									<p class="code">host='i686-unknown-linux-gnu'</p>
+									<p class="code">host_alias='i686-unknown-linux-gnu'</p>
+									<p class="code">host_cpu='i686'</p>
+									<p class="code">host_os='linux-gnu'</p>
+									<p class="code">host_vendor='unknown'</p>
+									<p class="code">htmldir='${docdir}'</p>
+									<p class="code">includedir='${prefix}/include'</p>
+									<p class="code">infodir='${datarootdir}/info'</p>
+									<p class="code">install_sh='${SHELL}&nbsp;/home/user/work/dev/src/quagga/debsrc/quagga-0.99.16/install-sh'</p>
+									<p class="code">libdir='${exec_prefix}/lib'</p>
+									<p class="code">libexecdir='${exec_prefix}/libexec'</p>
+									<p class="code">localedir='${datarootdir}/locale'</p>
+									<p class="code">localstatedir='${prefix}/var'</p>
+									<p class="code">lt_ECHO='echo'</p>
+									<p class="code">mandir='${datarootdir}/man'</p>
+									<p class="code">mkdir_p='/bin/mkdir&nbsp;-p'</p>
+									<p class="code">oldincludedir='/usr/include'</p>
+									<p class="code">pdfdir='${docdir}'</p>
+									<p class="code">pkgsrcdir=''</p>
+									<p class="code">pkgsrcrcdir=''</p>
+									<p class="code">prefix='NONE'</p>
+									<p class="code">program_transform_name='s,x,x,'</p>
+									<p class="code">psdir='${docdir}'</p>
+									<p class="code">quagga_statedir=''</p>
+									<p class="code">sbindir='${exec_prefix}/sbin'</p>
+									<p class="code">sharedstatedir='${prefix}/com'</p>
+									<p class="code">sysconfdir='/etc'</p>
+									<p class="code">target='i686-unknown-linux-gnu'</p>
+									<p class="code">target_alias=''</p>
+									<p class="code">target_cpu='i686'</p>
+									<p class="code">target_os='linux-gnu'</p>
+									<p class="code">target_vendor='unknown'</p>
+									<p class="code"></p>
+									<p class="code">##&nbsp;-----------&nbsp;##</p>
+									<p class="code">##&nbsp;confdefs.h.&nbsp;##</p>
+									<p class="code">##&nbsp;-----------&nbsp;##</p>
+									<p class="code"></p>
+									<p class="code">/*&nbsp;confdefs.h&nbsp;*/</p>
+									<p class="code">#define&nbsp;PACKAGE_NAME&nbsp;"Quagga"</p>
+									<p class="code">#define&nbsp;PACKAGE_TARNAME&nbsp;"quagga"</p>
+									<p class="code">#define&nbsp;PACKAGE_VERSION&nbsp;"0.99.17"</p>
+									<p class="code">#define&nbsp;PACKAGE_STRING&nbsp;"Quagga&nbsp;0.99.17"</p>
+									<p class="code">#define&nbsp;PACKAGE_BUGREPORT&nbsp;"https://bugzilla.quagga.net"</p>
+									<p class="code">#define&nbsp;PACKAGE_URL&nbsp;""</p>
+									<p class="code">#define&nbsp;PACKAGE&nbsp;"quagga"</p>
+									<p class="code">#define&nbsp;VERSION&nbsp;"0.99.17"</p>
+									<p class="code"></p>
+									<p class="code">configure:&nbsp;exit&nbsp;77</p>
+								</div>
+							</div><!-- codefr end -->
+							<p class="cc1">通过<a href="#_ac__quagga_config_log_91">第91行</a>的提示我们可以看到，是因为缺少xml2的库，可以依照dbus库的方法：</p>
+							<div class="codeNumFr">
+								<div class="codefr">
+									<p class="code">root@ubuntu:/usr/lib#&nbsp;ll&nbsp;libxml2.so*</p>
+									<p class="code">lrwxrwxrwx&nbsp;1&nbsp;root&nbsp;root&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;16&nbsp;2014-06-05&nbsp;02:25&nbsp;libxml2.so.2&nbsp;-&gt;&nbsp;libxml2.so.2.7.6</p>
+									<p class="code">-rw-r--r--&nbsp;1&nbsp;root&nbsp;root&nbsp;1212988&nbsp;2009-12-15&nbsp;20:50&nbsp;libxml2.so.2.7.6</p>
+									<p class="code">root@ubuntu:/usr/lib#&nbsp;ln&nbsp;-s&nbsp;libxml2.so.2&nbsp;libxml2.so</p>
+									<p class="code">root@ubuntu:/usr/lib#&nbsp;ll&nbsp;libxml2.so*</p>
+									<p class="code">lrwxrwxrwx&nbsp;1&nbsp;root&nbsp;root&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;12&nbsp;2014-08-07&nbsp;02:16&nbsp;libxml2.so&nbsp;-&gt;&nbsp;libxml2.so.2</p>
+									<p class="code">lrwxrwxrwx&nbsp;1&nbsp;root&nbsp;root&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;16&nbsp;2014-06-05&nbsp;02:25&nbsp;libxml2.so.2&nbsp;-&gt;&nbsp;libxml2.so.2.7.6</p>
+									<p class="code">-rw-r--r--&nbsp;1&nbsp;root&nbsp;root&nbsp;1212988&nbsp;2009-12-15&nbsp;20:50&nbsp;libxml2.so.2.7.6</p>
+									<p class="code">root@ubuntu:/usr/lib#&nbsp;</p>
+								</div>
+							</div><!-- codefr end -->
+							<p class="cc1">之后还是执行“./mkx86.sh cleanquagga”后，再重新“./mkx86.sh quagga”。如果还出现类似的错误，一般来说就这样反复的建立软连接到新的版本库就可以了。如果实在没有相应的库的话，就需要使用apt-get（Ubuntu）等命令来获取相应库了。库文件主要的两个目录是“/usr/lib/”和“/lib/”这两个目录，建立软连接的时候都需要管理员权限，在这里就不多做解释。还可能会出现缺失的库有：“/lib/libz.so”，具体的修改方法，在这里就不在多说了。下面来说下，下一个可能会出现的错误：</p>
+							<div class="codeNumFr">
+								<div class="codefr">
+									<p class="code">configure:&nbsp;error:&nbsp;vtysh&nbsp;needs&nbsp;libreadline&nbsp;but&nbsp;was&nbsp;not&nbsp;found&nbsp;and&nbsp;usable&nbsp;on&nbsp;your&nbsp;system.</p>
+									<p class="code">/home/user/work/dev/src/quagga</p>
+									<p class="code">/home/user/work/dev</p>
+									<p class="code">make&nbsp;-C&nbsp;/home/user/work/dev/build/x86/quagga/lib</p>
+									<p class="code">make:&nbsp;***&nbsp;/home/user/work/dev/build/x86/quagga/lib:&nbsp;No&nbsp;such&nbsp;file&nbsp;or&nbsp;directory.&nbsp;&nbsp;Stop.</p>
+									<p class="code">make:&nbsp;***&nbsp;[quaggalib]&nbsp;Error&nbsp;2</p>
+								</div>
+							</div><!-- codefr end -->
+							<p class="cc1">这个其实也是库缺失的错误，也是通过上面介绍的方法就可以解决，“libreadline.so*”的位置就在“/lib/”下，这里也不再多说。之后，我再强调一下，每次重新编译“quagga”之前，都要“cleanquagga”一下。</p>
+							<p class="cc1">如果打印结果最后几行出现形如：</p>
+							<div class="codeNumFr">
+								<div class="codefr">
+									<p class="code">if [ -e /home/user/work/dev/build/x86/quagga/bgpd/.libs/bgpd ] ; then \</p>
+									<p class="code">		cp /home/user/work/dev/build/x86/quagga/bgpd/.libs/bgpd /home/user/work/dev/../x86/buildroot/export/opt/bin ; \</p>
+									<p class="code">		cp -d /home/user/work/dev/../x86/buildroot/export/opt/bin/bgpd /home/user/work/dev/../x86/rootfs/files/opt/bin/  ; \</p>
+									<p class="code">	    chmod 777 /home/user/work/dev/../x86/rootfs/files/opt/bin/bgpd ; \</p>
+									<p class="code">	fi</p>
+									<p class="code">if [ -e /home/user/work/dev/build/x86/quagga/isisd/.libs/isisd ] ; then \</p>
+									<p class="code">		cp /home/user/work/dev/build/x86/quagga/isisd/.libs/isisd /home/user/work/dev/../x86/buildroot/export/opt/bin ; \</p>
+									<p class="code">		cp -d /home/user/work/dev/../x86/buildroot/export/opt/bin/isisd /home/user/work/dev/../x86/rootfs/files/opt/bin/  ; \</p>
+									<p class="code">	    chmod 777 /home/user/work/dev/../x86/rootfs/files/opt/bin/isisd ; \</p>
+									<p class="code">	fi</p>
+								</div>
+							</div><!-- codefr end -->
+							<p class="cc1">的情况。那么恭喜你，quagga目标的生成工作成功了。下面附上，编译的各个目标的依赖情况：<img src="doc/make.jpg" alt="编译依赖"></p>
+							<p class="cc1">我们可以发现，当我们生成完quagga目标后，make命令还帮我们自动完成了“libnpdlib”、“tipc_api”、“quaggalib”和“manlib”这几个目标，可以说如果成功生成了quagga目标就等于完成了一半的生成任务。另外，可以结合这里看一下<a href="./module.html">模块调用关系</a>的说明。</p>
+						</div><!-- h4 make quagga end -->
+					</div><!-- h3 quagga end -->
+				</div><!-- h2 Makefile end -->
+				<div class="hc2fr">
+					<p class="hc2">npd模块</p>
+					<p class="cc1">npd模块作为本工程的核心模块，完成了本工程的绝大部分核心功能。具体一点就是各个硬件数据库的同步工作、网络管理功能以及响应用户界面层模块（如vtysh发来的请求）的用户请求并返回结果等工作。由于大部分的直接与调用硬件API的工作由nam模块来做，所以，npd模块的大部分功能能够与硬件设备隔离。而我们需要改的地方主要是关于板定义的地方（对硬件设备的识别等）。</p>
+					<p class="cc1">以x86板家族为例，在npd模块中添加了四个文件，“dev/src/npdsuit/npd/src/app/nh_series/”目录下的：“nh_x86_spec_init.c”、“pcx8601_conn.c”、“pcx8601_feature.c”和“pcx8601_param.c”，并且修改了该目录下的“nh_product_common_init.c”文件。在之后的章节中，会逐一介绍x86板家族是如何编写或修改这些文件的。</p>
+					<div class="hc3fr">
+						<p class="hc3">nh_x86_spec_init.c</p>
+						<p class="cc1">以下是该文件的部分内容：</p>
+						<div class="codeNumFr">
+							<div class="codefr">
+								<p class="code">#ifdef __cplusplus</p>
+								<p class="code">extern "C"</p>
+								<p class="code">{</p>
+								<p class="code">#endif</p>
+								<p class="code"></p>
+								<p class="code">#include "sysdef/npd_sysdef.h"</p>
+								<p class="code">#include "sysdef/returncode.h"</p>
+								<p class="code"></p>
+								<p class="code">#include &lt;stdio.h&gt;</p>
+								<p class="code">#include &lt;stdlib.h&gt;</p>
+								<p class="code">#include &lt;stddef.h&gt;</p>
+								<p class="code"></p>
+								<p class="code">#................</p>
+								<p class="code">#省略部分</p>
+								<p class="code">#................</p>
+								<p class="code"></p>
+								<p class="code">#include "nh_product_init.h"</p>
+								<p class="code">#include "nh_product_info.h"</p>
+								<p class="code"></p>
+								<p class="code">#include "pcx8601_feature.c"</p>
+								<p class="code">#include "dummy_feature.c"</p>
+								<p class="code"></p>
+								<p class="code">board_spec_fix_param_t   *nh_series_board_spec_param_arr[] = </p>
+								<p class="code">{</p>
+								<p class="code">    [PPAL_BOARD_TYPE_TSM9002] = &dummy_spec_param,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_TGM9048] = &dummy_spec_param,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_TSM9024FC] = &dummy_spec_param,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_TGM9024] = &dummy_spec_param, </p>
+								<p class="code">    [PPAL_BOARD_TYPE_PCX8601] = &pcx8601_spec_param,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_NH_MAX] = NULL,</p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code">/* family feature */</p>
+								<p class="code">struct family_spec_fix_param_s t9k_family_spec_param =</p>
+								<p class="code">{</p>
+								<p class="code">	.family_type = FAMILY_TYPE_T9000,</p>
+								<p class="code">	.board_spec_param_arr = nh_series_board_spec_param_arr,</p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code">struct family_spec_fix_param_s * family_spec_type_arr[] = </p>
+								<p class="code">{</p>
+								<p class="code">	[FAMILY_TYPE_T9000] = &t9k_family_spec_param,</p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code">#ifdef __cplusplus</p>
+								<p class="code"></p>
+								<p class="code">}</p>
+								<p class="code">#endif</p>
+							</div>
+						</div><!-- codefr end -->
+						<p class="cc1">可以看到第20行，“pcx8601_feature.c”这个文件被包含了进来，这个是关于pcx8601板型号的npd配置信息，涉及了对pcx8601的基本配置。第29行，从而将pcx8601这一板型号加入到了可识别的型号集合中。第36行设定了产品家族的参数，将x86板家族加入到了T9000产品家族中。第42行的作用使刚刚的配置在全局上生效。总的来说，这里大部分按照原有其他硬件的写法写就可以，注意将"pcx8601_feature.c"文件包含进去就可以了。</p>
+					</div><!-- h3 nh_x86_spec_init end -->
+					<div class="hc3fr">
+						<p class="hc3">pcx8601_feature.c</p>
+						<p class="cc1">本文件用于定义pcx8601板型号和板管理相关的操作函数，下面是本文件中的“pcx8601_spec_param”全局变量：</p>
+						<div class="codeNumFr">
+							<div class="codefr">
+								<p class="code">board_spec_fix_param_t pcx8601_spec_param =</p>
+								<p class="code">{</p>
+								<p class="code">    .board_type = PPAL_BOARD_TYPE_PCX8601,</p>
+								<p class="code">    .fiber_module_fix_param = &pcx8601_sfp_param, </p>
+								<p class="code">    .ams_param = {</p>
+								<p class="code">                    [0] = &pcx8601_asic_switch, </p>
+								<p class="code">                    [2] = &pcx8601_ctrl_switch </p>
+								<p class="code">                 },</p>
+								<p class="code">    .slotno_get = &pcx8601_slotno_get, </p>
+								<p class="code">    .reset = &pcx8601_local_reset, </p>
+								<p class="code">    .get_reset_type = &pcx8601_reset_type, </p>
+								<p class="code">    .sys_led_lighting = &pcx8601_led_lighting, </p>
+								<p class="code">    .pne_monitor_start = &pcx8601_pne_mon_start, </p>
+								<p class="code">    .board_man_param_get = &t9000_board_mnparam_get, </p>
+								<p class="code">    .local_conn_init = &pcx8601_local_conn_init, </p>
+								<p class="code">    .system_conn_init = &pcx8601_system_conn_init, </p>
+								<p class="code">    .system_conn_deinit = &pcx8601_system_conn_deinit, </p>
+								<p class="code">    .asic_config_init = &pcx8601_sal_config_init_defaults </p>
+								<p class="code">};</p>
+							</div>
+						</div><!-- codefr end -->
+						<p class="cc1">“pcx8601_spec_param”这一“board_spec_fix_param_t”结构体变量关联于“nh_product_common_init.c”中的“nh_series_board_spec_param_arr”（见于上一节代码的29行）。这样，pcx8601就能够被正确的识别，并执行相关的板管理操作。对于本文件的其他地方，可以暂时不用修改，直接使用原有的代码就好（注意替换“pcx8601”和“x86”就好，大小写都有）。</p>
+					</div><!-- h3 pcx8601_feature end -->
+					<div class="hc3fr">
+						<p class="hc3">nh_product_common_init.c</p>
+						<p class="cc1">本文件的功能可以理解为npd所支持的所有板卡的板管理配置数据结构文件。下面是本文件的源代码</p>
+						<div class="codeNumFr" id="nh_product_common_init_c">
+							<div class="codefr">
+								<p class="code"></p>
+								<p class="code">#ifdef __cplusplus</p>
+								<p class="code">extern "C"</p>
+								<p class="code">{</p>
+								<p class="code">#endif</p>
+								<p class="code"></p>
+								<p class="code">#include "sysdef/npd_sysdef.h"</p>
+								<p class="code">#include "sysdef/returncode.h"</p>
+								<p class="code"></p>
+								<p class="code">#include &lt;stdio.h&gt;</p>
+								<p class="code">#include &lt;stdlib.h&gt;</p>
+								<p class="code">#include &lt;stddef.h&gt;</p>
+								<p class="code">#include &lt;string.h&gt;</p>
+								<p class="code">#include &lt;time.h&gt;</p>
+								<p class="code">#include &lt;sys/types.h&gt;</p>
+								<p class="code">#include &lt;sys/ioctl.h&gt;</p>
+								<p class="code">#include &lt;sys/stat.h&gt;</p>
+								<p class="code">#include &lt;fcntl.h&gt;</p>
+								<p class="code">#include "util/npd_list.h"</p>
+								<p class="code">#include "lib/common_api.h"</p>
+								<p class="code">#include "dbus/npd/npd_dbus_def.h"</p>
+								<p class="code">#include "npd/nbm/npd_bmapi.h"</p>
+								<p class="code">#include "npd/nam/npd_amapi.h"</p>
+								<p class="code">#include "nbm/nbm_api.h"</p>
+								<p class="code">#include "nam/nam_main_api.h"</p>
+								<p class="code">#include "board/ts_product_feature.h"</p>
+								<p class="code">#include "nbm/nbm_cpld.h"</p>
+								<p class="code">#include "os.h"</p>
+								<p class="code">#include "npd_log.h"</p>
+								<p class="code">#include "npd/nbm/npd_cplddef.h"</p>
+								<p class="code"></p>
+								<p class="code">#include "product_feature.h"</p>
+								<p class="code">#include "product_conn.h"</p>
+								<p class="code"></p>
+								<p class="code">#include "npd_product.h"</p>
+								<p class="code">#include "npd_c_slot.h"</p>
+								<p class="code">#include "nh_product_feature.h"</p>
+								<p class="code"></p>
+								<p class="code">#include "nh_product_init.h"</p>
+								<p class="code">#include "nh_product_common_info.h"</p>
+								<p class="code">#include "as_product_info.h"</p>
+								<p class="code">#include "nh_product_info.h"</p>
+								<p class="code">#include "us_product_info.h"</p>
+								<p class="code"></p>
+								<p class="code">#include "t9003_conn.c"</p>
+								<p class="code">#include "t9006_conn.c"</p>
+								<p class="code">#include "t9010_conn.c"</p>
+								<p class="code">#include "us_3000_conn.c"</p>
+								<p class="code">#include "t9014_conn.c"</p>
+								<p class="code"></p>
+								<p class="code">#include "t9003_feature.c"</p>
+								<p class="code">#include "t9006_feature.c"</p>
+								<p class="code">#include "t9010_feature.c"</p>
+								<p class="code">#include "t9014_feature.c"</p>
+								<p class="code"></p>
+								<p class="code">#include "nh_3052_real_feature.c"</p>
+								<p class="code">#include "us_3000_feature.c"</p>
+								<p class="code">#include "tsm9002_conn.c"</p>
+								<p class="code">#include "tsm9002_param.c"</p>
+								<p class="code">#include "tgm9048_conn.c"</p>
+								<p class="code">#include "tgm9048_param.c"</p>
+								<p class="code">#include "tsm9024fc_conn.c"</p>
+								<p class="code">#include "tsm9024fc_param.c"</p>
+								<p class="code">#include "tgm9024_conn.c"</p>
+								<p class="code">#include "tgm9024_param.c"</p>
+								<p class="code">#include "txm9004_conn.c"</p>
+								<p class="code">#include "txm9004_param.c"</p>
+								<p class="code">#include "nh_3052_conn.c"</p>
+								<p class="code">#include "nh_3052_param.c"</p>
+								<p class="code">#include "as6603_conn.c"</p>
+								<p class="code">#include "as6603_feature.c"</p>
+								<p class="code">#include "ax63ge24_conn.c"</p>
+								<p class="code">#include "ax63ge24_param.c"</p>
+								<p class="code">#include "ax63ge48_conn.c"</p>
+								<p class="code">#include "ax63ge48_param.c"</p>
+								<p class="code">#include "ax63ge24i_conn.c"</p>
+								<p class="code">#include "ax63ge24i_param.c"</p>
+								<p class="code">#include "cgm9048_conn.c"</p>
+								<p class="code">#include "cgm9048_param.c"</p>
+								<p class="code">#include "cgm9048s_conn.c"</p>
+								<p class="code">#include "cgm9048s_param.c"</p>
+								<p class="code">#include "g9604x_conn.c"</p>
+								<p class="code">#include "g9604x_param.c"</p>
+								<p class="code">#include "fw9001_conn.c"</p>
+								<p class="code">#include "fw9001_param.c"</p>
+								<p class="code">#include "as6612c_conn.c"</p>
+								<p class="code">#include "as6612c_param.c"</p>
+								<p class="code">#include "pcx8601_conn.c"</p>
+								<p class="code">#include "pcx8601_param.c"</p>
+								<p class="code"></p>
+								<p class="code"></p>
+								<p class="code">#include "us_3000_board_conn.c"</p>
+								<p class="code">#include "us_3000_board_param.c"</p>
+								<p class="code">#include "asx6602_conn.c"</p>
+								<p class="code">#include "asx6602_param.c"</p>
+								<p class="code">#include "asx9604l_conn.c"</p>
+								<p class="code">#include "asx9604l_param.c"</p>
+								<p class="code">#include "as9612x_conn.c"</p>
+								<p class="code">#include "as9612x_param.c"</p>
+								<p class="code">#include "g96sup_conn.c"</p>
+								<p class="code">#include "g96sup_param.c"</p>
+								<p class="code"></p>
+								<p class="code"></p>
+								<p class="code">unsigned int PPAL_BOARD_TYPE_NONE = PPAL_BOARD_TYPE_NH_NONE;</p>
+								<p class="code">unsigned int PPAL_BOARD_TYPE_MAX = PPAL_BOARD_TYPE_NH_MAX;</p>
+								<p class="code">unsigned int PRODUCT_MAX_NUM = PRODUCT_NH_MAX_NUM;</p>
+								<p class="code"></p>
+								<p class="code">/* t9k series */</p>
+								<p class="code">product_fix_param_t *nh_series_product_param_arr[] =</p>
+								<p class="code">{</p>
+								<p class="code">    [PRODUCT_T9010] = &t9010_fix_param,</p>
+								<p class="code">    [PRODUCT_T9006] = &t9006_fix_param,</p>
+								<p class="code">    [PRODUCT_T9003] = &t9003_fix_param,    </p>
+								<p class="code">    [PRODUCT_AS6603] = &as6603_fix_param, </p>
+								<p class="code">    [PRODUCT_T9014] = &t9014_fix_param,</p>
+								<p class="code">    </p>
+								<p class="code">    [PRODUCT_NH_MAX_NUM] = NULL,</p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code"></p>
+								<p class="code">product_conn_type_t *nh_series_product_conn_arr[] =</p>
+								<p class="code">{</p>
+								<p class="code">    [PRODUCT_T9010] = &t9010_product_conn,</p>
+								<p class="code">    [PRODUCT_T9006] = &t9006_product_conn,</p>
+								<p class="code">	[PRODUCT_T9003] = &t9003_product_conn,</p>
+								<p class="code">	[PRODUCT_AS6603] = &as6603_product_conn,</p>
+								<p class="code">    [PRODUCT_T9014] = &t9014_product_conn,</p>
+								<p class="code">	</p>
+								<p class="code">    [PRODUCT_NH_MAX_NUM] = NULL,    </p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code">board_conn_type_t *nh_series_board_conn_arr[] =</p>
+								<p class="code">{</p>
+								<p class="code">    [PPAL_BOARD_TYPE_NH_NONE] = &none_board_type_conn,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_TSM9002] = &tsm9002_board_conn,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_TGM9048] = &tgm9048_board_conn,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_TSM9024FC] = &tsm9024fc_board_conn,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_TGM9024] = &tgm9024_board_conn,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_TXM9004] = &txm9004_board_conn,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_AX63GE24] = &ax63ge24_board_conn,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_AX63GE24I] = &ax63ge24i_board_conn,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_AX63GE48] = &ax63ge48_board_conn,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_CGM9048] = &cgm9048_board_conn,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_FW9001] = &fw9001_board_conn,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_ASX6602] = &asx6602_board_conn,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_ASX9604L] = &asx9604l_board_conn,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_AS9612X] = &as9612x_board_conn,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_AS6612C] = &as6612c_board_conn,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_G96SUP] = &g96sup_board_conn,</p>
+								<p class="code">	[PPAL_BOARD_TYPE_G9604X] = &g9604x_board_conn,</p>
+								<p class="code">	[PPAL_BOARD_TYPE_CGM9048S] = &cgm9048s_board_conn,</p>
+								<p class="code">	[PPAL_BOARD_TYPE_PCX8601] = &pcx8601_board_conn,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_NH_MAX] = NULL,    </p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code">board_fix_param_t *nh_series_board_param_arr[] =</p>
+								<p class="code">{</p>
+								<p class="code">    [PPAL_BOARD_TYPE_TSM9002] = &tsm9002_param,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_TGM9048] = &tgm9048_param,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_TSM9024FC] = &tsm9024fc_param,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_TGM9024] = &tgm9024_param,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_TXM9004] = &txm9004_param,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_AX63GE24] = &ax63ge24_param,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_AX63GE24I] = &ax63ge24i_param,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_AX63GE48] = &ax63ge48_param,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_CGM9048] = &cgm9048_param,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_FW9001] = &fw9001_param,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_ASX6602] = &asx6602_param,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_ASX9604L] = &asx9604l_param,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_AS9612X] = &as9612x_param,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_AS6612C] = &as6612c_param,   </p>
+								<p class="code">    [PPAL_BOARD_TYPE_G96SUP] = &g96sup_param,   </p>
+								<p class="code">	[PPAL_BOARD_TYPE_G9604X] = &g9604x_param, </p>
+								<p class="code">    [PPAL_BOARD_TYPE_CGM9048S] = &cgm9048s_param,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_PCX8601] = &pcx8601_param,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_NH_MAX] = NULL,    </p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code">struct board_conn_type_s nh_series_board_conn_arr_fullmesh[] = </p>
+								<p class="code">{</p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code"></p>
+								<p class="code">board_conn_type_t *as_series_board_conn_arr[] =</p>
+								<p class="code">{</p>
+								<p class="code">    [PPAL_BOARD_TYPE_TGM9048] = &tgm9048_board_conn,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_TSM9024FC] = &tsm9024fc_board_conn,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_TGM9024] = &tgm9024_board_conn,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_TXM9004] = &txm9004_board_conn,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_AX63GE24] = &ax63ge24_board_conn,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_AX63GE24I] = &ax63ge24i_board_conn,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_AX63GE48] = &ax63ge48_board_conn,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_ASX6602] = &asx6602_board_conn,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_AS9612X] = &as9612x_board_conn,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_NH_MAX] = NULL,    </p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code">board_fix_param_t *as_series_board_param_arr[] =</p>
+								<p class="code">{</p>
+								<p class="code">    [PPAL_BOARD_TYPE_TGM9048] = &tgm9048_param,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_TSM9024FC] = &tsm9024fc_param,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_TGM9024] = &tgm9024_param,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_TXM9004] = &txm9004_param,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_AX63GE24] = &ax63ge24_param,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_AX63GE24I] = &ax63ge24i_param,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_AX63GE48] = &ax63ge48_param,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_ASX6602] = &asx6602_param,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_AS9612X] = &as9612x_param,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_NH_MAX] = NULL,    </p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code">struct board_conn_type_s as_series_board_conn_arr_fullmesh[] = </p>
+								<p class="code">{</p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code"></p>
+								<p class="code">/* au3k series   */</p>
+								<p class="code"></p>
+								<p class="code">product_fix_param_t *au3k_series_product_param_arr[] =</p>
+								<p class="code">{</p>
+								<p class="code">    [PRODUCT_NH_3052] = &nh3052_real_fix_param,</p>
+								<p class="code">    [PRODUCT_NH_MAX_NUM] = NULL,    		</p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code"></p>
+								<p class="code">product_conn_type_t *au3k_series_product_conn_arr[] =</p>
+								<p class="code">{</p>
+								<p class="code">    [PRODUCT_NH_3052] = &nh_3052_product_conn,</p>
+								<p class="code">    [PRODUCT_NH_MAX_NUM] = NULL,    				</p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code">struct board_conn_type_s *au3k_series_board_conn_arr[] =</p>
+								<p class="code">{</p>
+								<p class="code">    [PPAL_BOARD_TYPE_NH_3052] = &nh_31msb_board_conn,</p>
+								<p class="code">	[PPAL_BOARD_TYPE_FW9001] = &fw9001_board_conn,</p>
+								<p class="code">	[PPAL_BOARD_TYPE_PCX8601] = &pcx8601_board_conn,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_NH_MAX] = NULL,    				</p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code">struct board_fix_param_t *au3k_series_board_param_arr[] =</p>
+								<p class="code">{</p>
+								<p class="code">    [PPAL_BOARD_TYPE_NH_3052] = &nh_31msb_param,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_NH_MAX] = NULL,    </p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code">/* us3k series   */</p>
+								<p class="code"></p>
+								<p class="code">product_fix_param_t *us3k_series_product_param_arr[] =</p>
+								<p class="code">{</p>
+								<p class="code">    [PRODUCT_US3000] = &us3000_fix_param,</p>
+								<p class="code">    [PRODUCT_NH_MAX_NUM] = NULL,    		</p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code"></p>
+								<p class="code">product_conn_type_t *us3k_series_product_conn_arr[] =</p>
+								<p class="code">{</p>
+								<p class="code">    [PRODUCT_US3000] = &us3000_product_conn,</p>
+								<p class="code">    [PRODUCT_NH_MAX_NUM] = NULL,    				</p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code">struct board_conn_type_s *us3k_series_board_conn_arr[] =</p>
+								<p class="code">{</p>
+								<p class="code">    [PPAL_BOARD_TYPE_US_3000] = &us3000_board_board_conn,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_NH_MAX] = NULL,    				</p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code">struct board_fix_param_t *us3k_series_board_param_arr[] =</p>
+								<p class="code">{</p>
+								<p class="code">    [PPAL_BOARD_TYPE_US_3000] = &us3000_board_param,</p>
+								<p class="code">    [PPAL_BOARD_TYPE_NH_MAX] = NULL,    </p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code"></p>
+								<p class="code">/* family feature */</p>
+								<p class="code">family_common_fix_param_t as6600_family_param =</p>
+								<p class="code">{</p>
+								<p class="code">	.family_type = FAMILY_TYPE_AS6600,</p>
+								<p class="code">	.product_param_arr =  nh_series_product_param_arr,</p>
+								<p class="code">	.product_conn_arr = nh_series_product_conn_arr,</p>
+								<p class="code">	.board_conn_arr = as_series_board_conn_arr,</p>
+								<p class="code">	.board_conn_fullmesh_arr = as_series_board_conn_arr,</p>
+								<p class="code">	.board_param_arr = as_series_board_param_arr,</p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code"></p>
+								<p class="code">/* family feature */</p>
+								<p class="code">family_common_fix_param_t t9k_family_param =</p>
+								<p class="code">{</p>
+								<p class="code">	.family_type = FAMILY_TYPE_T9000,</p>
+								<p class="code">	.product_param_arr =  nh_series_product_param_arr,</p>
+								<p class="code">	.product_conn_arr = nh_series_product_conn_arr,</p>
+								<p class="code">	.board_conn_arr = nh_series_board_conn_arr,</p>
+								<p class="code">	.board_conn_fullmesh_arr = nh_series_board_conn_arr,</p>
+								<p class="code">	.board_param_arr = nh_series_board_param_arr,</p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code">family_common_fix_param_t au3k_family_param =</p>
+								<p class="code">{</p>
+								<p class="code">	.family_type = FAMILY_TYPE_AU3000,</p>
+								<p class="code">	.product_param_arr =  au3k_series_product_param_arr,</p>
+								<p class="code">	.product_conn_arr = au3k_series_product_conn_arr,</p>
+								<p class="code">	.board_conn_arr = au3k_series_board_conn_arr,</p>
+								<p class="code">	.board_conn_fullmesh_arr = au3k_series_board_conn_arr,</p>
+								<p class="code">	.board_param_arr = au3k_series_board_param_arr,</p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code">family_common_fix_param_t us3k_family_param =</p>
+								<p class="code">{</p>
+								<p class="code">	.family_type = FAMILY_TYPE_US3000,</p>
+								<p class="code">	.product_param_arr =  us3k_series_product_param_arr,</p>
+								<p class="code">	.product_conn_arr = us3k_series_product_conn_arr,</p>
+								<p class="code">	.board_conn_arr = us3k_series_board_conn_arr,</p>
+								<p class="code">	.board_conn_fullmesh_arr = us3k_series_board_conn_arr,</p>
+								<p class="code">	.board_param_arr = us3k_series_board_param_arr,</p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code">struct family_common_fix_param_s * family_type_arr[] = </p>
+								<p class="code">{</p>
+								<p class="code">	[FAMILY_TYPE_T9000] = &t9k_family_param,</p>
+								<p class="code">	[FAMILY_TYPE_AU3000] = &au3k_family_param, </p>
+								<p class="code">	[FAMILY_TYPE_AS6600] = &as6600_family_param,</p>
+								<p class="code">	[FAMILY_TYPE_US3000] = &us3k_family_param,	</p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code">extern struct family_spec_fix_param_s *family_spec_type_arr[];</p>
+								<p class="code">    </p>
+								<p class="code"></p>
+								<p class="code">long nh_product_info_init(void)</p>
+								<p class="code">{</p>
+								<p class="code">	struct family_common_fix_param_s* sys_family_param = family_type_arr[productinfo.family_type];</p>
+								<p class="code">	struct family_spec_fix_param_s* sys_family_spec_param = family_spec_type_arr[productinfo.family_type];</p>
+								<p class="code"></p>
+								<p class="code">	npd_syslog_dbg("product is family type %d.\n", productinfo.family_type);</p>
+								<p class="code"></p>
+								<p class="code">    register_product_param_array(sys_family_param-&gt;product_param_arr);</p>
+								<p class="code">    register_product_conn_array(sys_family_param-&gt;product_conn_arr);</p>
+								<p class="code">    register_board_conn_array(sys_family_param-&gt;board_conn_arr);</p>
+								<p class="code">	register_board_conn_fullmesh_array(sys_family_param-&gt;board_conn_fullmesh_arr);</p>
+								<p class="code">    register_board_param_array(sys_family_param-&gt;board_param_arr);</p>
+								<p class="code"></p>
+								<p class="code">    register_board_spec_param_array(sys_family_spec_param-&gt;board_spec_param_arr);</p>
+								<p class="code">	</p>
+								<p class="code">    return 0;</p>
+								<p class="code">   </p>
+								<p class="code">}</p>
+								<p class="code"></p>
+								<p class="code">long nh_product_param_read()</p>
+								<p class="code">{</p>
+								<p class="code">    /*open file "snros_product_param.cfg"*/</p>
+								<p class="code"></p>
+								<p class="code">    /*read snros_product_param and init ppal_product_info, n_param and g_sysinfo_backboard and g_sysinfo_module*/</p>
+								<p class="code">    return NPD_SUCCESS;</p>
+								<p class="code">}</p>
+								<p class="code"></p>
+								<p class="code">void product_init(void)</p>
+								<p class="code">{</p>
+								<p class="code">	productinfo.family_type = nh_family_type_get();</p>
+								<p class="code">    productinfo.product_id = nh_product_hw_code_get();</p>
+								<p class="code">    productinfo.local_module_id = nh_local_module_hw_code_get();</p>
+								<p class="code">    productinfo.local_module_hw_version = nh_board_hw_version_get();</p>
+								<p class="code">    productinfo.local_chassis_slot_no = nh_board_hw_slotno_get();</p>
+								<p class="code">    SYS_MASTER_ACTIVE_SLOT_INDEX = -1;</p>
+								<p class="code"></p>
+								<p class="code">    nh_product_info_init();</p>
+								<p class="code"></p>
+								<p class="code">}</p>
+								<p class="code"></p>
+								<p class="code">#ifdef __cplusplus</p>
+								<p class="code"></p>
+								<p class="code">}</p>
+								<p class="code">#endif</p>
+							</div>
+						</div><!-- codefr npci_c end -->
+						<p class="cc1">代码<a class="ac1" href="#_ac__nh_product_common_init_c_88">第88行</a>和<a class="ac1" href="#_ac__nh_product_common_init_c_89">第89行</a>所包含进来的文件就是“pcx8601”板管理模块相关的数据结构。这两个文件会在下面两个小节具体介绍。代码<a class="ac1" href="#_ac__nh_product_common_init_c_152">第152行</a>、<a class="ac1" href="#_ac__nh_product_common_init_c_175">第175行</a>以及<a class="ac1" href="#_ac__nh_product_common_init_c_236">第236行</a>，都是将前面包含进来的两个文件的核心全局变量赋值到产品定义中，以便在npd中生效。</p>
+					</div><!-- h3 npci end -->
+					<div class="hc3fr">
+						<p class="hc3">pcx8601_conn.c</p>
+						<p class="cc1">本文件的主要功能是：配置“pcx8601”的物理端口哪些是业务端口而哪些是用于板间通信的端口。通过包含到上一节的“nh_product_common_init.c”文件，从而能够将这些配置告诉给npd。</p>
+						<div id="pcx8601_conn_c" class="codeNumFr">
+							<div class="codefr">
+								<p class="code">/*!	@defgroup&nbsp;pcx8601_def	pcx8601板定义模块</p>
+								<p class="code">	@{</p>
+								<p class="code">*/</p>
+								<p class="code"></p>
+								<p class="code">/*!	虚拟端口映射</p>
+								<p class="code">	@file	pcx8601_conn.c</p>
+								<p class="code">	@note	用于定义该板业务端口和板间通讯端口所对应的物理端口</p>
+								<p class="code">*/</p>
+								<p class="code">#ifdef&nbsp;__cplusplus</p>
+								<p class="code">extern&nbsp;&quot;C&quot;</p>
+								<p class="code">{</p>
+								<p class="code">#endif</p>
+								<p class="code"></p>
+								<p class="code">/*!	用于定义该板的板间通讯用级联端口的数据结构.</p>
+								<p class="code"></p>
+								<p class="code">	@note	本例中没有涉及板间通讯，所以这里直接将slot_port的初值设为&quot;-1&quot;，即表示没有板间通讯级联端口.</p>
+								<p class="code">	@see	plane_conn_s</p>
+								<p class="code">			pcx8601_board_conn</p>
+								<p class="code">*/</p>
+								<p class="code">struct&nbsp;plane_conn_s&nbsp;pcx8601_plane_conn[]&nbsp;=</p>
+								<p class="code">{</p>
+								<p class="code">	{</p>
+								<p class="code">		.slot_port&nbsp;=&nbsp;-1</p>
+								<p class="code">	}</p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code">/*!	用于定义该板的业务端口的数据结构.</p>
+								<p class="code"></p>
+								<p class="code">	@note	本例中的业务端口数目设定的是24个，所以，相应的，这个数组需要24个这样的元素.</p>
+								<p class="code">	@arg	chip_port:</p>
+								<p class="code">		-	unit:			代表了是哪一个交换芯片.</p>
+								<p class="code">		-	unit_port:		代表了是unit这个芯片的哪个端口.</p>
+								<p class="code">	@arg	user_type:		定义这一端口的端口类型.</p>
+								<p class="code">	@arg	driver_type:	使用哪一个nam层.</p>
+								<p class="code">	@see	panel_conn_s</p>
+								<p class="code">			pcx8601_board_conn</p>
+								<p class="code">*/</p>
+								<p class="code">struct&nbsp;panel_conn_s&nbsp;pcx8601_panel_conn[]&nbsp;=</p>
+								<p class="code">{</p>
+								<p class="code">	{</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;1,</p>
+								<p class="code">		.chip_port&nbsp;=&nbsp;{</p>
+								<p class="code">			[ASIC_SWITCH_TYPE]&nbsp;=&nbsp;{</p>
+								<p class="code">				.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">				.unit_port&nbsp;=&nbsp;1,</p>
+								<p class="code">				.distance&nbsp;=&nbsp;0</p>
+								<p class="code">			},</p>
+								<p class="code">		},</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;{-1,&nbsp;-1},</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.user_type&nbsp;=&nbsp;ETH_INVALID,</p>
+								<p class="code">		.driver_type&nbsp;=&nbsp;MODULE_DRIVER_NAM_X86,&nbsp;/*&amp;lt;inc&amp;gt;*/</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;2,</p>
+								<p class="code">		.chip_port&nbsp;=&nbsp;{</p>
+								<p class="code">			[ASIC_SWITCH_TYPE]&nbsp;=&nbsp;{</p>
+								<p class="code">				.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">				.unit_port&nbsp;=&nbsp;2,</p>
+								<p class="code">				.distance&nbsp;=&nbsp;0</p>
+								<p class="code">			},</p>
+								<p class="code">		},</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;{-1,&nbsp;-1},</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.user_type&nbsp;=&nbsp;ETH_INVALID,</p>
+								<p class="code">		.driver_type&nbsp;=&nbsp;MODULE_DRIVER_NAM_X86,&nbsp;/*&amp;lt;inc&amp;gt;*/</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;3,</p>
+								<p class="code">		.chip_port&nbsp;=&nbsp;{</p>
+								<p class="code">			[ASIC_SWITCH_TYPE]&nbsp;=&nbsp;{</p>
+								<p class="code">				.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">				.unit_port&nbsp;=&nbsp;3,</p>
+								<p class="code">				.distance&nbsp;=&nbsp;0</p>
+								<p class="code">			},</p>
+								<p class="code">		},</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;{-1,&nbsp;-1},</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.user_type&nbsp;=&nbsp;ETH_INVALID,</p>
+								<p class="code">		.driver_type&nbsp;=&nbsp;MODULE_DRIVER_NAM_X86,</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;4,</p>
+								<p class="code">		.chip_port&nbsp;=&nbsp;{</p>
+								<p class="code">			[ASIC_SWITCH_TYPE]&nbsp;=&nbsp;{</p>
+								<p class="code">				.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">				.unit_port&nbsp;=&nbsp;4,</p>
+								<p class="code">				.distance&nbsp;=&nbsp;0</p>
+								<p class="code">			},</p>
+								<p class="code">		},</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;{-1,&nbsp;-1},</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.user_type&nbsp;=&nbsp;ETH_INVALID,</p>
+								<p class="code">		.driver_type&nbsp;=&nbsp;MODULE_DRIVER_NAM_X86,</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;5,</p>
+								<p class="code">		.chip_port&nbsp;=&nbsp;{</p>
+								<p class="code">			[ASIC_SWITCH_TYPE]&nbsp;=&nbsp;{</p>
+								<p class="code">				.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">				.unit_port&nbsp;=&nbsp;5,</p>
+								<p class="code">				.distance&nbsp;=&nbsp;0</p>
+								<p class="code">			},</p>
+								<p class="code">		},</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;{-1,&nbsp;-1},</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.user_type&nbsp;=&nbsp;ETH_INVALID,</p>
+								<p class="code">		.driver_type&nbsp;=&nbsp;MODULE_DRIVER_NAM_X86,</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;6,</p>
+								<p class="code">		.chip_port&nbsp;=&nbsp;{</p>
+								<p class="code">			[ASIC_SWITCH_TYPE]&nbsp;=&nbsp;{</p>
+								<p class="code">				.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">				.unit_port&nbsp;=&nbsp;6,</p>
+								<p class="code">				.distance&nbsp;=&nbsp;0</p>
+								<p class="code">			},</p>
+								<p class="code">		},</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;{-1,&nbsp;-1},</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.user_type&nbsp;=&nbsp;ETH_INVALID,</p>
+								<p class="code">		.driver_type&nbsp;=&nbsp;MODULE_DRIVER_NAM_X86,</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;7,</p>
+								<p class="code">		.chip_port&nbsp;=&nbsp;{</p>
+								<p class="code">			[ASIC_SWITCH_TYPE]&nbsp;=&nbsp;{</p>
+								<p class="code">				.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">				.unit_port&nbsp;=&nbsp;7,</p>
+								<p class="code">				.distance&nbsp;=&nbsp;0</p>
+								<p class="code">			},</p>
+								<p class="code">		},</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;{-1,&nbsp;-1},</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.user_type&nbsp;=&nbsp;ETH_INVALID,</p>
+								<p class="code">		.driver_type&nbsp;=&nbsp;MODULE_DRIVER_NAM_X86,</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;8,</p>
+								<p class="code">		.chip_port&nbsp;=&nbsp;{</p>
+								<p class="code">			[ASIC_SWITCH_TYPE]&nbsp;=&nbsp;{</p>
+								<p class="code">				.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">				.unit_port&nbsp;=&nbsp;8,</p>
+								<p class="code">				.distance&nbsp;=&nbsp;0</p>
+								<p class="code">			},</p>
+								<p class="code">		},</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;{-1,&nbsp;-1},</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.user_type&nbsp;=&nbsp;ETH_INVALID,</p>
+								<p class="code">		.driver_type&nbsp;=&nbsp;MODULE_DRIVER_NAM_X86,</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;9,</p>
+								<p class="code">		.chip_port&nbsp;=&nbsp;{</p>
+								<p class="code">			[ASIC_SWITCH_TYPE]&nbsp;=&nbsp;{</p>
+								<p class="code">				.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">				.unit_port&nbsp;=&nbsp;9,</p>
+								<p class="code">				.distance&nbsp;=&nbsp;0</p>
+								<p class="code">			},</p>
+								<p class="code">		},</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;{-1,&nbsp;-1},</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.user_type&nbsp;=&nbsp;ETH_INVALID,</p>
+								<p class="code">		.driver_type&nbsp;=&nbsp;MODULE_DRIVER_NAM_X86,</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;10,</p>
+								<p class="code">		.chip_port&nbsp;=&nbsp;{</p>
+								<p class="code">			[ASIC_SWITCH_TYPE]&nbsp;=&nbsp;{</p>
+								<p class="code">				.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">				.unit_port&nbsp;=&nbsp;10,</p>
+								<p class="code">				.distance&nbsp;=&nbsp;0</p>
+								<p class="code">			},</p>
+								<p class="code">		},</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;{-1,&nbsp;-1},</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.user_type&nbsp;=&nbsp;ETH_INVALID,</p>
+								<p class="code">		.driver_type&nbsp;=&nbsp;MODULE_DRIVER_NAM_X86,</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;11,</p>
+								<p class="code">		.chip_port&nbsp;=&nbsp;{</p>
+								<p class="code">			[ASIC_SWITCH_TYPE]&nbsp;=&nbsp;{</p>
+								<p class="code">				.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">				.unit_port&nbsp;=&nbsp;11,</p>
+								<p class="code">				.distance&nbsp;=&nbsp;0</p>
+								<p class="code">			},</p>
+								<p class="code">		},</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;{-1,&nbsp;-1},</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.user_type&nbsp;=&nbsp;ETH_INVALID,</p>
+								<p class="code">		.driver_type&nbsp;=&nbsp;MODULE_DRIVER_NAM_X86,</p>
+								<p class="code">	},	</p>
+								<p class="code">	{</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;12,</p>
+								<p class="code">		.chip_port&nbsp;=&nbsp;{</p>
+								<p class="code">			[ASIC_SWITCH_TYPE]&nbsp;=&nbsp;{</p>
+								<p class="code">				.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">				.unit_port&nbsp;=&nbsp;12,</p>
+								<p class="code">				.distance&nbsp;=&nbsp;0</p>
+								<p class="code">			},</p>
+								<p class="code">		},</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;{-1,&nbsp;-1},</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.user_type&nbsp;=&nbsp;ETH_INVALID,</p>
+								<p class="code">		.driver_type&nbsp;=&nbsp;MODULE_DRIVER_NAM_X86,</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;13,</p>
+								<p class="code">		.chip_port&nbsp;=&nbsp;{</p>
+								<p class="code">			[ASIC_SWITCH_TYPE]&nbsp;=&nbsp;{</p>
+								<p class="code">				.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">				.unit_port&nbsp;=&nbsp;13,</p>
+								<p class="code">				.distance&nbsp;=&nbsp;0</p>
+								<p class="code">			},</p>
+								<p class="code">		},</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;{-1,&nbsp;-1},</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.user_type&nbsp;=&nbsp;ETH_INVALID,</p>
+								<p class="code">		.driver_type&nbsp;=&nbsp;MODULE_DRIVER_NAM_X86,</p>
+								<p class="code">	},&nbsp;</p>
+								<p class="code">	{</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;14,</p>
+								<p class="code">		.chip_port&nbsp;=&nbsp;{</p>
+								<p class="code">			[ASIC_SWITCH_TYPE]&nbsp;=&nbsp;{</p>
+								<p class="code">				.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">				.unit_port&nbsp;=&nbsp;14,</p>
+								<p class="code">				.distance&nbsp;=&nbsp;0</p>
+								<p class="code">			},</p>
+								<p class="code">		},</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;{-1,&nbsp;-1},</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.user_type&nbsp;=&nbsp;ETH_INVALID,</p>
+								<p class="code">		.driver_type&nbsp;=&nbsp;MODULE_DRIVER_NAM_X86,</p>
+								<p class="code">	},&nbsp;</p>
+								<p class="code">	{</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;15,</p>
+								<p class="code">		.chip_port&nbsp;=&nbsp;{</p>
+								<p class="code">			[ASIC_SWITCH_TYPE]&nbsp;=&nbsp;{</p>
+								<p class="code">				.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">				.unit_port&nbsp;=&nbsp;15,</p>
+								<p class="code">				.distance&nbsp;=&nbsp;0</p>
+								<p class="code">			},</p>
+								<p class="code">		},</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;{-1,&nbsp;-1},</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.user_type&nbsp;=&nbsp;ETH_INVALID,</p>
+								<p class="code">		.driver_type&nbsp;=&nbsp;MODULE_DRIVER_NAM_X86,</p>
+								<p class="code">	},	&nbsp;</p>
+								<p class="code">	{</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;16,</p>
+								<p class="code">		.chip_port&nbsp;=&nbsp;{</p>
+								<p class="code">			[ASIC_SWITCH_TYPE]&nbsp;=&nbsp;{</p>
+								<p class="code">				.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">				.unit_port&nbsp;=&nbsp;16,</p>
+								<p class="code">				.distance&nbsp;=&nbsp;0</p>
+								<p class="code">			},</p>
+								<p class="code">		},</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;{-1,&nbsp;-1},</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.user_type&nbsp;=&nbsp;ETH_INVALID,</p>
+								<p class="code">		.driver_type&nbsp;=&nbsp;MODULE_DRIVER_NAM_X86,</p>
+								<p class="code">	},&nbsp;</p>
+								<p class="code">	{</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;17,</p>
+								<p class="code">		.chip_port&nbsp;=&nbsp;{</p>
+								<p class="code">			[ASIC_SWITCH_TYPE]&nbsp;=&nbsp;{</p>
+								<p class="code">				.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">				.unit_port&nbsp;=&nbsp;17,</p>
+								<p class="code">				.distance&nbsp;=&nbsp;0</p>
+								<p class="code">			},</p>
+								<p class="code">		},</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;{-1,&nbsp;-1},</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.user_type&nbsp;=&nbsp;ETH_INVALID,</p>
+								<p class="code">		.driver_type&nbsp;=&nbsp;MODULE_DRIVER_NAM_X86,</p>
+								<p class="code">	},&nbsp;</p>
+								<p class="code">	{</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;18,</p>
+								<p class="code">		.chip_port&nbsp;=&nbsp;{</p>
+								<p class="code">			[ASIC_SWITCH_TYPE]&nbsp;=&nbsp;{</p>
+								<p class="code">				.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">				.unit_port&nbsp;=&nbsp;18,</p>
+								<p class="code">				.distance&nbsp;=&nbsp;0</p>
+								<p class="code">			},</p>
+								<p class="code">		},</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;{-1,&nbsp;-1},</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.user_type&nbsp;=&nbsp;ETH_INVALID,</p>
+								<p class="code">		.driver_type&nbsp;=&nbsp;MODULE_DRIVER_NAM_X86,</p>
+								<p class="code">	},&nbsp;</p>
+								<p class="code">	{</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;19,</p>
+								<p class="code">		.chip_port&nbsp;=&nbsp;{</p>
+								<p class="code">			[ASIC_SWITCH_TYPE]&nbsp;=&nbsp;{</p>
+								<p class="code">				.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">				.unit_port&nbsp;=&nbsp;19,</p>
+								<p class="code">				.distance&nbsp;=&nbsp;0</p>
+								<p class="code">			},</p>
+								<p class="code">		},</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;{-1,&nbsp;-1},</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.user_type&nbsp;=&nbsp;ETH_INVALID,</p>
+								<p class="code">		.driver_type&nbsp;=&nbsp;MODULE_DRIVER_NAM_X86,</p>
+								<p class="code">	},&nbsp;&nbsp;</p>
+								<p class="code">	{</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;20,</p>
+								<p class="code">		.chip_port&nbsp;=&nbsp;{</p>
+								<p class="code">			[ASIC_SWITCH_TYPE]&nbsp;=&nbsp;{</p>
+								<p class="code">				.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">				.unit_port&nbsp;=&nbsp;20,</p>
+								<p class="code">				.distance&nbsp;=&nbsp;0</p>
+								<p class="code">			},</p>
+								<p class="code">		},</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;{-1,&nbsp;-1},</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.user_type&nbsp;=&nbsp;ETH_INVALID,</p>
+								<p class="code">		.driver_type&nbsp;=&nbsp;MODULE_DRIVER_NAM_X86,</p>
+								<p class="code">	},&nbsp;&nbsp;&nbsp;</p>
+								<p class="code">	{</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;21,</p>
+								<p class="code">		.chip_port&nbsp;=&nbsp;{</p>
+								<p class="code">			[ASIC_SWITCH_TYPE]&nbsp;=&nbsp;{</p>
+								<p class="code">				.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">				.unit_port&nbsp;=&nbsp;21,</p>
+								<p class="code">				.distance&nbsp;=&nbsp;0</p>
+								<p class="code">			},</p>
+								<p class="code">		},</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;{-1,&nbsp;-1},</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.user_type&nbsp;=&nbsp;ETH_INVALID,</p>
+								<p class="code">		.driver_type&nbsp;=&nbsp;MODULE_DRIVER_NAM_X86,</p>
+								<p class="code">	},	&nbsp;</p>
+								<p class="code">	{</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;22,</p>
+								<p class="code">		.chip_port&nbsp;=&nbsp;{</p>
+								<p class="code">			[ASIC_SWITCH_TYPE]&nbsp;=&nbsp;{</p>
+								<p class="code">				.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">				.unit_port&nbsp;=&nbsp;22,</p>
+								<p class="code">				.distance&nbsp;=&nbsp;0</p>
+								<p class="code">			},</p>
+								<p class="code">		},</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;{-1,&nbsp;-1},</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.user_type&nbsp;=&nbsp;ETH_INVALID,</p>
+								<p class="code">		.driver_type&nbsp;=&nbsp;MODULE_DRIVER_NAM_X86,</p>
+								<p class="code">	},&nbsp;&nbsp;</p>
+								<p class="code">	{</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;23,</p>
+								<p class="code">		.chip_port&nbsp;=&nbsp;{</p>
+								<p class="code">			[ASIC_SWITCH_TYPE]&nbsp;=&nbsp;{</p>
+								<p class="code">				.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">				.unit_port&nbsp;=&nbsp;23,</p>
+								<p class="code">				.distance&nbsp;=&nbsp;0</p>
+								<p class="code">			},</p>
+								<p class="code">		},</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;{-1,&nbsp;-1},</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.user_type&nbsp;=&nbsp;ETH_INVALID,</p>
+								<p class="code">		.driver_type&nbsp;=&nbsp;MODULE_DRIVER_NAM_X86,</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;24,</p>
+								<p class="code">		.chip_port&nbsp;=&nbsp;{</p>
+								<p class="code">			[ASIC_SWITCH_TYPE]&nbsp;=&nbsp;{</p>
+								<p class="code">				.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">				.unit_port&nbsp;=&nbsp;24,</p>
+								<p class="code">				.distance&nbsp;=&nbsp;0</p>
+								<p class="code">			},</p>
+								<p class="code">		},</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;{-1,&nbsp;-1},</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.user_type&nbsp;=&nbsp;ETH_INVALID,</p>
+								<p class="code">		.driver_type&nbsp;=&nbsp;MODULE_DRIVER_NAM_X86,</p>
+								<p class="code">	},&nbsp;&nbsp;</p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code">/*!&nbsp;用于定义各个unit_port对应的port类型是什么</p>
+								<p class="code">	@todo	&amp;lt;inc&amp;gt;</p>
+								<p class="code">	@see	asic_conn_s</p>
+								<p class="code">			pcx8601_board_conn</p>
+								<p class="code">*/</p>
+								<p class="code">struct&nbsp;asic_conn_s&nbsp;pcx8601_asic_conn[]&nbsp;=</p>
+								<p class="code">{</p>
+								<p class="code">	{</p>
+								<p class="code">		.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">		.unit_port&nbsp;=&nbsp;0,</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.phy_addr&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.trunk&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_unit&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.cross_port&nbsp;=&nbsp;-1</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">		.unit_port&nbsp;=&nbsp;1,</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;1,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.phy_addr&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.trunk&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_unit&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.cross_port&nbsp;=&nbsp;-1</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">		.unit_port&nbsp;=&nbsp;2,</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;2,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.phy_addr&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.trunk&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_unit&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.cross_port&nbsp;=&nbsp;-1</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">		.unit_port&nbsp;=&nbsp;3,</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;3,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.phy_addr&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.trunk&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_unit&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.cross_port&nbsp;=&nbsp;-1</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">		.unit_port&nbsp;=&nbsp;4,</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;4,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.phy_addr&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.trunk&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_unit&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.cross_port&nbsp;=&nbsp;-1</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">		.unit_port&nbsp;=&nbsp;5,</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;5,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.phy_addr&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.trunk&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_unit&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.cross_port&nbsp;=&nbsp;-1</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">		.unit_port&nbsp;=&nbsp;6,</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;6,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.phy_addr&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.trunk&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_unit&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.cross_port&nbsp;=&nbsp;-1</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">		.unit_port&nbsp;=&nbsp;7,</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;7,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.phy_addr&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.trunk&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_unit&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.cross_port&nbsp;=&nbsp;-1</p>
+								<p class="code">	},</p>
+								<p class="code"></p>
+								<p class="code">	{</p>
+								<p class="code">		.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">		.unit_port&nbsp;=&nbsp;8,</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;8,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.phy_addr&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.trunk&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_unit&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.cross_port&nbsp;=&nbsp;4</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">		.unit_port&nbsp;=&nbsp;9,</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;9,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.phy_addr&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.trunk&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_unit&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.cross_port&nbsp;=&nbsp;-1</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">		.unit_port&nbsp;=&nbsp;10,</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;10,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.phy_addr&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.trunk&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_unit&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.cross_port&nbsp;=&nbsp;-1</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">		.unit_port&nbsp;=&nbsp;11,</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;11,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.phy_addr&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.trunk&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_unit&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.cross_port&nbsp;=&nbsp;-1</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">		.unit_port&nbsp;=&nbsp;12,</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;12,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.phy_addr&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.trunk&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_unit&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.cross_port&nbsp;=&nbsp;-1</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">		.unit_port&nbsp;=&nbsp;13,</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;13,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.phy_addr&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.trunk&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_unit&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.cross_port&nbsp;=&nbsp;-1</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">		.unit_port&nbsp;=&nbsp;14,</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;14,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.phy_addr&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.trunk&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_unit&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.cross_port&nbsp;=&nbsp;-1</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">		.unit_port&nbsp;=&nbsp;15,</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;15,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.phy_addr&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.trunk&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_unit&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.cross_port&nbsp;=&nbsp;-1</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">		.unit_port&nbsp;=&nbsp;16,</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;16,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.phy_addr&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.trunk&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_unit&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.cross_port&nbsp;=&nbsp;-1</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">		.unit_port&nbsp;=&nbsp;17,</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;17,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.phy_addr&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.trunk&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_unit&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.cross_port&nbsp;=&nbsp;-1</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">		.unit_port&nbsp;=&nbsp;18,</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;18,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.phy_addr&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.trunk&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_unit&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.cross_port&nbsp;=&nbsp;-1</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">		.unit_port&nbsp;=&nbsp;19,</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;19,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.phy_addr&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.trunk&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_unit&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.cross_port&nbsp;=&nbsp;-1</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">		.unit_port&nbsp;=&nbsp;20,</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;20,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.phy_addr&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.trunk&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_unit&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.cross_port&nbsp;=&nbsp;-1</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">		.unit_port&nbsp;=&nbsp;21,</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;21,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.phy_addr&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.trunk&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_unit&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.cross_port&nbsp;=&nbsp;-1</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">		.unit_port&nbsp;=&nbsp;22,</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;22,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.phy_addr&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.trunk&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_unit&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.cross_port&nbsp;=&nbsp;-1</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">		.unit_port&nbsp;=&nbsp;23,</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;23,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.phy_addr&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.trunk&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_unit&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.cross_port&nbsp;=&nbsp;-1</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">		.unit_port&nbsp;=&nbsp;24,</p>
+								<p class="code">		.bcast_bus&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.panel_port&nbsp;=&nbsp;24,</p>
+								<p class="code">		.plane_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.phy_addr&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.trunk&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.subslot_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_unit&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.peer_port&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.cross_port&nbsp;=&nbsp;-1</p>
+								<p class="code">	},</p>
+								<p class="code">	{</p>
+								<p class="code">		.unit&nbsp;=&nbsp;-1</p>
+								<p class="code">	}</p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code">/*!</p>
+								<p class="code">	@todo	&amp;lt;inc&amp;gt;</p>
+								<p class="code">	@see	unit_gmodule_s</p>
+								<p class="code">			pcx8601_board_conn</p>
+								<p class="code">*/</p>
+								<p class="code">struct&nbsp;unit_gmodule_s&nbsp;pcx8601_unit_gmodule[]&nbsp;=</p>
+								<p class="code">{</p>
+								<p class="code">	{</p>
+								<p class="code">		.module_base&nbsp;=&nbsp;{0,&nbsp;-1},</p>
+								<p class="code">		.max_port_per_module&nbsp;=&nbsp;TSERIES_PORT_PER_ASICMODULE</p>
+								<p class="code">	}</p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code">/*!</p>
+								<p class="code">	@todo	&amp;lt;inc&amp;gt;</p>
+								<p class="code">	@see	gmodule_unit_s</p>
+								<p class="code">			pcx8601_board_conn</p>
+								<p class="code">*/</p>
+								<p class="code">struct&nbsp;gmodule_unit_s&nbsp;pcx8601_gmodule_unit[]&nbsp;=</p>
+								<p class="code">{</p>
+								<p class="code">	{&nbsp;</p>
+								<p class="code">		.unit&nbsp;=&nbsp;0,</p>
+								<p class="code">		.max_port_per_module&nbsp;=&nbsp;TSERIES_PORT_PER_ASICMODULE,</p>
+								<p class="code">		.unit_port_base&nbsp;=&nbsp;0</p>
+								<p class="code">	},</p>
+								<p class="code"></p>
+								<p class="code">	{</p>
+								<p class="code">		.unit&nbsp;=&nbsp;-1,</p>
+								<p class="code">		.max_port_per_module&nbsp;=&nbsp;TSERIES_PORT_PER_ASICMODULE,</p>
+								<p class="code">		.unit_port_base&nbsp;=&nbsp;-1</p>
+								<p class="code">	}</p>
+								<p class="code"></p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code">/*!&nbsp;用于关联nh_product_common_init.c中的nh_series_board_conn_arr</p>
+								<p class="code">	@note	要与本文件的相应数据结构对应，特别是数据类型。还有要注意初始化的格式，对于单板运行，可以参照本例中的格式。</p>
+								<p class="code">			另外，本结构被nh_series_board_conn_arr所引用，从而将其加到了产品定义中，作为该产品中pcx8601的端口映射结构。</p>
+								<p class="code">	@see	board_conn_type_t</p>
+								<p class="code">			nh_series_board_conn_arr</p>
+								<p class="code">			nh_product_common_init.c</p>
+								<p class="code">*/</p>
+								<p class="code">board_conn_type_t&nbsp;pcx8601_board_conn&nbsp;=&nbsp;</p>
+								<p class="code">{</p>
+								<p class="code">	.board_type&nbsp;=&nbsp;PPAL_BOARD_TYPE_PCX8601,</p>
+								<p class="code">	.chassis_topo&nbsp;=&nbsp;CENTRAL_FABRIC,</p>
+								<p class="code">	.plane_portnum&nbsp;=&nbsp;0,</p>
+								<p class="code">	.panel_portnum&nbsp;=&nbsp;{</p>
+								<p class="code">		&nbsp;[ASIC_SWITCH_TYPE]&nbsp;=&nbsp;{</p>
+								<p class="code">			[0]&nbsp;=&nbsp;24,</p>
+								<p class="code">		&nbsp;}</p>
+								<p class="code">	},</p>
+								<p class="code">	.board_conn_from_plane&nbsp;=&nbsp;pcx8601_plane_conn,</p>
+								<p class="code">	.board_conn_from_panel&nbsp;=&nbsp;pcx8601_panel_conn,</p>
+								<p class="code">	.board_conn_from_chip&nbsp;=&nbsp;{</p>
+								<p class="code">		&nbsp;[ASIC_SWITCH_TYPE]&nbsp;=&nbsp;{</p>
+								<p class="code">			&nbsp;&nbsp;&nbsp;[0]&nbsp;=&nbsp;pcx8601_asic_conn</p>
+								<p class="code">		&nbsp;}</p>
+								<p class="code">	},</p>
+								<p class="code">	.board_gmodule&nbsp;=&nbsp;pcx8601_unit_gmodule,</p>
+								<p class="code">	.board_unit&nbsp;=&nbsp;pcx8601_gmodule_unit</p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code">#ifdef&nbsp;__cplusplus</p>
+								<p class="code">extern&nbsp;&quot;C&quot;</p>
+								<p class="code">}</p>
+								<p class="code">#endif</p>
+								<p class="code">/*!	@}	*/</p>
+								<p class="code"></p>
+							</div>
+						</div><!-- codefr end -->
+						<p class="cc1">可以看到<a class="ac1" href="#_ac__pcx8601_conn_c_20">第20行</a>这里，“pcx8601_plane_conn”是用来配置用于板间通信的级联端口的，由于本例没有涉及，所以这里设置的是无效值。<a class="ac1" href="#_ac__pcx8601_conn_c_38">第38行</a>的“pcx8601_panel_conn”是用于定义业务端口（网络转发功能）的，可以参照第27至37行的注释来看每一个变量和值所代表的意思，本例中一共设置了24个业务端口。<a class="ac1" href="#_ac__pcx8601_conn_c_407">第407行</a>的“pcx8601_asic_conn”，则是从物理端口角度，来阐明每一个端口是何种类型的，注意与上面两个变量的数据一致就行了。</p>
+					</div><!-- h3 pcx8601_conn.c end -->
+					<div class="hc3fr">
+						<p class="hc3">pcx8601_param.c</p>
+						<p class="cc1">本文件主要涉及的是“pcx8601”的各个性能参数等硬件相关的配置。下面是该文件的内容：</p>
+						<div id="pcx8601_param_c" class="codeNumFr">
+							<div class="codefr">
+								<p class="code">/*!	@addtogroup pcx8601_def</p>
+								<p class="code">	@{</p>
+								<p class="code">*/</p>
+								<p class="code"></p>
+								<p class="code">/*!	产品关联</p>
+								<p class="code">	@file	pcx8601_param.c</p>
+								<p class="code">	@note	用于定义该板与产品相关联的一些数据结构</p>
+								<p class="code">	@todo	本文件注释待完善</p>
+								<p class="code">*/</p>
+								<p class="code"></p>
+								<p class="code">#ifdef __cplusplus</p>
+								<p class="code">extern &quot;C&quot;</p>
+								<p class="code">{</p>
+								<p class="code">#endif</p>
+								<p class="code">#include &lt;sys/syscall.h&gt;</p>
+								<p class="code"></p>
+								<p class="code"></p>
+								<p class="code">long pcx8601_upgrade_thread(void *arg)</p>
+								<p class="code">{</p>
+								<p class="code">	npd_syslog_err(&quot;pcx 8601 not supported.\n&quot;);		//!	@test	这里改成相应的板名称</p>
+								<p class="code">	char filename[256] = {0}, real_file[256];</p>
+								<p class="code">	char cmd[300] = {0};</p>
+								<p class="code">	struct stat sb;</p>
+								<p class="code"></p>
+								<p class="code">	unsigned int slot_index = 0;</p>
+								<p class="code">	char thread_name[30] = {0};</p>
+								<p class="code">	char pidBuf[100] = {0};</p>
+								<p class="code">	</p>
+								<p class="code">	memset(cmd, 0, 300);</p>
+								<p class="code">	</p>
+								<p class="code"></p>
+								<p class="code">	slot_index = (unsigned int)arg;</p>
+								<p class="code">	/* tell my thread id*/</p>
+								<p class="code">	memset(thread_name, 0, 30);</p>
+								<p class="code">	sprintf(thread_name, &quot;NpdOsUpgrade.%d&quot;, slot_index+1);</p>
+								<p class="code">		</p>
+								<p class="code">	npd_init_tell_whoami(thread_name,0);</p>
+								<p class="code"></p>
+								<p class="code">	memset(pidBuf, 0, 100);</p>
+								<p class="code">    snprintf(pidBuf, 63, &quot;%5d(tid: %d) %s %s\n&quot;, getpid(), (int)syscall(SYS_gettid), &quot;-&quot;, thread_name);</p>
+								<p class="code">	memset(cmd, 0, 300);</p>
+								<p class="code">	sprintf(cmd, &quot;echo '%s' &gt; /var/run/%s\n&quot;, pidBuf, thread_name);</p>
+								<p class="code">	system(cmd);	</p>
+								<p class="code"></p>
+								<p class="code">	if(SYS_MODULE_ISMASTERSTANDBY(slot_index) &amp;&amp;</p>
+								<p class="code">		stat(&quot;/mnt/license/license.hc&quot;, &amp;sb) &gt;= 0)</p>
+								<p class="code">	{</p>
+								<p class="code"></p>
+								<p class="code">		/* because this sync file will use long time.then cancel the timeout for sync all file */</p>
+								<p class="code">		chasm_board_cancel_timeout(slot_index);</p>
+								<p class="code"></p>
+								<p class="code">		memset(cmd, 0, 300);</p>
+								<p class="code">		memset(cmd, 0, sizeof(cmd));		</p>
+								<p class="code">		sprintf(cmd, &quot;remote_exec_client %d 'test -d /mnt/license || mkdir /mnt/license'\n&quot;, slot_index + 1);</p>
+								<p class="code">		system(cmd);	</p>
+								<p class="code"></p>
+								<p class="code">		memset(cmd, 0, sizeof(cmd));		</p>
+								<p class="code">		sprintf(cmd, &quot;remote_exec_client %d 'test -d /mnt/fw || mkdir /mnt/fw'\n&quot;, slot_index + 1);</p>
+								<p class="code">		system(cmd);	</p>
+								<p class="code"></p>
+								<p class="code">		memset(filename, 0, sizeof(filename));</p>
+								<p class="code">		memset(real_file, 0, sizeof(real_file));</p>
+								<p class="code">		sprintf(filename, &quot;license.hc&quot;);</p>
+								<p class="code">		sprintf(real_file, &quot;/mnt/license/%s&quot;, filename);</p>
+								<p class="code">		memset(cmd, 0, sizeof(cmd));</p>
+								<p class="code">		sprintf(cmd, &quot;file_client -n %d %s\n&quot;, slot_index + 1, real_file);</p>
+								<p class="code">		system(cmd);</p>
+								<p class="code"></p>
+								<p class="code">		memset(filename, 0, sizeof(filename));</p>
+								<p class="code">		memset(real_file, 0, sizeof(real_file));</p>
+								<p class="code">		sprintf(filename, &quot;lic_version&quot;);</p>
+								<p class="code">		sprintf(real_file, &quot;/mnt/license/%s&quot;, filename);</p>
+								<p class="code">		memset(cmd, 0, sizeof(cmd));</p>
+								<p class="code">		sprintf(cmd, &quot;file_client -n %d %s\n&quot;, slot_index + 1, real_file);</p>
+								<p class="code">		system(cmd);</p>
+								<p class="code"></p>
+								<p class="code"></p>
+								<p class="code">		memset(filename, 0, sizeof(filename));</p>
+								<p class="code">		memset(real_file, 0, sizeof(real_file));		</p>
+								<p class="code">		sprintf(filename, &quot;mp_hid_rand&quot;);</p>
+								<p class="code">		sprintf(real_file, &quot;/mnt/license/%s&quot;, filename);</p>
+								<p class="code">		memset(cmd, 0, sizeof(cmd));</p>
+								<p class="code">		sprintf(cmd, &quot;file_client -n %d %s\n&quot;, slot_index + 1, real_file);</p>
+								<p class="code">		system(cmd);</p>
+								<p class="code"></p>
+								<p class="code">		memset(filename, 0, sizeof(filename));</p>
+								<p class="code">		memset(real_file, 0, sizeof(real_file));</p>
+								<p class="code">		sprintf(filename, &quot;fw_upt&quot;);</p>
+								<p class="code">		sprintf(real_file, &quot;/mnt/fw/%s&quot;, filename);</p>
+								<p class="code">		memset(cmd, 0, sizeof(cmd));</p>
+								<p class="code">		sprintf(cmd, &quot;file_client -n %d %s\n&quot;, slot_index + 1, real_file);</p>
+								<p class="code">		system(cmd);</p>
+								<p class="code"></p>
+								<p class="code">		memset(filename, 0, sizeof(filename));</p>
+								<p class="code">		memset(real_file, 0, sizeof(real_file));</p>
+								<p class="code">		sprintf(filename, &quot;fw_pkt&quot;);</p>
+								<p class="code">		sprintf(real_file, &quot;/mnt/fw/%s&quot;, filename);</p>
+								<p class="code">		memset(cmd, 0, sizeof(cmd));</p>
+								<p class="code">		sprintf(cmd, &quot;file_client -n %d %s\n&quot;, slot_index + 1, real_file);</p>
+								<p class="code">		system(cmd);</p>
+								<p class="code">		</p>
+								<p class="code">		memset(filename, 0, sizeof(filename));</p>
+								<p class="code">		memset(real_file, 0, sizeof(real_file));</p>
+								<p class="code">		sprintf(filename, &quot;tos_version&quot;);</p>
+								<p class="code">		sprintf(real_file, &quot;/mnt/fw/%s&quot;, filename);</p>
+								<p class="code">		memset(cmd, 0, sizeof(cmd));</p>
+								<p class="code">		sprintf(cmd, &quot;file_client -n %d %s\n&quot;, slot_index + 1, real_file);</p>
+								<p class="code">		system(cmd);</p>
+								<p class="code"></p>
+								<p class="code">		memset(filename, 0, sizeof(filename));</p>
+								<p class="code">		memset(real_file, 0, sizeof(real_file));</p>
+								<p class="code">		sprintf(filename, &quot;tos_chksum&quot;);</p>
+								<p class="code">		sprintf(real_file, &quot;/mnt/fw/%s&quot;, filename);</p>
+								<p class="code">		memset(cmd, 0, sizeof(cmd));</p>
+								<p class="code">		sprintf(cmd, &quot;file_client -n %d %s\n&quot;, slot_index + 1, real_file);</p>
+								<p class="code">		system(cmd);</p>
+								<p class="code">		</p>
+								<p class="code">	}	</p>
+								<p class="code">	</p>
+								<p class="code">	return chasm_os_upgrade(slot_index);</p>
+								<p class="code">}</p>
+								<p class="code"></p>
+								<p class="code">long pcx8601_npd_os_upgrade(unsigned int slot_index)</p>
+								<p class="code">{</p>
+								<p class="code">	npd_syslog_dbg(&quot;********Entering function %s  ********\r\n&quot;, __FUNCTION__);</p>
+								<p class="code">	</p>
+								<p class="code">	char thread_name[30] = {0};</p>
+								<p class="code">	</p>
+								<p class="code">	chasm_board_cancel_timeout(slot_index);</p>
+								<p class="code"></p>
+								<p class="code">	memset(thread_name, 0, 30);</p>
+								<p class="code">	sprintf(thread_name, &quot;NpdOsUpgrade.%d&quot;, slot_index+1);</p>
+								<p class="code">	</p>
+								<p class="code">	nam_thread_create(thread_name,</p>
+								<p class="code">		(void *)pcx8601_upgrade_thread, (void *)slot_index,NPD_TRUE,NPD_FALSE);</p>
+								<p class="code">	</p>
+								<p class="code">	return NPD_SUCCESS;</p>
+								<p class="code">}</p>
+								<p class="code"></p>
+								<p class="code">long pcx8601_board_ready_config(unsigned int slot_index)</p>
+								<p class="code">{	</p>
+								<p class="code">	return NPD_SUCCESS;</p>
+								<p class="code">}</p>
+								<p class="code"></p>
+								<p class="code">ipp_fix_param_t  pcx8601_ipp_param =</p>
+								<p class="code">{</p>
+								<p class="code">    .ipp_portnum = 2,</p>
+								<p class="code">    .ipp_phyport_map = {&quot;eth0&quot;, &quot;eth1&quot;},</p>
+								<p class="code">    .ipp_board_map = {-1, -2}</p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code">sub_board_fix_param_t pcx8601_subboard_param = </p>
+								<p class="code">{</p>
+								<p class="code">    .sub_slotnum = 1,     // more than 1</p>
+								<p class="code">    .sub_slot_portnum = 0</p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code">temper_fix_param_t pcx8601_temper_param =</p>
+								<p class="code">{</p>
+								<p class="code">    .num = 2,</p>
+								<p class="code">    .name = {&quot;OCTEON TEMP&quot;, &quot;BCM 56821 TEMP&quot;}</p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code">board_feature_t pcx8601_feature = </p>
+								<p class="code">{</p>
+								<p class="code">    .jumbo_size = 13000,</p>
+								<p class="code">    .max_macaddr = 32768,</p>
+								<p class="code">    .max_macapp = 512,</p>
+								<p class="code">    .max_macmpls = 0,</p>
+								<p class="code">    .max_ext_macaddr = 0,</p>
+								<p class="code">    .max_normal_vlan = 4096,</p>
+								<p class="code">    .max_macbased_vlan = 4096,</p>
+								<p class="code">    .max_protobased_vlan = 4096,</p>
+								<p class="code">    .max_ipsubnet_vlan = 4096,</p>
+								<p class="code">    .max_stpg = 128,</p>
+								<p class="code">    .max_trunk = 128,</p>
+								<p class="code">    .max_port_per_trunk = 32,</p>
+								<p class="code">    .max_fabric_trunk_extra = 8,</p>
+								<p class="code">    .max_vlanswitch_ingress = 8192,</p>
+								<p class="code">    .max_vlanswitch_egress = 8192,</p>
+								<p class="code">    .max_qinq = 8192,</p>
+								<p class="code">    .max_range_qinq = 2048, /*a range of vlan map in one q tag id*/</p>
+								<p class="code">    .max_sec_per_range_qinq = 16, /*a range can contain section number*/</p>
+								<p class="code">    .max_mirror_des_port = 1,</p>
+								<p class="code">    </p>
+								<p class="code">    .max_l2mc = 1024,</p>
+								<p class="code">    .max_vr = 32,</p>
+								<p class="code">    .max_ip_intf = 4096,</p>
+								<p class="code">    .max_ip_route = 16384,</p>
+								<p class="code">    .max_ip_host_extra = 16384,</p>
+								<p class="code">    .max_ip_ecmp = 16384,</p>
+								<p class="code">    .max_ip_route_per_ecmp = 32,</p>
+								<p class="code">    .max_ipmc_extra = 4096,</p>
+								<p class="code">    .max_ipv6_route = 4096,</p>
+								<p class="code">    .max_ipv6_host_extra = 4096,</p>
+								<p class="code">    .max_ipv6_ecmp = 4096,</p>
+								<p class="code">    .max_ipv6_route_per_ecmp = 32,</p>
+								<p class="code">    .max_ipv6mc_extra = 1024,</p>
+								<p class="code">    .max_tunnel = 512,</p>
+								<p class="code">    .max_dscp_map = 32,</p>
+								<p class="code">    .max_ele_per_dscp_map = 32,</p>
+								<p class="code">    .max_mpls_virtual_port = 0,</p>
+								<p class="code">    .max_mpls_vfi = 0,</p>
+								<p class="code">    .max_mpls_lsp = 0,</p>
+								<p class="code">    .max_mpls_pushtagnum = 0,</p>
+								<p class="code">    .max_mpls_handle_tagnum = 0,</p>
+								<p class="code">    .max_vlan_acl_std = 4096,</p>
+								<p class="code">    .max_ingress_acl_std = 8192,</p>
+								<p class="code">    .max_egress_acl_std = 2048,</p>
+								<p class="code">    .vlan_acl_portlist_len = 8,</p>
+								<p class="code">    .ing_acl_portlist_len = -1,</p>
+								<p class="code">    .egr_acl_portlist_len = 8,</p>
+								<p class="code">    .max_qos_meter = 8192,</p>
+								<p class="code">    .max_qos_counter = 8192,</p>
+								<p class="code">    .bandwidth_adjust_size = 1, /*unit, kbps*/  </p>
+								<p class="code"></p>
+								<p class="code">    .max_vr_ext = 0,</p>
+								<p class="code">    .max_ip_intf_ext = 0,</p>
+								<p class="code">    .max_ip_route_ext = 0,</p>
+								<p class="code">    .max_ip_host_extra_ext = 0,</p>
+								<p class="code">    .max_ip_ecmp_ext = 0,</p>
+								<p class="code">    .max_ip_route_per_ecmp_ext = 0,</p>
+								<p class="code">    .max_ipmc_extra_ext = 0,</p>
+								<p class="code">    .max_ipv6_route_ext = 0,</p>
+								<p class="code">    .max_ipv6_host_extra_ext = 0,</p>
+								<p class="code">    .max_ipv6_ecmp_ext = 0,</p>
+								<p class="code">    .max_ipv6_route_per_ecmp_ext = 0,</p>
+								<p class="code">    .max_ipv6mc_extra_ext = 0,</p>
+								<p class="code">    .max_tunnel_ext = 0,</p>
+								<p class="code">    .max_mpls_vfi_ext = 0,</p>
+								<p class="code">    .max_mpls_lsp_ext = 0,</p>
+								<p class="code">    .max_vlan_acl_std_ext = 0,</p>
+								<p class="code">    .max_ingress_acl_std_ext = 0,</p>
+								<p class="code">    .max_egress_acl_std_ext = 0,</p>
+								<p class="code">    .max_qos_meter_ext = 0,</p>
+								<p class="code">    .max_qos_counter_ext = 0,</p>
+								<p class="code"></p>
+								<p class="code">    .max_txqueue_system = 0,</p>
+								<p class="code">    .max_txqueue_perport = 8,</p>
+								<p class="code">    .max_rxqueue_system = 0,</p>
+								<p class="code">    .max_rxqueue_perport = 1,</p>
+								<p class="code">    .max_shaper_system = 0,</p>
+								<p class="code">    .max_shaper_perport = 8,</p>
+								<p class="code">        </p>
+								<p class="code">    .ipv4_route_ele_acl_rule_size = 0,</p>
+								<p class="code">    .ipv6_route_ele_acl_rule_size = 0,</p>
+								<p class="code">    .mpls_lsp_ele_acl_rule_size = 0,</p>
+								<p class="code"></p>
+								<p class="code">    .ext_tcam = FALSE,</p>
+								<p class="code">    .mac_pending_learn = TRUE,</p>
+								<p class="code">    .ext_mac_auto_learn = FALSE,</p>
+								<p class="code">    .prohibit_sta_move = TRUE,</p>
+								<p class="code">    .class_sta_move = TRUE,</p>
+								<p class="code">    .mac_limit_system = TRUE,</p>
+								<p class="code">    .mac_limit_per_port = TRUE,</p>
+								<p class="code">    .mac_limit_per_lag = TRUE,</p>
+								<p class="code">    .mac_limit_per_vlan = TRUE,</p>
+								<p class="code">    .mac_limit_per_vpls = FALSE,</p>
+								<p class="code">    .mac_delete_per_port = TRUE,</p>
+								<p class="code">    .mac_delete_per_lag = TRUE,</p>
+								<p class="code">    .mac_delete_per_vlan = TRUE,</p>
+								<p class="code">    .mac_delete_perport_pervlan = TRUE,</p>
+								<p class="code">    .mac_delete_perlag_pervlan = TRUE,</p>
+								<p class="code">    .mac_learn_svl = TRUE,</p>
+								<p class="code">    .private_vlan = TRUE,</p>
+								<p class="code">    .flow_vlan = TRUE,</p>
+								<p class="code">    .vlan_xlate = TRUE,</p>
+								<p class="code">    .mac_based_app = TRUE,</p>
+								<p class="code">    .mac_based_mpls = FALSE,</p>
+								<p class="code">    .same_port_bridge = TRUE,</p>
+								<p class="code">    </p>
+								<p class="code">    .vrf = FALSE,</p>
+								<p class="code">    .route_urpf = TRUE,</p>
+								<p class="code"></p>
+								<p class="code">    .ipv4_tunnel = FALSE,</p>
+								<p class="code">    .ipv6_tunnel = FALSE,</p>
+								<p class="code">    .gre_tunnel = FALSE,</p>
+								<p class="code">    .mpls_tunnel = FALSE,</p>
+								<p class="code"></p>
+								<p class="code">    .mpls_vpls = FALSE,</p>
+								<p class="code">    .mpls_h_vpls = FALSE,</p>
+								<p class="code">    .mpls_vpn = FALSE,</p>
+								<p class="code">    .mpls_te = FALSE,</p>
+								<p class="code">    .mpls_frr = FALSE,</p>
+								<p class="code">    .mpls_diffserv = FALSE,</p>
+								<p class="code">    .preingress_filter = TRUE,</p>
+								<p class="code">    .ingress_filter = TRUE,</p>
+								<p class="code">    .egress_filter = TRUE,</p>
+								<p class="code"></p>
+								<p class="code">    .wred = TRUE,</p>
+								<p class="code">    .queue_wdrr = TRUE,</p>
+								<p class="code">    .queue_wrr = TRUE,</p>
+								<p class="code">    .queue_rr = TRUE,</p>
+								<p class="code"></p>
+								<p class="code">    .stack = TRUE,</p>
+								<p class="code">    .rspan = TRUE,</p>
+								<p class="code">    .sflow = TRUE,</p>
+								<p class="code"></p>
+								<p class="code">	</p>
+								<p class="code">	.ctrl_num = 2,</p>
+								<p class="code">	.ctrl_switch = TRUE,</p>
+								<p class="code">	.support_acl_based_vlan = TRUE,</p>
+								<p class="code">	.support_acl_policy_route = TRUE,</p>
+								<p class="code">	.num_of_tcp_comparator = 16,</p>
+								<p class="code">	.num_of_udp_comparator = 16,</p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code">/*!	产品支持</p>
+								<p class="code">	@note	pcx8601能够被识别的产品</p>
+								<p class="code">*/</p>
+								<p class="code">int pcx8601_support_product[] =</p>
+								<p class="code">{</p>
+								<p class="code">    PRODUCT_T9010,</p>
+								<p class="code">    PRODUCT_T9006,</p>
+								<p class="code">    PRODUCT_T9014,</p>
+								<p class="code">    0</p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code">/*!	板参数定义</p>
+								<p class="code">	@note	pcx8601的参数定义</p>
+								<p class="code">*/</p>
+								<p class="code">board_fix_param_t pcx8601_param =</p>
+								<p class="code">{</p>
+								<p class="code">    .board_code = PPAL_BOARD_HWCODE_PCX8601,</p>
+								<p class="code">    .board_type = PPAL_BOARD_TYPE_PCX8601,</p>
+								<p class="code">    .full_name = &quot;AUTELAN PCX86 SERIES MULTI-LAYER SWITCH MAIN CONTROL BOARD&quot;,</p>
+								<p class="code">    .short_name = &quot;PCX8601&quot;,</p>
+								<p class="code">    .have_pp = TRUE,</p>
+								<p class="code">    .master_flag = TRUE,</p>
+								<p class="code">    .service_flag = FALSE,</p>
+								<p class="code">    .panel_portnum = 24,</p>
+								<p class="code">    .subboard_fix_param = &amp;pcx8601_subboard_param,</p>
+								<p class="code">    .ipp_fix_param = &amp;pcx8601_ipp_param,</p>
+								<p class="code">    .temper_fix_param = &amp;pcx8601_temper_param,</p>
+								<p class="code">    .os_upgrade = &amp;pcx8601_npd_os_upgrade,    </p>
+								<p class="code">    .board_ready_config = &amp;pcx8601_board_ready_config,</p>
+								<p class="code">    .feature = &amp;pcx8601_feature,</p>
+								<p class="code">    .sdk_type = SDK_X86,</p>
+								<p class="code">    .board_support_product = (int*)pcx8601_support_product</p>
+								<p class="code">};</p>
+								<p class="code"></p>
+								<p class="code"></p>
+								<p class="code">#ifdef __cplusplus</p>
+								<p class="code">extern &quot;C&quot;</p>
+								<p class="code">}</p>
+								<p class="code">#endif</p>
+								<p class="code">/*!	@}	*/</p>
+								<p class="code"></p>
+							</div>
+						</div><!-- codefr end -->
+						<p class="cc1">可以看到，本文件的所有配置，最后都通过<a class="ac1" href="#_ac__pcx8601_param_c_322">第322行</a>的“pcx8601_param”使其在npd中生效。这里要根据硬件的实际情况设置，在这里就不再具体阐述。</p>
+					</div><!-- h3 pcx8601_param.c end -->
+				</div><!-- h2 npd end -->
+				<div class="hc2fr">
+					<p class="hc2">nam模块</p>
+					<p class="cc1">在src/npdsuit/nam_x86/src/lib下有诸多形如nam_*.c的文件，这里就是直接调用相应硬件sdk并被npd层调用的X86的nam模块。</p>
+					<p class="cc1">对于新板卡，也需要在src/npdsuit/nam_[board_family]/src/lib下创建nam层文件。而它们的名字，是要与其他板卡系列的名字相同的。而且不仅仅是文件名，其文件中的函数名、参数、参数类型以及返回值类型也要一样。不同的只是函数的内容。</p>
+					<p class="cc1">nam函数的内容可以参照相应注释或npd代码，了解其要完成的功能后，调用相应的硬件SDK并返回结果。如果不知道如何调用或硬件没有提供相应的功能或SDK，直接返回一个值也是可以的。这里还需要读者自己实现，本例只是用“nam_eth.c”做一个简单的例子，具体的实现可以参照附件中的相应代码。</p>
+					<p class="cc1">必须要建的nam模块文件的清单：</p>
+					<div class="codeNumFr">
+						<div class="codefr">
+							<p class="code">root@ubuntu:/home/user/work/dev/src/npdsuit/nam_x86/src/lib# ls nam_*.c</p>
+							<p class="code">nam_acl.c   nam_diag.c  nam_fdb.c   nam_mirror.c  nam_pvlan.c  nam_rx.c     nam_tunnel.c  nam_vlan.c</p>
+							<p class="code">nam_arp.c   nam_dldp.c  nam_intf.c  nam_ndisc.c   nam_qos.c    nam_stp.c    nam_tx.c      nam_wifi.c</p>
+							<p class="code">nam_asic.c  nam_eth.c   nam_log.c   nam_poe.c     nam_route.c  nam_trunk.c  nam_utilus.c</p>
+						</div>
+					</div><!-- codefr end -->
+				</div><!-- h2 nam end -->
+				<div class="hc2fr">
+					<p class="hc2">编译与生成</p>
+					<p class="cc1">在完成了以上这些工作，就可以开始进行“deb”目标的生成工作了。从<a href="#hc4_1_2_3_7">“dev/make/x86/make.kernel.x86”</a>这一小节我们可以看到：“deb”这一目标生成前，会自动生成“quagga dcli nam nbm npd”这几个目标，所以，quagga模块刚刚必须能够成功编译。然后，就可以执行：</p>
+					<div class="codeNumFr">
+						<div class="codefr">
+							<p class="code">root@ubuntu:/home/user/work/dev# ./mkx86.sh deb</p>
+						</div>
+					</div><!-- codefr end -->
+					<p class="cc1">就可以了。如果发现，目录下多出了一个“aw.deb”文件，那么就说明生成成功了，否则就不成功。不成功的原因多是因为少lib库文件和在错误状态下没有clean原有目标造成的。具体的解决方法可以参照“<a href="#hc4_1_2_4_3">quagga的编译</a>”这一章节。</p>
+				</div><!-- h2 编译与生成 end -->
+				<div class="hc2fr">
+					<p class="hc2">安装</p>
+					<p class="cc1">本例的最终目标是“deb”格式文件，在目标机器上的安装方法是：</p>
+					<div class="codeNumFr">
+						<div class="codefr">
+							<p class="code">root@ubuntu:/home/user/work/dev# dpkg -i aw.deb</p>
+						</div>
+					</div><!-- codefr end -->
+					<p class="cc1">之后出现类似如下结果，就表示成功了。</p>
+					<div class="codeNumFr">
+						<div class="codefr">
+							<p class="code">root@ubuntu:/home/user/work/dev# dpkg -i aw.deb</p>
+							<p class="code">Selecting previously deselected package autenet-sh.</p>
+							<p class="code">(Reading database ... 124337 files and directories currently installed.)</p>
+							<p class="code">Unpacking autenet-sh (from aw.deb) ...</p>
+							<p class="code">Setting up autenet-sh (2.4.1) ...</p>
+							<p class="code">Processing triggers for ureadahead ...</p>
+							<p class="code">ureadahead will be reprofiled on next reboot</p>
+							<p class="code">root@ubuntu:/home/user/work/dev# </p>
+						</div>
+					</div><!-- codefr end -->
+					<p class="cc1">在dev目录下，有一个“etc”文件夹，其内部结构如下：</p>
+					<div class="codeNumFr">
+						<div class="codefr">
+							<p class="code">root@ubuntu:/home/liumk/work/dev/etc# tree</p>
+							<p class="code">.</p>
+							<p class="code">└── dbus-1</p>
+							<p class="code">    └── system.conf</p>
+							<p class="code"></p>
+							<p class="code">1 directory, 1 file</p>
+							<p class="code">root@ubuntu:/home/liumk/work</p>
+						</div>
+					</div><!-- codefr end -->
+					<p class="cc1">这个文件夹原本是要放到“aw.deb”包中的。但是，因为其与dbus包中相应的文件冲突，所以只能够手动复制到目标机器的根目录下。</p>
+					<p class="cc1">还有一个需要注意的地方是，目标机器的kernel需要有“tipc.ko”这个模块，嵌入内核还是动态加载都可以。</p>
+				</div><!-- h2 安装 end -->
+			</div><!-- h1 addboard end -->
+			<div class="middn"><a href="index.html" class="middn"><p class="middn">返回主页</p></a></div>
+		</div>
+	</div>
+</body>
+</html>
