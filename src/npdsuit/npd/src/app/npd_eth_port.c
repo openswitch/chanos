@@ -4176,8 +4176,25 @@ int npd_set_port_speed
     }
     else
     {
-        syslog_ax_eth_port_dbg("%s ::auto neg speed %d\n",__func__,anspeed);
-        ret = ETHPORT_RETURN_CODE_SPEED_NODE;
+        if(speed > 1000)
+        {
+            ret = nam_set_ethport_speed(eth_g_index,attr);
+    
+            if (NPD_FAIL == ret)
+            {
+                syslog_ax_eth_port_err("set port speed failed \n");
+                ret = ETHPORT_RETURN_CODE_ERR_HW;
+            }
+            else
+            {
+                ret = ETHPORT_RETURN_CODE_ERR_NONE;
+            }
+        }
+		else
+		{
+            syslog_ax_eth_port_dbg("%s ::auto neg speed %d\n",__func__,anspeed);
+            ret = ETHPORT_RETURN_CODE_SPEED_NODE;
+		}
     }
     return ret;
 }
