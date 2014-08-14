@@ -3288,21 +3288,27 @@ unsigned int npd_fdb_number_vlan_set
 	struct vlan_s *vlanNode = NULL;
 
 	ret = npd_check_vlan_exist(vlanId);
-	if(NPD_TRUE!= ret){/*NPD_VLAN_EXIST == 13*/
+	if(NPD_TRUE!= ret)
+	{
 	   npd_syslog_err("fdb:The vlan %d input does not exist \n",vlanId);
 	   return FDB_RETURN_CODE_GENERAL;
 	}
     npd_key_database_lock();
 	vlanNode = npd_find_vlan_by_vid(vlanId);
-	if(vlanNode != NULL) {
+	if(vlanNode != NULL)
+	{
 		if(vlanNode->fdb_limit != number)
 		{
-    	    vlanNode->fdb_limit = number;		
+    	    vlanNode->fdb_limit = number;
     		npd_put_vlan(vlanNode);
         	if(number >= 0)
         	{
         	    npd_fdb_dynamic_entry_del_by_vlan(vlanId);
         	}
+		}
+		else
+		{
+		    free(vlanNode);
 		}
 	}
 	npd_key_database_unlock();

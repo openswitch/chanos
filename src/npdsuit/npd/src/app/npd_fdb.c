@@ -3045,6 +3045,9 @@ int npd_fdb_learning(struct fdb_entry_item_s *entry, int isAdd)
     int ret;
     struct timeval tnow;
     struct timezone tzone;
+#ifdef HAVE_VRRP
+    unsigned char vmac[MAC_ADDRESS_LEN];
+#endif
 	
     switch_port = malloc(sizeof(struct switch_port_db_s));
 
@@ -3089,7 +3092,6 @@ int npd_fdb_learning(struct fdb_entry_item_s *entry, int isAdd)
             return FDB_RETURN_CODE_NODE_EXIST;
 		}
     }
-#if 0
 #ifdef HAVE_AAA
     if( NPD_TRUE == npd_asd_check_authMode_MAB(entry->ifIndex))
     {
@@ -3098,7 +3100,6 @@ int npd_fdb_learning(struct fdb_entry_item_s *entry, int isAdd)
 		entry->isBlock = 1;
 		entry->blockMode = NPD_FDB_BLACKLIST_SMAC_MODE;
     }
-#endif
 #endif
     status = dbtable_hash_search(npd_fdb_hashmac_index, entry, NULL, &old_entry);
 
@@ -3203,7 +3204,6 @@ int npd_fdb_learning(struct fdb_entry_item_s *entry, int isAdd)
     entry->time = time(NULL);
     free(switch_port);
     free(vlan);
-#if 0
 #ifdef HAVE_VRRP
 	if (isAdd && (NPD_TRUE == npd_vrrp_vlan_vmac_check(entry->vlanid, vmac))
 		&& !memcmp(entry->mac, vmac, MAC_ADDRESS_LEN))
@@ -3211,7 +3211,6 @@ int npd_fdb_learning(struct fdb_entry_item_s *entry, int isAdd)
 		/* if the device is vrrp master, can't add vlan mac in fdb */
 		return FDB_RETURN_CODE_SUCCESS;		
 	}
-#endif
 #endif
     status = dbtable_hash_insert(npd_fdb_hashmac_index, entry);
 
