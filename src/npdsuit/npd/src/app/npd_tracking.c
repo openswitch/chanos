@@ -757,7 +757,7 @@ int npd_tracking_group_show_running(char** show_str)
         len = sprintf(cur_str, "track-group %d\n", query.tracking_group_id);
         cur_str += len;
 
-        len = sprintf(cur_str, "track-group mode %s\n", (query.tracking_mode == tracking_mode_any) ? "any" : "all");
+        len = sprintf(cur_str, " track-group mode %s\n", (query.tracking_mode == tracking_mode_any) ? "any" : "all");
         cur_str += len;
 
         for (netif_id = 0; netif_id < NPD_TRACKING_MAX_OBJECT; netif_id++)
@@ -769,16 +769,16 @@ int npd_tracking_group_show_running(char** show_str)
                 if (netif_index_l2 == query.tracking_object[netif_id].netif_index_layer)
                 {
                     npd_netif_index_to_user_fullname(query.tracking_object[netif_id].netif_index, track_object_name);
-                    len = sprintf(cur_str, "track-object interface %s\n", track_object_name);
+                    len = sprintf(cur_str, " track-object interface %s\n", track_object_name);
                 }
                 else if (netif_index_l3 == query.tracking_object[netif_id].netif_index_layer)
                 {
                     npd_netif_index_to_l3intf_name(query.tracking_object[netif_id].netif_index, track_object_name);
-                    len = sprintf(cur_str, "track-object interface %s\n", track_object_name);
+                    len = sprintf(cur_str, " track-object interface %s\n", track_object_name);
                 }
                 else if (netif_index_slot == query.tracking_object[netif_id].netif_index_layer)
                 {
-                    len = sprintf(cur_str, "track-object slot %d\n", query.tracking_object[netif_id].netif_index);
+                    len = sprintf(cur_str, " track-object slot %d\n", query.tracking_object[netif_id].netif_index);
                 }
                 else
                 {
@@ -789,12 +789,15 @@ int npd_tracking_group_show_running(char** show_str)
             }
         }
 
-        memset(track_object_name, 0, sizeof(track_object_name));
-        npd_netif_index_to_user_fullname(query.dl_index, track_object_name);
-        len = sprintf(cur_str, "track-action interface %s down\n", track_object_name);
-        cur_str += len;
-
-        len = sprintf(cur_str, "exit\n");
+		if(0 != query.dl_index)
+		{
+			memset(track_object_name, 0, sizeof(track_object_name));
+        	npd_netif_index_to_user_fullname(query.dl_index, track_object_name);
+        	len = sprintf(cur_str, "track-action interface %s down\n", track_object_name);
+	        cur_str += len;
+		}
+		
+        len = sprintf(cur_str, " exit\n");
         cur_str += len;
     }
 
