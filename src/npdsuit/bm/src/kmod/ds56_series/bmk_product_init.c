@@ -30,11 +30,8 @@
 #include "ts_product_feature.h"
 #include "bmk_product_init.h"
 
-extern int get_flash_type(void);
-
 extern kboard_fix_param * ds5600_series_board_param_arr[] ;
 extern kproduct_fix_param * ds5600_series_product_param_arr[];
-extern unsigned int ds5600_board_id;
 
 #include "bmk_ds5652_board_param.c"
 #include "bmk_ds5652_product_param.c"
@@ -139,9 +136,6 @@ int bm_get_family_type(void)
     }
 
     return FAMILY_UNKNOWN;
-	
-	//return FAMILY_UNKNOWN;
-	
 }
 
 long bm_get_product_type(void)
@@ -200,9 +194,6 @@ int bm_common_ioctl(/*struct inode *inode, */struct file *filp, unsigned int cmd
 
 int bm_common_init()
 {
-	//register_product_array(ts_series_product_param_arr);
-	//register_board_array(ts_series_board_param_arr);
-
 	/* init kboard info */
 	kboard_info = kmalloc(sizeof(kboard_param), GFP_KERNEL);
 	if (NULL == kboard_info)
@@ -268,7 +259,6 @@ int bm_common_init()
 
 int bm_product_init(void)
 {
-	
 	int result = 0;
 	
 	DBG(debug_ioctl, KERN_INFO DRIVER_NAME ": Enter bm_product_init\n");
@@ -293,7 +283,6 @@ int bm_product_init(void)
 		DBG(debug_ioctl,  "product_init failure.\n");
 		return result;
 	}
-
 	
 	result = ko_board->board_init();
 	if (result != 0)

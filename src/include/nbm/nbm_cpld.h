@@ -63,9 +63,9 @@ typedef bm_op_sysinfo_args bm_op_mainboard_sysinfo;
   */
 typedef struct ax_sysinfo_product_t
 {
-	char  ax_sysinfo_module_serial_no[21]; /*data should be 20 bytes */
+	char  ax_sysinfo_module_serial_no[32]; /*data should be less than 32 bytes */
 	char  ax_sysinfo_module_name[25];  /*data max length should be 24 bytes */
-	char  ax_sysinfo_product_serial_no[21]; /*data should be 20 bytes */
+	char  ax_sysinfo_product_serial_no[32]; /*data should be 32 bytes */
 	char  ax_sysinfo_product_base_mac_address[13]; /*data should be 12 bytes */
 	char  ax_sysinfo_product_name[25]; /*data max length should be 24 bytes */
 	char  ax_sysinfo_software_name[25]; /*data max length should be 24 bytes */

@@ -169,6 +169,11 @@ board_feature_t ds5652_board_feature =
     .support_acl_based_vlan = TRUE,
     .support_acl_policy_route = TRUE,
 	
+    .macbased_vlan_start_id=0,
+    .macbased_vlan_end_id=191,    
+    .ipsubnet_vlan_start_id=192,
+    .ipsubnet_vlan_end_id=255,
+    
 	.sg_filter = TRUE 
 };
 
@@ -183,8 +188,8 @@ board_fix_param_t ds5652_board_param =
 {
     .board_code = PPAL_BOARD_HWCODE_DS5652,
     .board_type = PPAL_BOARD_TYPE_DS5652,
-    .full_name = DS5600_FULL_NAME,
-    .short_name = DS5600_SHORT_NAME,
+    .full_name = "CHANOS Multi-Layer Datacenter Switch with 48X10GE+4X40GE",
+    .short_name = "DS5652",
     .have_pp = TRUE,
     .master_flag = FALSE,
     .service_flag = TRUE,

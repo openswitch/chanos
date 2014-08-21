@@ -4,8 +4,6 @@
 #include <linux/version.h>
 
 
-void ds5600_master_get_mngt_eth_mac(int port, char *mac);
-void ds5600_linecard_get_mngt_eth_mac(int port, char *mac);
 
 int bm_proc_init(void);
 int bm_proc_clearup(void);
@@ -75,14 +73,6 @@ int ioctl_proc_backboard_version(struct inode *inode, struct file *filp, unsigne
 int ioctl_proc_board_num(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg);
 
 #endif
-cpld_reg_ctl * util_get_cmd_reg_ctrl(unsigned int cmd);
-long util_slot_is_master_slot(int slot_index);
-long util_kernel_read_file(char *filename, char *buf, int *len);
-
-
-#define BOARD_ISMASTERSLOT(slot_index) \
-	(1 == util_slot_is_master_slot(slot_index))
-
 
 extern struct file_operations bm_proc_module_sn;
 extern struct file_operations bm_proc_module_name;

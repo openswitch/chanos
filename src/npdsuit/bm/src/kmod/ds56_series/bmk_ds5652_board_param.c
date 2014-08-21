@@ -14,26 +14,6 @@
 #include "bmk_read_eeprom.h"
 
 
-#define I2C_DEV_NUM	1
-
-#define GP0_REG 0
-#define GP1_REG 1
-#define IODIR0_REG 6
-#define IODIR1_REG 7
-
-#define WIRELESS_LED_NUM 6
-
-#define I2C_ADDR_LEN 1
-
-typedef int sa_i32_t;
-typedef unsigned int sa_u32_t;
-typedef unsigned char sa_u8_t;
-
-
-struct task_struct * ds5600_board_led_task = NULL;
-
-int ds5600_board_slot_index_get(void);
-
 void ds5600_board_led_light(int light, int cycle)
 {
 		
@@ -47,8 +27,8 @@ int ds5600_board_led_thread(void *data)
 
 int ds5600_board_create_led_thread(void)
 {
-	int err;
 #if 0	
+	int err;
     ds5600_board_led_task = kthread_create(ds5600_board_led_thread, NULL, "kwled");
 
 	if (IS_ERR(ds5600_board_led_task))
@@ -94,9 +74,7 @@ ioctl_proc ds5600_board_ioctl_proc_arr[] =
 
 int ds5600_board_init(void)
 {
-	int i, result = 0;
-	unsigned char gp_data[] = {0xFF, 0xFF};
-	unsigned char iodir_data[] = {0x00, 0x00};
+	int result = 0;
 	
 	DBG(debug_ioctl, KERN_INFO DRIVER_NAME ":Enter ds5600_board_init\n");
 
@@ -108,8 +86,6 @@ int ds5600_board_init(void)
 
 void ds5600_board_cleanup(void)
 {
-	/* just do nothing */
-	//free_irq(ko_board->irq_board, &bm_dev);
 	if (NULL != ko_board->cpld_int_data)
 	{
 		kfree(ko_board->cpld_int_data);

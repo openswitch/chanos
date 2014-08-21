@@ -61,7 +61,6 @@ extern unsigned short phy_info_map[128][256];
 
 long ds5652_board_sal_config_init_defaults(void)
 {
-	unsigned char devNum = 0, portNum = 0; 
 	memset(phy_addr_map, 0xff, sizeof(phy_addr_map));
 	memset(phy_info_map, 0x0, sizeof(phy_info_map));
 	appDemoDbEntryAdd("boardIdx", 27);/*LION2 board*/
@@ -91,14 +90,6 @@ fiber_module_fix_param_t ds5652_board_sfp_param =
     .fiber_module_insert_detect = &ds5652_board_sfp_detect_start,
     .fiber_module_info_get = &ds5652_board_sfp_info_get,
 };
-
-extern unsigned long systemInitialized;
-long nh_null_asic_init(int unit)
-{
-    npd_syslog_dbg("only for debug chasm\n");
-    systemInitialized = 1;
-    return NPD_SUCCESS;
-}
 
 long ds5652_board_asic_led_proc(int unit)
 {

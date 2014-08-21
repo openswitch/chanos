@@ -424,13 +424,6 @@ int dummy_ioctl_proc_product_hwcode(struct inode *inode, struct file *filp, unsi
 	return op_ret;
 	
 }
-void dummy_product_init_board(kboard_fix_param * k_fix_board)
-{
-	bm_util_replace_iotclfunc(BM_IOC_CPLD_SLOT_ID, dummy_ioctl_proc_cpld_slot_id);
-	bm_util_replace_iotclfunc(BM_IOC_CPLD_PRODUCT_HWCODE, dummy_ioctl_proc_product_hwcode);
-	//dummy_replace_iotclfunc(BM_IOC_CPLD_SLOT_ID, dummy_ioctl_proc_cpld_slot_id);
-	//dummy_replace_iotclfunc(BM_IOC_CPLD_PRODUCT_HWCODE, dummy_ioctl_proc_product_hwcode);	
-}
 
 int dummy_product_init(void)
 {

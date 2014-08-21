@@ -58,7 +58,7 @@ board_manage_fix_param_t ds5600_boardmn_fix_param =
 
 pne_fix_param_t ds5600_pne_fix_param = 
 {
-    .power_num = 1,
+    .power_num = 2,
     .fan_num = 1,
     .pne_monitor_start = &ds_pne_monitor_start,
     .pne_fanspeed_adjust = &ds_fan_speed_adjust
@@ -149,6 +149,11 @@ product_feature_t ds5600_feature =
     .ipv6_route_ele_acl_rule_size = 0,
     .mpls_lsp_ele_acl_rule_size = 0,
 
+    .macbased_vlan_start_id=0,
+    .macbased_vlan_end_id=191,    
+    .ipsubnet_vlan_start_id=192,
+    .ipsubnet_vlan_end_id=255,
+    
     .ext_tcam = FALSE,
     .mac_pending_learn = TRUE,
     .ext_mac_auto_learn = FALSE,
@@ -203,8 +208,8 @@ product_fix_param_t ds5600_fix_param =
 {
     .product_code = PPAL_PRODUCT_HWCODE_DS5652,
     .product_type = PRODUCT_DS5600,
-    .product_short_name = DS5600_SHORT_NAME,
-    .product_name = DS5600_FULL_NAME,
+    .product_short_name = "DS5652",
+    .product_name = "CHANOS DS5600 Multi-Layer Datacenter Switch",
     .product_pp_feature = &ds5600_feature,
     .serial_no = "1001",
     .board_manage = &ds5600_boardmn_fix_param,

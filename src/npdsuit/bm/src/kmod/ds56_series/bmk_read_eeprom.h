@@ -23,9 +23,9 @@ extern unsigned int debug_ioctl;
   */
 typedef struct ax_sysinfo_product_t
 {
-	char  ax_sysinfo_module_serial_no[21]; //data should be 20 bytes the last byte is '\0'
+	char  ax_sysinfo_module_serial_no[32]; //data should be 20 bytes the last byte is '\0'
 	char  ax_sysinfo_module_name[25];  //data max length should be 24 bytes the last byte is '\0' 
-	char  ax_sysinfo_product_serial_no[21]; //data should be 20 bytes the last byte is '\0' 
+	char  ax_sysinfo_product_serial_no[32]; //data should be 20 bytes the last byte is '\0' 
 	char  ax_sysinfo_product_base_mac_address[13]; //data should be 12 bytes the last byte is '\0' 
 	char  ax_sysinfo_product_name[25]; //data max length should be 24 bytes the last byte is '\0' 
 	char  ax_sysinfo_software_name[25]; //data max length should be 24 bytes the last byte is '\0' 

@@ -25,7 +25,7 @@
 
 #define MAC_ADDRESS_LEN	6
 
-#define SYSINFO_SN_LENGTH	  20
+#define SYSINFO_SN_LENGTH	  32
 #define SYSINFO_PRODUCT_NAME  24
 #define SYSINFO_SOFTWARE_NAME 24
 #define SYSINFO_ENTERPRISE_NAME  64
@@ -33,19 +33,16 @@
 #define SYSINFO_BUILT_IN_ADMIN_USERNAME  32
 #define SYSINFO_BUILT_IN_ADMIN_PASSWORD  32
 
-#define SYSINFO_MODULE_SERIAL_NO  20
-#define SYSINFO_MODULE_NAME       24 
-
 /**
   * EEPROM addresses on chassis device.
   */
-#define  BM_AX_BACKPLANE_EEPROM_ADDR         0x56
-#define  BM_AX_MODULE0_EEPROM_ADDR           0x57
+#define  BM_AX_BACKPLANE_EEPROM_ADDR         0x50
+#define  BM_AX_MODULE0_EEPROM_ADDR           0x50
 
 /**
   * EEPROM addresses on box device.
   */
-#define  BM_AX_MAINBOARD_EEPROM_ADDR         0X56
+#define  BM_AX_MAINBOARD_EEPROM_ADDR         0X50
 
 
 typedef struct bm_op_args_s {

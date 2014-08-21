@@ -18,14 +18,9 @@
 #include "bmk_ds5600_series_info.h"
 
 
-#define PROC_SYSINFO_DIR	"sysinfo"
-#define AX7_PRODUCT_SLOT_NUM 	5
-
 unsigned int debug_ioctl = 0;    
 unsigned int debug_octeon =  0 ; 
 
-bm_op_args bm_ioc_op_args;
-sys_mac_add sys_mac;
 
 /** 
   * data from chassis device.
@@ -36,10 +31,7 @@ extern mac_addr_stored_t stored_mac;
 /**
   * data from box device.
   */
-struct ax_sysinfo_product_t       bm_ax_sysinfo_on_mainboard;
 extern long bm_get_product_code(void);
-
-#define INT_MINOR_REG_OFFSET	8
 
 ioctl_proc ds5600_ioctl_proc_arr[] = 
 {
@@ -65,81 +57,6 @@ ioctl_proc ds5600_ioctl_proc_arr[] =
 	
 	{BM_IOC_KERNEL_DEBUG,			ioctl_proc_kernel_debug},
 };
-
-long util_slot_is_master_slot(int slot_index)
-{
-    int i;
-
-    for(i = 0; i < ko_product->master_slotnum; i++)
-    {
-        if(slot_index == ko_product->master_slot_id[i])
-            return 1;
-    }
-    return 0;
-}
-
-cpld_reg_ctl * util_get_cmd_reg_ctrl(unsigned int cmd)
-{
-	int index; 
-	cpld_reg_ctl * ptr_cpld_ctl = NULL;
-	
-	for (index = 0; index < ko_board->cpld_reg_ctrl_count; index++)
-	{
-		cpld_reg_ctl *cpld_ctl = &ko_board->cpld_reg_ctrl_arr[index];
-		if (cpld_ctl->cmd_code == cmd)
-		{
-			DBG(debug_ioctl, "cmd %#x index %d, offset %#x, mask %#x.\n", 
-									cmd, index, cpld_ctl->offset, cpld_ctl->mask);
-			ptr_cpld_ctl = cpld_ctl;
-			break;
-		}
-	}
-
-	if (ptr_cpld_ctl == NULL)
-	{
-		DBG(debug_ioctl, "can't find cmd code  0x%x\n", cmd);
-	}
-
-	return ptr_cpld_ctl;
-}
-
-long util_kernel_read_file(char *filename, char *buf, int *len)
-{
-	int slot_index;
-	char read_buf[128];
-	int read_len;
-	struct file *file = NULL;
-	mm_segment_t old_fs;
-
-	if (filename==NULL)
-	{
-		return -1;
-	}
-	
-	file = filp_open(filename, O_RDWR | O_APPEND | O_CREAT, 0644);
- 	if (IS_ERR(file)) {
-		DBG(debug_ioctl, KERN_INFO DRIVER_NAME ":Enter util_kernel_read_file\n");
-		return -1;
-	}	
-	memset(read_buf, 0, sizeof(read_buf));
-	old_fs = get_fs();
-	set_fs(KERNEL_DS);
-    read_len = file->f_op->read(file, (char *)read_buf, sizeof(read_buf), &file->f_pos);
-    set_fs(old_fs);	
-	DBG(debug_ioctl, KERN_INFO DRIVER_NAME "read file %s len %d success.\n",
-		filename, read_len);
-	
-	if(file != NULL)
-         filp_close(file, NULL);
-	if (read_len > *len)
-	{
-		return -1;
-	}
-			
-	memcpy(buf, read_buf, read_len);
-	*len=read_len;
-	return 0;
- }
 
 int bm_product_series_ioctl(/*struct inode *inode, */struct file *filp, unsigned int cmd, unsigned long arg)
 {
@@ -208,175 +125,7 @@ irqreturn_t bm_board_interrupt_handler(int irq, void *dev_id)
 	DBG(debug_ioctl, "Enter bm_board_interrupt_handler. \n");
 	return IRQ_HANDLED;
 }
-int mac_addr_get(unsigned char *mac)
-{
-		mac[0] = 0x00;
-		mac[1] = 0x1f;
-		mac[2] = 0x64;
-		mac[3] = 0x00;
-		mac[4] = 0x00;
-		mac[5] = 0x55;
-		return 0;
-}
-void ds5600_master_get_mngt_eth_mac(int port, char *mac_address)
-{
-	ax_sysinfo_product_t sysinfo;
-	int rval = 0;
-	int i = 0;
-    char *tmp_mac_chars = NULL;
-    unsigned char temp_2char[3] = {0x00, 0x00, 0x00};
 
-	if(port == 1 || port == 2)
-	{
-		mac_address[0] = 0x00;
-		mac_address[1] = 0x1f;
-		mac_address[2] = 0x64;
-		mac_address[3] = 0x00;
-		mac_address[4] = 0x00;
-		mac_address[5] = ((port << 4) | kboard_info->slot_index);
-	}
-	else
-	{
-    	memset(&sysinfo, 0, sizeof(sysinfo));
-		/*管理网口的MAC地址，首先尝试从本板获取*/
-    	rval = ax_read_sysinfo_from_eeprom_proc(BM_AX_BACKPLANE_EEPROM_ADDR, &sysinfo);
-    
-    	if (rval < 0 || strlen(sysinfo.ax_sysinfo_product_base_mac_address) == 0)
-    	{
-			/*如果失败，则再从背板获取*/
-    	    rval = ax_read_sysinfo_from_eeprom_proc(BM_AX_MODULE0_EEPROM_ADDR, &sysinfo);
-    		if(rval < 0 || strlen(sysinfo.ax_sysinfo_product_base_mac_address) == 0)
-    		{
-			    /*如果再失败，则再从devinfo文件获取*/
-    			mac_addr_get(mac_address);
-				if(port == 0)
-				{
-				    mac_address[5]+=0;
-				}
-				else
-				{
-					mac_address[5]+=1;
-				}
-				return;
-    		}
-			else
-			{
-				tmp_mac_chars = sysinfo.ax_sysinfo_product_base_mac_address;
-                for (i=0; i<12; i+=2)
-                {
-                    memcpy(temp_2char, tmp_mac_chars+i, 2);
-                    mac_address[i/2] = (unsigned char)simple_strtoul((char *)temp_2char, 0, 16);
-                }
-				if(port == 0)
-				{
-				    mac_address[5]+=0;
-				}
-				else
-				{
-					mac_address[5]+=1;
-				}
-			}
-    	}
-		else
-		{
-			tmp_mac_chars = sysinfo.ax_sysinfo_product_base_mac_address;
-            for (i=0; i<12; i+=2)
-            {
-                memcpy(temp_2char, tmp_mac_chars+i, 2);
-                mac_address[i/2] = (unsigned char)simple_strtoul((char *)temp_2char, 0, 16);
-            }
-			if(port == 0)
-			{
-			    mac_address[5]+=0;
-			}
-			else
-			{
-				mac_address[5]+=1;
-			}
-		}
-		
-	}
-}
-
-void ds5600_linecard_get_mngt_eth_mac(int port, char *mac_address)
-{
-	ax_sysinfo_product_t sysinfo;
-	int rval = 0;
-	int i = 0;
-    char *tmp_mac_chars = NULL;
-    unsigned char temp_2char[3] = {0x00, 0x00, 0x00};
-
-	if(port == 0 || port == 1)
-	{
-		mac_address[0] = 0x00;
-		mac_address[1] = 0x1f;
-		mac_address[2] = 0x64;
-		mac_address[3] = 0x00;
-		mac_address[4] = 0x00;
-		mac_address[5] = ((port << 4) | kboard_info->slot_index);
-	}
-	else
-	{
-    	memset(&sysinfo, 0, sizeof(sysinfo));
-		/*管理网口的MAC地址，首先尝试从本板获取*/
-    	rval = ax_read_sysinfo_from_eeprom_proc(BM_AX_MODULE0_EEPROM_ADDR, &sysinfo);
-    
-    	if (rval < 0 || strlen(sysinfo.ax_sysinfo_product_base_mac_address) == 0)
-    	{
-			/*如果失败，则再从背板获取*/
-    	    rval = ax_read_sysinfo_from_eeprom_proc(BM_AX_BACKPLANE_EEPROM_ADDR, &sysinfo);
-    		if(rval < 0 || strlen(sysinfo.ax_sysinfo_product_base_mac_address) == 0)
-    		{
-			    /*如果再失败，则再从devinfo文件获取*/
-    			mac_addr_get(mac_address);
-				if(port == 2)
-				{
-				    mac_address[5]+=0;
-				}
-				else
-				{
-					mac_address[5]+=1;
-				}
-				return;
-    		}
-			else
-			{
-			    tmp_mac_chars = sysinfo.ax_sysinfo_product_base_mac_address;
-                for (i=0; i<12; i+=2)
-                {
-                    memcpy(temp_2char, tmp_mac_chars+i, 2);
-                    mac_address[i/2] = (unsigned char)simple_strtoul((char *)temp_2char, 0, 16);
-                }
-				if(port == 2)
-				{
-				    mac_address[5]+=0;
-				}
-				else
-				{
-					mac_address[5]+=1;
-				}
-			}
-    	}
-		else
-		{
-			tmp_mac_chars = sysinfo.ax_sysinfo_product_base_mac_address;
-            for (i=0; i<12; i+=2)
-            {
-                memcpy(temp_2char, tmp_mac_chars+i, 2);
-                mac_address[i/2] = (unsigned char)simple_strtoul((char *)temp_2char, 0, 16);
-            }
-			if(port == 0)
-			{
-			    mac_address[5]+=0;
-			}
-			else
-			{
-				mac_address[5]+=1;
-			}
-		}
-		
-	}
-}
 /**************************************************
 *
 *	cpld handler
@@ -482,12 +231,11 @@ int ioctl_proc_module_type(struct inode *inode, struct file *filp, unsigned int 
 }
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
-
+int ioctl_proc_pcb_version(/*struct inode *inode, */struct file *filp, unsigned int cmd, unsigned long arg)
 #else
-
+int ioctl_proc_pcb_version(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg)
 #endif
 
-int ioctl_proc_pcb_version(/*struct inode *inode, */struct file *filp, unsigned int cmd, unsigned long arg)
 {
     cpld_op_args cpld_op_data;
 	int  op_ret = 0;
@@ -502,12 +250,11 @@ int ioctl_proc_pcb_version(/*struct inode *inode, */struct file *filp, unsigned 
 }
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
-
+int ioctl_proc_read_product_sysinfo(/*struct inode *inode, */struct file *filp, unsigned int cmd, unsigned long arg)
 #else
-
+int ioctl_proc_read_product_sysinfo(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg)
 #endif
 
-int ioctl_proc_read_product_sysinfo(/*struct inode *inode, */struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	ax_product_sysinfo product_sysinfo;
 	int retval = 0;
@@ -524,12 +271,11 @@ int ioctl_proc_read_product_sysinfo(/*struct inode *inode, */struct file *filp, 
 }
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
-
+int ioctl_proc_read_module_sysinfo(/*struct inode *inode,*/ struct file *filp, unsigned int cmd, unsigned long arg)
 #else
-
+int ioctl_proc_read_module_sysinfo(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg)
 #endif
 
-int ioctl_proc_read_module_sysinfo(/*struct inode *inode,*/ struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	ax_module_sysinfo module_sysinfo;
 	int retval = 0;
@@ -545,12 +291,11 @@ int ioctl_proc_read_module_sysinfo(/*struct inode *inode,*/ struct file *filp, u
 }
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
-
+int ioctl_proc_env_exch(/*struct inode *inode, */struct file *filp, unsigned int cmd, unsigned long arg)
 #else
-
+int ioctl_proc_env_exch(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg)
 #endif
 
-int ioctl_proc_env_exch(/*struct inode *inode, */struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	boot_env_t bm_op_boot_env_args;
 	int retval = 0;
@@ -566,12 +311,11 @@ int ioctl_proc_env_exch(/*struct inode *inode, */struct file *filp, unsigned int
 }
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
-
+int ioctl_proc_get_mac(/*struct inode *inode, */struct file *filp, unsigned int cmd, unsigned long arg)
 #else
-
+int ioctl_proc_get_mac(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg)
 #endif
 
-int ioctl_proc_get_mac(/*struct inode *inode, */struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	sys_mac_add sys_mac;
 	int retval = 0;
@@ -743,59 +487,6 @@ int ioctl_proc_product_hwcode(/*struct inode *inode, */struct file *filp, unsign
 	op_ret = copy_to_user((cpld_op_args *)arg, &cpld_op_data, sizeof(cpld_op_args));
 	return op_ret;
 }
-
-void bm_util_replace_iotclfunc(unsigned int cmd, IOCTL_FUC  replace_func)
-{
-	int index = 0;
-	
-	if (NULL == replace_func)
-		return;
-
-	for (index = 0; index < LENGTH(ds5600_ioctl_proc_arr); index++)
-	{
-		ioctl_proc* ptr_proc_element =  &ds5600_ioctl_proc_arr[index];
-
-		//DBG("current index %d cmd is %x \n",index,  proc_element.cmd);
-
-		if ((cmd == ptr_proc_element->cmd) && (NULL != ptr_proc_element->func))
-		{
-			ptr_proc_element->func = replace_func;
-			DBG(debug_ioctl, "replace func success.\n");
-			return ;
-		}
-	}
-	
-	for (index = 0; index < ko_product->ioctl_proc_count; index++)
-	{
-		ioctl_proc* ptr_proc_element =  &ko_product->ioctl_proc_arr[index];
-
-		//DBG("current index %d cmd is %x \n",index,  proc_element.cmd);
-
-		if ((cmd == ptr_proc_element->cmd) && (NULL != ptr_proc_element->func))
-		{
-			ptr_proc_element->func = replace_func;
-			DBG(debug_ioctl, "replace func success.\n");
-			return ;
-		}
-	}
-	
-		
-	for (index = 0; index < ko_board->ioctl_proc_count; index++)
-	{
-		ioctl_proc* ptr_proc_element =  &ko_board->ioctl_proc_arr[index];
-
-		//DBG("current index %d cmd is %x \n",index,  proc_element.cmd);
-
-		if ((cmd == ptr_proc_element->cmd) && (NULL != ptr_proc_element->func))
-		{
-			ptr_proc_element->func = replace_func;
-			DBG(debug_ioctl, "replace func success.\n");
-			return ;
-		}
-	}
-	
-}
-
 
 /**************************************************************************
  *
@@ -1203,14 +894,8 @@ struct file_operations bm_proc_slot_id = {
     .release = single_release,
 };
 
-
-
-
-//////////////////////////////////////////////////////////////////////////////////////
 static int bm_proc_board_name_show(struct seq_file *file, void *ptr)
 {
-
-
 	if (!ko_board->board_name)
 		seq_printf(file, "Read board name error\n");
 	else
@@ -1231,11 +916,8 @@ struct file_operations bm_proc_board_name = {
     .release = single_release,
 };
 
-//////////////////////////////////////////////////////////////////////////////////////
 static int bm_proc_product_type_show(struct seq_file *file, void *ptr)
 {
-
-
 	if (!kboard_info)
 		seq_printf(file, "Read product type error\n");
 	else

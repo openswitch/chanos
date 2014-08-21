@@ -49,46 +49,11 @@ enum
 #define PPAL_PRODUCT_HWCODE_US3000 0x07
 
 #define PPAL_PRODUCT_HWCODE_DS5652 0x0A
-
+#define PPAL_PRODUCT_HWCODE_DS6224 0x0B
+#define PPAL_PRODUCT_HWCODE_DS5662 0x0C
 
 
 #define PPAL_PRODUCT_HWCODE_DUMMY	0xFF
-
-#define T9014_FULL_NAME "AUTELAN AS9614 Multi-Layer Core Intelligent Switch"
-#define T9014_SHORT_NAME "T9014"
-
-
-#define T9010_FULL_NAME "AUTELAN AS9610 Multi-Layer Core Intelligent Switch"
-#define T9010_SHORT_NAME "T9010"
-
-#define T9006_FULL_NAME "AUTELAN AS9606 Multi-Layer Core Intelligent Switch"
-#define T9006_SHORT_NAME "T9606"
-
-#define G9606_FULL_NAME "G9606 Multi-Layer Core Intelligent Switch"
-#define G9606_SHORT_NAME "G9606"
-
-
-#define T9003_FULL_NAME "AUTELAN AS9603 Multi-Layer Core Intelligent Switch"
-#define T9003_SHORT_NAME "T9603"
-
-
-#define AS6603_FULL_NAME "AUTELAN AS6603 Multi-Layer Core Intelligent Switch"
-#define AS6603_SHORT_NAME "AS6603"
-
-#define NH3052_SHORT_NAME "AU3052"
-
-#define NH3028_SHORT_NAME "AS3028"
-
-#define US3000_FULL_NAME "AUSeries Multi-Layer Ethernet&Wireless Unified Switch"
-#define US3000_SHORT_NAME "AU-Series"
-
-
-#define AX8603_FULL_NAME "AUTELAN AX8603 Multi-Layer Core Intelligent Switch"
-#define AX8603_SHORT_NAME "AX8603"
-
-#define DS5600_FULL_NAME "CHSNOS DS5600 Multi-Layer Core Intelligent Datacenter Switch"
-#define DS5600_SHORT_NAME "DS5600"
-
 
 /*product type*/
 #define PRODUCT_UNKNOWN -1
@@ -109,6 +74,8 @@ enum
     PRODUCT_G9606,
     PRODUCT_G9610,
     PRODUCT_DS5600,
+    PRODUCT_DS6224,
+    PRODUCT_DS5662,         /* 15 	*/
     PRODUCT_NH_MAX_NUM
 };
 
@@ -160,6 +127,8 @@ enum
 
 /*ds5600*/
 #define PPAL_BOARD_HWCODE_DS5652    0x07
+#define PPAL_BOARD_HWCODE_DS6224    0x08
+#define PPAL_BOARD_HWCODE_DS5662    0x09
 
 #define TSM9002_NAME     "TSM9002"
 #define TSM9002_SN       "1000"
@@ -224,6 +193,8 @@ enum
 	PPAL_BOARD_TYPE_FW9002,			//--30
 	PPAL_BOARD_TYPE_CGM9048S,
 	PPAL_BOARD_TYPE_DS5652,
+	PPAL_BOARD_TYPE_DS6224,
+	PPAL_BOARD_TYPE_DS5662,
     PPAL_BOARD_TYPE_NH_MAX
 };
 #define TSERIES_PORT_PER_ASICMODULE 32
