@@ -671,7 +671,7 @@ void npd_create_eth_port
     int port_type;
     int port_driver_type;
 
-	/*\B6\D4\D3?\D0?\C9õô\A3\ACnetif_index\D6§Õ\AB\C8\EB\B5\C4slot?\BC\CA\C9\CF\CA\C7subslot*/
+	/*\B6\D4\D3?\D0?\C9??\A3\ACnetif_index\D6¡ì?\AB\C8\EB\B5\C4slot?\BC\CA\C9\CF\CA\C7subslot*/
 	if(PRODUCT_IS_BOX)
         eth_port_ifindex = eth_port_generate_ifindex(slot_index, sub_slot, 0, eth_local_index, sub_port);
 	else
@@ -787,7 +787,7 @@ void npd_delete_eth_port(
     struct eth_port_s *eth_ports = NULL;
 
 	
-	/*\B6\D4\D3?\D0?\C9õô\A3\ACnetif_index\D6§Õ\AB\C8\EB\B5\C4slot?\BC\CA\C9\CF\CA\C7subslot*/
+	/*\B6\D4\D3?\D0?\C9??\A3\ACnetif_index\D6¡ì?\AB\C8\EB\B5\C4slot?\BC\CA\C9\CF\CA\C7subslot*/
 	if(PRODUCT_IS_BOX)
         eth_port_ifindex = eth_port_generate_ifindex(slot_index, sub_slot, 0, eth_local_index, sub_port);
 	else
@@ -844,7 +844,7 @@ void npd_remove_eth_port(
 	
     int array_id = 0;
 
-	/*\B6\D4\D3?\D0?\C9õô\A3\ACnetif_index\D6§Õ\AB\C8\EB\B5\C4slot?\BC\CA\C9\CF\CA\C7subslot*/
+	/*\B6\D4\D3?\D0?\C9??\A3\ACnetif_index\D6¡ì?\AB\C8\EB\B5\C4slot?\BC\CA\C9\CF\CA\C7subslot*/
 	if(PRODUCT_IS_BOX)
         eth_port_ifindex = eth_port_generate_ifindex(slot_index, sub_slot, 0, eth_local_index, sub_port);
 	else
@@ -894,7 +894,7 @@ void npd_insert_eth_port(
     unsigned int eth_port_ifindex = 0;
     struct eth_port_s *eth_ports = NULL;
 
-	/*\B6\D4\D3?\D0?\C9õô\A3\ACnetif_index\D6§Õ\AB\C8\EB\B5\C4slot?\BC\CA\C9\CF\CA\C7subslot*/
+	/*\B6\D4\D3?\D0?\C9??\A3\ACnetif_index\D6¡ì?\AB\C8\EB\B5\C4slot?\BC\CA\C9\CF\CA\C7subslot*/
 	if(PRODUCT_IS_BOX)
         eth_port_ifindex = eth_port_generate_ifindex(slot_index, sub_slot, 0, eth_local_index, sub_port);
 	else
@@ -2589,7 +2589,7 @@ int npd_eth_port_update_admin(
 
     admin_status = (new_port->attr_bitmap & ETH_ATTR_ADMIN_STATUS) >> ETH_ADMIN_STATUS_BIT;
 
-    /*\B3\F5?\BB\AF¦Ä\BD\E1\CA\F8\A3\AC\B2\BBenable\B6?\DA*/
+    /*\B3\F5?\BB\AF|?\BD\E1\CA\F8\A3\AC\B2\BBenable\B6?\DA*/
     if((admin_status == ETH_ATTR_ENABLE) && (!npd_startup_end))
         ;
     else
@@ -2599,7 +2599,7 @@ int npd_eth_port_update_admin(
      
 int npd_eth_port_startup_end_update()
 {
-	/*\D3\C3traversal\BB\E1\B7\E2\CB\F8\CA\FD\BE?\E2\BD?\A4?\BC?\D4\DAQUALCOMM??\C9\CF\D3§á\C9\C4?\BC\D6\C2\D6\D8\C6\F4*/
+	/*\D3\C3traversal\BB\E1\B7\E2\CB\F8\CA\FD\BE?\E2\BD?\A4?\BC?\D4\DAQUALCOMM??\C9\CF\D3¡ì¨¢\C9\C4?\BC\D6\C2\D6\D8\C6\F4*/
 	int ret;
 	struct eth_port_s eth_port = {0};
 
@@ -2611,7 +2611,7 @@ int npd_eth_port_startup_end_update()
 		if(local_ret == ETHPORT_RETURN_CODE_ERR_NONE)
 		{
     		npd_eth_port_update_admin(g_eth_ports, &eth_port, 0);
-    		/*?10ms\A3\AC\D2??\C0\ED\CD\EA\B6?\DAup\D6§Ø\CF*/
+    		/*?10ms\A3\AC\D2??\C0\ED\CD\EA\B6?\DAup\D6¡ì?\CF*/
     		usleep(10000);
 		}
 		ret = dbtable_sequence_traverse_next(g_eth_ports, eth_port.eth_port_ifindex, &eth_port);
@@ -4904,7 +4904,7 @@ int npd_del_ethport_route_mode(unsigned int eth_g_index)
             npd_put_port(portInfo);
             netif_notify_event(eth_g_index, PORT_NOTIFIER_L2CREATE);
             
-/* ?\B8\C3?\D3§Ò\D8?\A3\AC\CF\E0\B9??\A6\C0\ED\D4\DAL2CREATE\CA?\FE\D6\D0\D2?\AD\D7\F6\C1?\AC\B6\F8\C7?\C9\C4\DC\D2\FD\B7\A2\CA\FD\BE?\BB?\D6?\C4\CE\CA\CC\E2
+/* ?\B8\C3?\D3¡ì¨°\D8?\A3\AC\CF\E0\B9??\A6\C0\ED\D4\DAL2CREATE\CA?\FE\D6\D0\D2?\AD\D7\F6\C1?\AC\B6\F8\C7?\C9\C4\DC\D2\FD\B7\A2\CA\FD\BE?\BB?\D6?\C4\CE\CA\CC\E2
             if(link_status)
                 netif_notify_event(eth_g_index, PORT_NOTIFIER_LINKUP_E);
             else
@@ -5091,14 +5091,14 @@ int npd_eth_port_thread_notifier
 	if(local == ETHPORT_RETURN_CODE_ERR_NONE)
 	{
         old_state = npd_check_eth_port_status(eth_g_index);
-		/*\C8\E7\B9\FB\CA?\BE\B0\E5\B6??\AC\D0\E8?\B6\D4ethPort\B5\C4\CA\FD\BE?\F8\D0§Ú\FC\D0\C2*/
+		/*\C8\E7\B9\FB\CA?\BE\B0\E5\B6??\AC\D0\E8?\B6\D4ethPort\B5\C4\CA\FD\BE?\F8\D0¡ì¨²\FC\D0\C2*/
         ret = npd_get_port_link_status(eth_g_index,&new_state);
 
         if (NPD_SUCCESS != ret)
         {
             npd_netif_index_to_user_fullname(eth_g_index, name);
-            /*\C8\E7\B9\FB\B1\BE\B0?\CA\C7\D6\F7\BF\D8\C7???\BB\CA?\BE\B0\E5\BD?\DA, \B2\BB\D7\F6\B4\A6\C0\ED*/
-			printf("Can't get link status of ethernet port %s(%x).\r\n", name, eth_g_index);
+            /*\C8\E7\B9\FB\B1\BE\B0I\CA\C7\D6\F7\BF\D8\C7???\BB\CA?\BE\B0\E5\BD?\DA, \B2\BB\D7\F6\B4\A6\C0\ED*/
+			syslog_ax_eth_port_dbg("Can't get link status of ethernet port %s(%x).\r\n", name, eth_g_index);
             goto error;
         }
         port_counter_info = npd_get_port_counter_by_index(eth_g_index);
@@ -5149,10 +5149,10 @@ int npd_eth_port_thread_notifier
         if (old_state == new_state)
         {
 	/*\D3\C9\D3??\BC?DB\B2\D9\D7\F7\B2\BB\CA\C7?\D7?\D9\D7\F7\A3\AC\CB\F9\D2?\E6\D4?\C9\C4\DC\C1\AC\D0\F8\C9?\A8\CA?\FE\A3\AC
-	\B5\AB\CA\C7DB\D6§Ö\C4???\D3§Ú?\E4
+	\B5\AB\CA\C7DB\D6¡ì?\C4???\D3¡ì¨²?\E4
             goto error;
         */
-        printf("Link change trigged but state not changed.\r\n");
+        syslog_ax_eth_port_dbg("Link change trigged but state not changed.\r\n");
         }
         else if (ETH_PORT_NOTIFIER_LINKPOLL_E == event)  /*find state change when polling*/
         {
@@ -5171,7 +5171,7 @@ int npd_eth_port_thread_notifier
                 ((ETH_ATTR_LINKDOWN == new_state) && (ETH_PORT_NOTIFIER_LINKUP_E == event)))
         {
 			
-            printf("link %s event but port %#x current state %s error\n",		\
+            syslog_ax_eth_port_dbg("link %s event but port %#x current state %s error\n",		\
                                    (ETH_PORT_NOTIFIER_LINKUP_E == event) ? "UP":"DOWN",eth_g_index,	\
                                    (ETH_ATTR_LINKUP == new_state) ? "UP":"DOWN");
             /*\B4?\A6\B2\BB\C4?\BB\B4\A6\C0\ED\A3\AC\CF\E0?\CA?\FE\CF\C2\C3\E6\B4\FA\C2\EB\BB?\C0\ED,\BD\F6\D0\E8?\B6\D4event\B8\B3\D2\D4\D5\FD?\B5\C4?*/
@@ -5454,7 +5454,7 @@ void npd_eth_port_handle_delay_event()
 		if((npd_ethport_change_fast_detect[array_id].fast_count > 0)
 			&& (((unsigned int)tnow.tv_sec - (unsigned int)eth_port.lastLinkChange) > 1))
 		{
-			/*?\B4¦Æ??\C4\C4\DA\C8?\FC\D0\C2\D4\DA\CA?\FE\C9?\A8?\D2?\AD\CD\EA\B3\C9*/
+			/*?\B4|???\C4\C4\DA\C8?\FC\D0\C2\D4\DA\CA?\FE\C9?\A8?\D2?\AD\CD\EA\B3\C9*/
             eth_port.lastLinkChange = tnow.tv_sec;
         
             switch (event)
