@@ -1005,6 +1005,12 @@ unsigned int npd_dhcp_snp_attach_opt82_string
 	optionptr = (unsigned char *)packet->options;
 	end = npd_dhcp_snp_end_option(optionptr);
 
+	/* end position + string length + option code/length + end option */
+	if (end + string[NPD_DHCP_SNP_OPT_LEN] + 2 + 1 >= NPD_DHCP_SNP_OPTION_LEN) {
+		syslog_ax_dhcp_snp_err("Option 0x%02x did not fit into the packet!\n", string[NPD_DHCP_SNP_OPT_CODE]);
+		return DHCP_SNP_RETURN_CODE_ERROR;
+	}
+
 	syslog_ax_dhcp_snp_dbg("optionptr end %d  %02x-%02x-%02x-%02x-%02x",end ,optionptr[end-2],optionptr[end-1]
 							,optionptr[end],optionptr[end+1],optionptr[end+2]);
 
@@ -1013,12 +1019,6 @@ unsigned int npd_dhcp_snp_attach_opt82_string
 	syslog_ax_dhcp_snp_dbg("NPD_DHCP_SNP_OPT_LEN  %d",end + 2 + 1);
 	syslog_ax_dhcp_snp_dbg("string %s!\n",string);
 	syslog_ax_dhcp_snp_dbg("string %02x!\n",string[NPD_DHCP_SNP_OPT_LEN]);
-
-	/* end position + string length + option code/length + end option */
-	if (end + string[NPD_DHCP_SNP_OPT_LEN] + 2 + 1 >= NPD_DHCP_SNP_OPTION_LEN) {
-		syslog_ax_dhcp_snp_err("Option 0x%02x did not fit into the packet!\n", string[NPD_DHCP_SNP_OPT_CODE]);
-		return DHCP_SNP_RETURN_CODE_ERROR;
-	}
 
 	syslog_ax_dhcp_snp_dbg("adding option 0x%02x\n", string[NPD_DHCP_SNP_OPT_CODE]);
 
