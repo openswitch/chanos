@@ -36,6 +36,8 @@ extern kproduct_fix_param * ds5600_series_product_param_arr[];
 #include "bmk_ds5652_board_param.c"
 #include "bmk_ds5652_product_param.c"
 
+#include "bmk_ds6224_board_param.c"
+#include "bmk_ds6224_product_param.c"
 /* ********** variables ***************** */
 kfamily_fix_param ** kfamily_type_arr = NULL;
 kproduct_fix_param ** kproduct_type_arr = NULL;
@@ -47,11 +49,13 @@ unsigned int PPAL_BOARD_TYPE_NONE = PPAL_BOARD_TYPE_NH_NONE;
 unsigned int PPAL_BOARD_TYPE_MAX = PPAL_BOARD_TYPE_NH_MAX;
 unsigned int PRODUCT_MAX_NUM = PRODUCT_NH_MAX_NUM;
 
-/* us3k family */
+extern int bmk_ds5652_twsi_eeprom_read_byte(uint8_t addr, unsigned short data_offset, char *buf_ptr);
+
 kboard_fix_param * ds5600_series_board_param_arr[] = 
 {	
 
 	[PPAL_BOARD_TYPE_DS5652]	= &ds5600_board,
+	[PPAL_BOARD_TYPE_DS6224]	= &ds6224_board,
 	[PPAL_BOARD_TYPE_NH_MAX]	= NULL,	
 };
 
@@ -59,6 +63,7 @@ kboard_fix_param * ds5600_series_board_param_arr[] =
 kproduct_fix_param * ds5600_series_product_param_arr[] = 
 {
 	[PRODUCT_DS5600] = &ds5600_product_fix_param,
+	[PRODUCT_DS6224] = &ds6224_product_fix_param,
 	[PRODUCT_NH_MAX_NUM]	= NULL,
 };
 
@@ -103,16 +108,52 @@ long bm_get_family_code(void)
 
 long bm_get_product_code(void)
 {
-	return 	PPAL_PRODUCT_HWCODE_DS5652;
+    int ret = 0;
+	char buf[2];
+    ret = bmk_ds5652_twsi_eeprom_read_byte(0x50, 0x10, buf);
+	if(ret == 0)
+	{
+        ret = bmk_ds5652_twsi_eeprom_read_byte(0x50, 0x11, buf+1);
+		if(ret == 0)
+		{
+		    switch(buf[1])
+		    {
+		        case 1:
+					return PPAL_PRODUCT_HWCODE_DS5652;
+		        case 2:
+					return PPAL_PRODUCT_HWCODE_DS6224;
+		        default:
+					break;
+		    }
+		}
+	}
+	return 	PPAL_PRODUCT_HWCODE_DS5662;
 }
 
 
 long bm_get_board_code(void)
 {
-	return PPAL_BOARD_HWCODE_DS5652;
+    int ret = 0;
+	char buf[2];
+    ret = bmk_ds5652_twsi_eeprom_read_byte(0x50, 0x10, buf);
+	if(ret == 0)
+	{
+        ret = bmk_ds5652_twsi_eeprom_read_byte(0x50, 0x11, buf+1);
+		if(ret == 0)
+		{
+		    switch(buf[1])
+		    {
+		        case 1:
+					return PPAL_BOARD_HWCODE_DS5652;
+		        case 2:
+					return PPAL_BOARD_HWCODE_DS6224;
+		        default:
+					break;
+		    }
+		}
+	}
+	return 	PPAL_BOARD_HWCODE_DS5662;
 }
-
-
 
 int bm_get_family_type(void)
 {
@@ -187,7 +228,7 @@ int bm_get_board_type(void)
 
 int bm_common_ioctl(/*struct inode *inode, */struct file *filp, unsigned int cmd, unsigned long arg)
 {
-	DBG(debug_octeon, KERN_INFO DRIVER_NAME ":Enter bm_conmmon_ioctl.\n");
+	DBG(debug_octeon, KERN_INFO DRIVER_NAME ":Enter bm_conmmon_ioctl. cmd = %x\n", cmd);
 	
 	return -2;
 }

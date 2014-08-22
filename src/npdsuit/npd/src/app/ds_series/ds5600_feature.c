@@ -222,6 +222,22 @@ product_fix_param_t ds5600_fix_param =
 };
 
 
+product_fix_param_t ds6224_fix_param =
+{
+	.product_code = PPAL_PRODUCT_HWCODE_DS6224,
+    .product_type = PRODUCT_DS6224,
+    .product_short_name = "DS6224",
+    .product_name = "CHANOS DS5600 Multi-Layer Datacenter Switch with 24X10GE",
+    .product_pp_feature = &ds5600_feature,
+    .serial_no = "1001",
+    .board_manage = &ds5600_boardmn_fix_param,
+    .pne_fix_param_t = &ds5600_pne_fix_param,
+    .product_man_param_get = &ds5600_load_backinfo,
+    .product_reset = &ds_sys_reset,
+    .product_show_chassis = &ds_chassis_show,
+    .slotno_get = &ds5600_slotno_get,
+    .master_set = &ds5600_npd_master_set
+};
 
 #ifdef __cplusplus
 }

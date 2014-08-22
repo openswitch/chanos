@@ -1,15 +1,15 @@
-/*
- * purpose: read sysinfo from EEPROM.
- * author: Autelan. Co. Ltd.
- * codeby: baolc
- * 2008-06-19
- */
 
 #include <linux/mm.h>
 #include <linux/slab.h>
+#include <linux/delay.h>
 #include <linux/mtd/mtd.h>
 #include <linux/err.h>
-
+#include <linux/file.h>
+#include <linux/vfs.h>
+#include <linux/jiffies.h>
+#include <linux/of.h>
+#include <linux/i2c.h>
+#include <linux/syscalls.h>
 #include "bmk_read_eeprom.h"
 
 /////////////////////////////////////////////////////////////////////
@@ -19,7 +19,7 @@
 #define AX_EEPROM_SYSINFO_MAC_ADDR_LEN     (12)
 
 
-#define AX_SYSINFO_MALLOC(x)   kmalloc(x, GFP_ATOMIC)
+#define AX_SYSINFO_MALLOC(x)   kmalloc(x, GFP_KERNEL)
 #define AX_SYSINFO_FREE(x, s)  kfree(x) //return void
 
 extern struct mtd_info *get_mtd_device_nm(const char *name);
@@ -130,7 +130,7 @@ static int _ax_populate_sysinfo_with_textbuf(_ax_sysinfo_t* dest_sysinfo_ptr, un
 		int index ;
 		for (index = 0; index < buf_len; index++)
 		{
-			printk("%d ", text_buf[index]);
+			printk("%02x ", text_buf[index]);
 			if (0 == (index%16))
 			{
 				printk("\n");
@@ -160,7 +160,9 @@ static int _ax_populate_sysinfo_with_textbuf(_ax_sysinfo_t* dest_sysinfo_ptr, un
 	DBG(debug_octeon, "elem_count is %d.\n", elem_count);
 
 	if (elem_count > 0 && buf_len <= 0)
+	{
 		return -1;
+	}
 
 	//second, begin to parse element in sysinfo
 	dest_sysinfo_ptr->sysinfo_elem_array = (_ax_sysinfo_elem_tlv_t*)AX_SYSINFO_MALLOC(sizeof(_ax_sysinfo_elem_tlv_t) * elem_count); //malloc memory for elements
@@ -234,228 +236,246 @@ static int _ax_populate_sysinfo_with_textbuf(_ax_sysinfo_t* dest_sysinfo_ptr, un
 /** 
   * copy from _ax_sysinfo_t to ax_sysinfo_product_t
   */
-static void _ax_populate_global_bootinfo(_ax_sysinfo_t* dest_sysinfo_ptr, ax_sysinfo_product_t* sysinfo)
+static void bmk_ds5652_populate_global_bootinfo(char* date_sysinfo_ptr, ax_sysinfo_product_t* sysinfo)
 {
-	int elem_count;
 	int i = 0;
-	int real_size = 0;
-
-	elem_count = dest_sysinfo_ptr->sysinfo_header.total_element_count; 
+	char item_name[64];
+	char item[256];
+	char *item_name_start = NULL;
+	char *item_name_end = NULL;
+	int item_name_complete = 0;
+	char *item_start = NULL;
+	char *item_end = NULL;
+	int item_complete = 0;
 	
-	if (dest_sysinfo_ptr->sysinfo_elem_array == NULL)
-		return;
-
-	//copy to  sysinfo
-	for (i=0; i<elem_count; i++)
+	for(i = 0; i < AX_EEPROM_SYSINFO_MAX_SIZE + 1; i++)
 	{
-		if (dest_sysinfo_ptr->sysinfo_elem_array[i].data_buf_ptr != NULL && dest_sysinfo_ptr->sysinfo_elem_array[i].element_length != 0)
-		{
-			switch (dest_sysinfo_ptr->sysinfo_elem_array[i].element_type)
-			{
-			case AX_SYSINFO_MODULE_SERIAL_NO:
-				real_size = sizeof(sysinfo->ax_sysinfo_module_serial_no);
-				if (dest_sysinfo_ptr->sysinfo_elem_array[i].element_length >= real_size)
+	    DBG(debug_ioctl, "%c ", date_sysinfo_ptr[i]);
+	    if(i%16 == 15)
+	    {
+	        DBG(debug_ioctl, "\r\n");
+	    }
+	    switch(date_sysinfo_ptr[i])
+	    {
+	        case '[':
+				memset(item_name, 0, 64);
+				item_start = NULL;
+				item_end = NULL;
+				item_name_complete = 0;
+				item_name_start = date_sysinfo_ptr + i + 1;
+				break;
+	        case ']':
+				item_name_end = date_sysinfo_ptr + i;
+				if(item_name_start)
 				{
-				    memcpy(sysinfo->ax_sysinfo_module_serial_no, dest_sysinfo_ptr->sysinfo_elem_array[i].data_buf_ptr, real_size);
-					sysinfo->ax_sysinfo_module_serial_no[real_size-1] = '\0';
+				    memset(item, 0, 256);
+				    item_name_complete = 1;
+					memcpy(item_name, item_name_start, (item_name_end - item_name_start));
 				}
 				else
 				{
-				    memcpy(sysinfo->ax_sysinfo_module_serial_no, dest_sysinfo_ptr->sysinfo_elem_array[i].data_buf_ptr, dest_sysinfo_ptr->sysinfo_elem_array[i].element_length);
+				    item_name_start = NULL;
+					item_name_end = NULL;
+					item_name_complete = 0;
 				}
 				break;
-			case AX_SYSINFO_MODULE_NAME:
-				real_size = sizeof(sysinfo->ax_sysinfo_module_name);
-				if (dest_sysinfo_ptr->sysinfo_elem_array[i].element_length >= real_size)
+			case '=':
+				break;
+	        case '<':
+				if(item_name_complete)
 				{
-				    memcpy(sysinfo->ax_sysinfo_module_name, dest_sysinfo_ptr->sysinfo_elem_array[i].data_buf_ptr, real_size);
-					sysinfo->ax_sysinfo_module_name[real_size-1] = '\0';
-				}
-				else
-				{
-				    memcpy(sysinfo->ax_sysinfo_module_name, dest_sysinfo_ptr->sysinfo_elem_array[i].data_buf_ptr, dest_sysinfo_ptr->sysinfo_elem_array[i].element_length);;
+				    item_start = date_sysinfo_ptr + i + 1;
 				}
 				break;
-			case AX_SYSINFO_PRODUCT_SERIAL_NO:
-				real_size = sizeof(sysinfo->ax_sysinfo_product_serial_no);
-				if (dest_sysinfo_ptr->sysinfo_elem_array[i].element_length >= real_size)
+	        case '>':
+				if(item_name_complete)
 				{
-				    memcpy(sysinfo->ax_sysinfo_product_serial_no, dest_sysinfo_ptr->sysinfo_elem_array[i].data_buf_ptr, real_size);
-					sysinfo->ax_sysinfo_product_serial_no[real_size-1] = '\0';
+				    if(item_start)
+				    {
+    				    item_end = date_sysinfo_ptr + i;
+    					if(strcmp(item_name, "ALIAS_NAME") == 0)
+    					{
+    					    memcpy(sysinfo->ax_sysinfo_module_name, item_start, (item_end - item_start) > 24 ? 24:(item_end - item_start));
+    					    memcpy(sysinfo->ax_sysinfo_product_name, item_start, (item_end - item_start) > 24 ? 24:(item_end - item_start));
+    					}
+						else if(strcmp(item_name, "PRODUCT_NAME") == 0)
+    					{
+    					    memcpy(sysinfo->ax_sysinfo_module_name, item_start, (item_end - item_start) > 24 ? 24:(item_end - item_start));
+    					    memcpy(sysinfo->ax_sysinfo_product_name, item_start, (item_end - item_start) > 24 ? 24:(item_end - item_start));
+    					}
+						else if(strcmp(item_name, "SERIAL_NO") == 0)
+    					{
+    					    memcpy(sysinfo->ax_sysinfo_module_serial_no, item_start, (item_end - item_start) > 31 ? 31:(item_end - item_start));
+    					    memcpy(sysinfo->ax_sysinfo_product_serial_no, item_start, (item_end - item_start) > 31 ? 31:(item_end - item_start));
+    					}
+						else if(strcmp(item_name, "MAC") == 0)
+    					{
+    					    memcpy(sysinfo->ax_sysinfo_product_base_mac_address, item_start, (item_end - item_start) > 12 ? 12:(item_end - item_start));
+    					}
+						else if(strcmp(item_name, "OID") == 0)
+    					{
+    					    memcpy(sysinfo->ax_sysinfo_enterprise_snmp_oid, item_start, (item_end - item_start) > 128 ? 128:(item_end - item_start));
+    					}
+				    }
 				}
-				else
-				{
-				    memcpy(sysinfo->ax_sysinfo_product_serial_no, dest_sysinfo_ptr->sysinfo_elem_array[i].data_buf_ptr, dest_sysinfo_ptr->sysinfo_elem_array[i].element_length);;
-				}
-				break;
-			case AX_SYSINFO_PRODUCT_BASE_MAC_ADDRESS:
-				real_size = sizeof(sysinfo->ax_sysinfo_product_base_mac_address);
-				if (dest_sysinfo_ptr->sysinfo_elem_array[i].element_length >= real_size)
-				{
-				    memcpy(sysinfo->ax_sysinfo_product_base_mac_address, dest_sysinfo_ptr->sysinfo_elem_array[i].data_buf_ptr, real_size);
-					sysinfo->ax_sysinfo_product_base_mac_address[real_size-1] = '\0';
-				}
-				else
-				{
-				    memcpy(sysinfo->ax_sysinfo_product_base_mac_address, dest_sysinfo_ptr->sysinfo_elem_array[i].data_buf_ptr, dest_sysinfo_ptr->sysinfo_elem_array[i].element_length);
-				}
-				break;
-			case AX_SYSINFO_PRODUCT_NAME:
-				real_size = sizeof(sysinfo->ax_sysinfo_product_name);
-				if (dest_sysinfo_ptr->sysinfo_elem_array[i].element_length >= real_size)
-				{
-				    memcpy(sysinfo->ax_sysinfo_product_name, dest_sysinfo_ptr->sysinfo_elem_array[i].data_buf_ptr, real_size);
-					sysinfo->ax_sysinfo_product_name[real_size-1] = '\0';
-				}
-				else
-				{
-				    memcpy(sysinfo->ax_sysinfo_product_name, dest_sysinfo_ptr->sysinfo_elem_array[i].data_buf_ptr, dest_sysinfo_ptr->sysinfo_elem_array[i].element_length);;
-				}
-				break;
-			case AX_SYSINFO_SOFTWARE_NAME:
-				real_size = sizeof(sysinfo->ax_sysinfo_software_name);
-				if (dest_sysinfo_ptr->sysinfo_elem_array[i].element_length >= real_size)
-				{
-				    memcpy(sysinfo->ax_sysinfo_software_name, dest_sysinfo_ptr->sysinfo_elem_array[i].data_buf_ptr, real_size);
-					sysinfo->ax_sysinfo_software_name[real_size-1] = '\0';
-				}
-				else
-				{
-				    memcpy(sysinfo->ax_sysinfo_software_name, dest_sysinfo_ptr->sysinfo_elem_array[i].data_buf_ptr, dest_sysinfo_ptr->sysinfo_elem_array[i].element_length);;
-				}
-				break;
-			case AX_SYSINFO_ENTERPRISE_NAME:
-				real_size = sizeof(sysinfo->ax_sysinfo_enterprise_name);
-				if (dest_sysinfo_ptr->sysinfo_elem_array[i].element_length >= real_size)
-				{
-				    memcpy(sysinfo->ax_sysinfo_enterprise_name, dest_sysinfo_ptr->sysinfo_elem_array[i].data_buf_ptr, real_size);
-					sysinfo->ax_sysinfo_enterprise_name[real_size-1] = '\0';
-				}
-				else
-				{
-				    memcpy(sysinfo->ax_sysinfo_enterprise_name, dest_sysinfo_ptr->sysinfo_elem_array[i].data_buf_ptr, dest_sysinfo_ptr->sysinfo_elem_array[i].element_length);;
-				}
-				break;
-			case AX_SYSINFO_ENTERPRISE_SNMP_OID:
-				real_size = sizeof(sysinfo->ax_sysinfo_enterprise_snmp_oid);
-				if (dest_sysinfo_ptr->sysinfo_elem_array[i].element_length >= real_size)
-				{
-				    memcpy(sysinfo->ax_sysinfo_enterprise_snmp_oid, dest_sysinfo_ptr->sysinfo_elem_array[i].data_buf_ptr, real_size);
-					sysinfo->ax_sysinfo_enterprise_snmp_oid[real_size-1] = '\0';
-				}
-				else
-				{
-				    memcpy(sysinfo->ax_sysinfo_enterprise_snmp_oid, dest_sysinfo_ptr->sysinfo_elem_array[i].data_buf_ptr, dest_sysinfo_ptr->sysinfo_elem_array[i].element_length);;
-				}
-				break;
-			case AX_SYSINFO_SNMP_SYS_OID:
-				real_size = sizeof(sysinfo->ax_sysinfo_snmp_sys_oid);
-				if (dest_sysinfo_ptr->sysinfo_elem_array[i].element_length >= real_size)
-				{
-				    memcpy(sysinfo->ax_sysinfo_snmp_sys_oid, dest_sysinfo_ptr->sysinfo_elem_array[i].data_buf_ptr, real_size);
-					sysinfo->ax_sysinfo_snmp_sys_oid[real_size-1] = '\0';
-				}
-				else
-				{
-				    memcpy(sysinfo->ax_sysinfo_snmp_sys_oid, dest_sysinfo_ptr->sysinfo_elem_array[i].data_buf_ptr, dest_sysinfo_ptr->sysinfo_elem_array[i].element_length);;
-				}
-				break;
-			case AX_SYSINFO_BUILT_IN_ADMIN_USERNAME:
-				real_size = sizeof(sysinfo->ax_sysinfo_built_in_admin_username);
-				if (dest_sysinfo_ptr->sysinfo_elem_array[i].element_length >= real_size)
-				{
-				    memcpy(sysinfo->ax_sysinfo_built_in_admin_username, dest_sysinfo_ptr->sysinfo_elem_array[i].data_buf_ptr, real_size);
-					sysinfo->ax_sysinfo_built_in_admin_username[real_size-1] = '\0';
-				}
-				else
-				{
-				    memcpy(sysinfo->ax_sysinfo_built_in_admin_username, dest_sysinfo_ptr->sysinfo_elem_array[i].data_buf_ptr, dest_sysinfo_ptr->sysinfo_elem_array[i].element_length);;
-				}
-				break;
-			case AX_SYSINFO_BUILT_IN_ADMIN_PASSWORD:
-				real_size = sizeof(sysinfo->ax_sysinfo_built_in_admin_password);
-				if (dest_sysinfo_ptr->sysinfo_elem_array[i].element_length >= real_size)
-				{
-				    memcpy(sysinfo->ax_sysinfo_built_in_admin_password, dest_sysinfo_ptr->sysinfo_elem_array[i].data_buf_ptr, real_size);
-					sysinfo->ax_sysinfo_built_in_admin_password[real_size-1] = '\0';
-				}
-				else
-				{
-				    memcpy(sysinfo->ax_sysinfo_built_in_admin_password, dest_sysinfo_ptr->sysinfo_elem_array[i].data_buf_ptr, dest_sysinfo_ptr->sysinfo_elem_array[i].element_length);;
-				}
+		        item_name_complete = 0;
+		        item_start = NULL;
+				item_end = NULL;
+				item_name_start = NULL;
+			    item_name_end = NULL;
+				memset(item_name, 0, 64);
+				memset(item, 0, 256);
 				break;
 			default:
 				break;
-			}
-		}
+	    }
 	}
-	
 }
 
-
-
-/** Read sysinfo buf from eeprom.
-  * NOTE: Allocate memory inside this function! The memory should be released when not using!!
-  *@param  eeprom_dev_addr   The eeprom's address in TWSI bus, 8 bit
-  *@param  data_offset  The sysinfo data in eeprom's offset. 32bit addr 0x000nxxxx for EEPROM address selectors at n, offset xxxx in EEPROM. Here only use the lower 16bit.
-  *@param  buf_len_ptr  A pointer to an integer, which will used to store the length of buffer allocated. NOT include the appended '\0' char!
-  *@return   buffer's address, should be released using ax_sysinfo_buf_free() when not using!
-  */
-static unsigned char* _ax_twsi_read_sysinfo_buf_from_eeprom(uint8_t eeprom_dev_addr, uint32_t data_offset, uint32_t* buf_len_ptr)
+int bmk_ds5652_twsi_eeprom_read_byte(uint8_t addr, unsigned short data_offset, char *buf_ptr)
 {
-	#define AX_SYSINFO_HEADER_BUF_LEN  11
-	unsigned char header_buf[AX_SYSINFO_HEADER_BUF_LEN];
-	char* buf_addr = NULL;
-	unsigned int debug_ioctl = 0;
-	struct mtd_info *mtd;
-	char *mtd_name = "sys_info";
-	int ret;
-	unsigned long total;
+	struct file *file;
+	struct i2c_client *client = NULL;
+	struct i2c_msg msg[2];
+	unsigned long timeout, read_time;
+	int status;
+	char eeprom_offset[2];
 
-	mtd = get_mtd_device_nm(mtd_name);
-	if(IS_ERR(mtd))
+	file = filp_open("/dev/i2c-1", O_RDWR, 0);
+	if(IS_ERR(file))
 	{
-		DBG(debug_ioctl, "Get mtd %s error!\n", mtd_name);
+		DBG(debug_ioctl, "Get device file for /dev/i2c-1 failed!\n");
 		return -1;
 	}
-	
-	data_offset &= 0xFFFF; //here only use the lower 16bit offset addr
-	
-	//first read the sysinfo header from eeprom, they are predefined 10 bytes
-	total = AX_SYSINFO_HEADER_BUF_LEN-1;	
-	ret = (*mtd->read)(mtd, (loff_t)data_offset, (size_t)total, (size_t*)&total, header_buf); 	
-	if (ret || total != (AX_SYSINFO_HEADER_BUF_LEN-1))
+	client = file->private_data;
+    if(client == NULL)
 	{
-		*buf_len_ptr = -1; //read error
-		return 0;
+		DBG(debug_ioctl, "Get i2c client of /dev/i2c-1 failed!\n");
+		return -1;
 	}
-	header_buf[AX_SYSINFO_HEADER_BUF_LEN-1] = 0; //end str with '\0'
+	memset(msg, 0, sizeof(msg));
+	
+	eeprom_offset[0] = data_offset >> 8;
+	eeprom_offset[1] = data_offset;
+	
+	msg[0].addr = addr;
+	msg[0].len = 2;
+	msg[0].buf = eeprom_offset;
 
-	*buf_len_ptr = _ax_tool_simple_nstrtoi(&header_buf[AX_SYSINFO_HEADER_BUF_LEN-6], 5); //total buffer length
-	if (*buf_len_ptr > 0xff)
+	msg[1].addr = addr;
+	msg[1].flags = I2C_M_RD;
+	msg[1].buf = buf_ptr;
+	msg[1].len = 1;
+	
+	/*
+	 * Reads fail if the previous write didn't complete yet. We may
+	 * loop a few times until this one succeeds, waiting at least
+	 * long enough for one entire page write to work.
+	 */
+	timeout = jiffies + msecs_to_jiffies(25);
+	do
 	{
-		DBG(debug_ioctl, "sysinfo total length 0x%x is bigger than the eeprom's total size\n", *buf_len_ptr);
-		return 0; // bad head :the sysinfo total length is bigger than the eeprom's total size 	
+		read_time = jiffies;
+		
+		status = i2c_transfer(client->adapter, msg, 2);
+
+		DBG(debug_ioctl, "read %zu@%d --> %d (%ld)\n",
+				1, data_offset, status, jiffies);
+
+		if (status == 2)
+		{
+		    DBG(debug_ioctl, "Read value %x from eeprom at %x successed.\r\n", *buf_ptr, data_offset);
+			return 0;
+		}
+
+		/* REVISIT: at HZ=100, this is sloooow */
+		msleep(1);
+	} while (time_before(read_time, timeout));
+    return -1;
+}
+
+int bmk_ds5652_twsi_eeprom_write_byte(uint8_t addr, unsigned short data_offset, char data)
+{
+	struct file *file;
+	struct i2c_client *client = NULL;
+	struct i2c_msg msg[1];
+	unsigned long timeout, read_time;
+	int status;
+	char eeprom_date[3];
+
+	file = filp_open("/dev/i2c-1", O_RDWR, 0);
+	if(IS_ERR(file))
+	{
+		DBG(debug_ioctl, "Get device file for /dev/i2c-1 failed!\n");
+		return -1;
 	}
+	client = file->private_data;
+    if(client == NULL)
+	{
+		DBG(debug_ioctl, "Get i2c client of /dev/i2c-1 failed!\n");
+		return -1;
+	}
+	DBG(debug_ioctl, "Get i2c client of /dev/i2c-1.\n");
 	
+	memset(msg, 0, sizeof(msg));
+	
+	eeprom_date[0] = data_offset >> 8;
+	eeprom_date[1] = data_offset;
+	eeprom_date[2] = data;
+	
+	msg[0].addr = addr;
+	msg[0].len = 3;
+	msg[0].buf = eeprom_date;
+
+	
+	/*
+	 * Reads fail if the previous write didn't complete yet. We may
+	 * loop a few times until this one succeeds, waiting at least
+	 * long enough for one entire page write to work.
+	 */
+	timeout = jiffies + msecs_to_jiffies(25);
+	do
+	{
+		read_time = jiffies;
+		status = i2c_transfer(client->adapter, msg, 1);
+
+		DBG(debug_ioctl, "write %zu@%d --> %d (%ld)\n",
+				1, data_offset, status, jiffies);
+
+		if (status == 1)
+		{
+		    DBG(debug_ioctl, "Write %x to eeprom at %x successed.\r\n", data, data_offset);
+			return 0;
+		}
+
+		/* REVISIT: at HZ=100, this is sloooow */
+		msleep(1);
+	} while (time_before(read_time, timeout));
+    return -1;
+}
+
+static unsigned char* bmk_ds5652_twsi_read_sysinfo_buf_from_eeprom(uint8_t eeprom_dev_addr, uint32_t data_offset, uint32_t* buf_len_ptr)
+{
+    int status = 0, i = 0;
+	char* buf_addr = NULL;
 	//allocate memory for buffer to be written
-	buf_addr = (char*)AX_SYSINFO_MALLOC(*buf_len_ptr); //malloc memory for buffer
+	buf_addr = (char*)AX_SYSINFO_MALLOC(AX_EEPROM_SYSINFO_MAX_SIZE + 1); //malloc memory for buffer
 	
-	if (buf_addr <= 0)
+	if (buf_addr == NULL)
 	{
 		*buf_len_ptr = -1; //malloc error
-		return 0;
+		return NULL;
 	}
-
-	//read all sysinfo data from eeprom, write them to buffer
-	total = *buf_len_ptr;	
-	ret = (*mtd->read)(mtd, (loff_t)data_offset, (size_t)total, (size_t*)&total, buf_addr); 	
-	if (ret || total != *buf_len_ptr)
-	{
-		*buf_len_ptr = -1; //read error
-		return 0;
-	}
-
+	
+	for(i = 0; i < AX_EEPROM_SYSINFO_MAX_SIZE; i++)
+    {
+        status = bmk_ds5652_twsi_eeprom_read_byte(eeprom_dev_addr, data_offset + i, buf_addr + i);
+		if(status != 0)
+		{
+		    break;
+		}
+    }
+    *buf_len_ptr = i;
 	return buf_addr;
 }
 
@@ -479,31 +499,21 @@ static int ax_read_sysinfo_from_eeprom(uint8_t  eeprom_addr, ax_sysinfo_product_
 {
 	int rcode = 0;
 	int buf_len = 0;
-	unsigned char* buf_addr;
-	_ax_sysinfo_t  tmp_ax_sysinfo;
-	
+	char* buf_addr;
 	if (eeprom_addr <= 0 || sysinfo == NULL)
 	{
 		printk("sysinfo is NULL\n");
 		return -1;
 	}
 	memset(sysinfo, 0x00, sizeof(ax_sysinfo_product_t));	
-	buf_addr = _ax_twsi_read_sysinfo_buf_from_eeprom(eeprom_addr, 0x0000, &buf_len); //malloc buffer
+	buf_addr = bmk_ds5652_twsi_read_sysinfo_buf_from_eeprom(eeprom_addr, 0x0000, &buf_len); //malloc buffer
 	if (buf_addr <= 0x0000 || buf_len <= 0)
 	{
 		DBG(debug_ioctl, "malloc for buf_addr failed\n");
 		return -1;
 	}
 
-	memset(&tmp_ax_sysinfo, 0x00, sizeof(_ax_sysinfo_t));
-	rcode = _ax_populate_sysinfo_with_textbuf(&tmp_ax_sysinfo, buf_addr, buf_len);
-	if (rcode < 0)
-	{
-		printk("_ax_populate_sysinfo_with_textbuf failed\n");
-		return rcode;
-	}
-
-	_ax_populate_global_bootinfo(&tmp_ax_sysinfo, sysinfo);
+	bmk_ds5652_populate_global_bootinfo(buf_addr + 0x34, sysinfo);/*0x34 is the start of sysinfo*/
 
 	DBG(debug_ioctl, "sysinfo detail:\n");
 	DBG(debug_ioctl, "module sn:%s\n",sysinfo->ax_sysinfo_module_serial_no);
@@ -614,3 +624,4 @@ int bm_ax_read_module_sysinfo(ax_module_sysinfo* sysinfo)
 	printk("Needed to be implemented.\n");
 	return 0;
 }
+

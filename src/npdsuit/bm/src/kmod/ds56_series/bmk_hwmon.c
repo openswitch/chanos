@@ -32,9 +32,8 @@ int bm_set_temp_threshold(int type, int value)
 }
 
 
-
 int bm_get_temp_info(temp_info_args * temp_info)
-{	
+{
 	return 0;
 }
 
