@@ -71,14 +71,14 @@
         #define TUNNEL_BITMAP_START_PORT		(MAX_ETHPORT_PER_SYSTEM+CHASSIS_TRUNK_RANGE_MAX+CHASSIS_WIFI_RANGE_MAX+1)
         #else
         #define MAX_CHASSIS_COUNT 1
-        #define MAX_CHASSIS_SLOT_COUNT 1
+        #define MAX_CHASSIS_SLOT_COUNT 2
         #define MAX_SLOT_SUBBOARD_COUNT 5
         #define MAX_ETHPORT_PER_BOARD 64
         #define SUBBOARD_START_PORT   64
         #define MAX_SUBPORT_PER_ETHPORT 4
         #define MAX_ETHPORT_PER_SUBBOARD 4
-        #define MAX_ETHPORT_PER_SYSTEM 256
-        #define MAX_SWITCHPORT_PER_SYSTEM 512
+        #define MAX_ETHPORT_PER_SYSTEM 512
+        #define MAX_SWITCHPORT_PER_SYSTEM 1024
         #define MAX_TRUNK_PER_SYSTEM   127
         #define CHASSIS_VLAN_RANGE_MIN		1		/*added by wujh*/
         #define CHASSIS_VLAN_RANGE_MAX		4096

@@ -1764,7 +1764,62 @@ unsigned int dcli_get_ethport_number(unsigned int eth_g_index)
 	}
     return 1;
 }
+#ifdef HAVE_STACKING
+int man_set_eth_port_stacking(unsigned int port_index, int enable, int remote_unit)
+{
+	DBusMessage *query, *reply;
+    
+	DBusError err;
+	int op_ret = 0;
+	unsigned int eth_g_index = port_index;
+    unsigned int route;
 
+	dbus_error_init(&err);
+
+	query = dbus_message_new_method_call(
+							NPD_DBUS_BUSNAME,		\
+							NPD_DBUS_ETHPORTS_OBJPATH ,	\
+							NPD_DBUS_ETHPORTS_INTERFACE ,		\
+							NPD_DBUS_ETHPORTS_INTERFACE_METHOD_CONFIG_PORT_STACKING);
+	
+	dbus_error_init(&err);
+
+	dbus_message_append_args(query,
+							 DBUS_TYPE_UINT32,&eth_g_index,
+							 DBUS_TYPE_UINT32,&enable,
+							 DBUS_TYPE_UINT32,&remote_unit,
+							 DBUS_TYPE_INVALID);
+	reply = dbus_connection_send_with_reply_and_block (dcli_dbus_connection,query,-1, &err);
+
+	dbus_message_unref(query);
+	if (NULL == reply)
+	{
+		if (dbus_error_is_set(&err))
+		{
+			dbus_error_free(&err);
+		}
+		return 0;
+	}
+
+	if (dbus_message_get_args ( reply, &err,
+					DBUS_TYPE_UINT32, &op_ret,
+					DBUS_TYPE_INVALID)) 
+	{
+		dbus_message_unref(reply);
+		return op_ret;
+	} 
+	else 
+	{
+		if (dbus_error_is_set(&err)) 
+		{
+			dbus_error_free(&err);
+		}
+    	dbus_message_unref(reply);
+    	return 1;
+	}
+    return 1;
+}
+#endif
 #ifdef __cplusplus
 }
 #endif

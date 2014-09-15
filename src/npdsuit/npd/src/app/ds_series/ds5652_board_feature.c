@@ -20,7 +20,6 @@ long ds5652_board_sfp_info_get(unsigned long panel_port, fiber_module_man_param_
 
 long ds5652_board_slotno_get()
 {
-	return 0;
     int tipc_node_temp = tipc_get_own_node();
 	return (tipc_node_temp&0x0F) - 1;
 }
@@ -65,6 +64,7 @@ long ds5652_board_sal_config_init_defaults(void)
 	memset(phy_info_map, 0x0, sizeof(phy_info_map));
 	appDemoDbEntryAdd("boardIdx", 27);/*LION2 board*/
 	appDemoDbEntryAdd("boardRevId", 1);
+	appDemoDbEntryAdd("hwDevNum", ds5652_board_slotno_get()*2);
     return 0;
 }
 

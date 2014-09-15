@@ -414,7 +414,7 @@ void npd_init_eth_ports(void)
     if (0 != ret || npd_eth_cfgtbl == NULL)
     {
         syslog_ax_fdb_err("create npd fdb configuration table fail\n");
-        return NPD_FAIL;
+        return ;
     }
 
     ret = dbtable_create_array_index("eth_cfg", npd_eth_cfgtbl, &npd_eth_cfg_index);
@@ -422,7 +422,7 @@ void npd_init_eth_ports(void)
     if (0 != ret)
     {
         syslog_ax_fdb_err("create npd ethernet port configuration table index fail\n");
-        return NPD_FAIL;
+        return ;
     }
 
     npd_eth_cfg_default.rate_poll_enable = npd_eth_port_rate_poll_enable;
@@ -431,7 +431,7 @@ void npd_init_eth_ports(void)
     if (ret != 0)
     {
         syslog_ax_fdb_err("Insert ethernet prot default configuration failed.\n");
-        return NPD_FAIL;
+        return ;
     }
 
     register_netif_notifier(&eth_port_notifier);
@@ -596,7 +596,13 @@ int npd_put_port(struct eth_port_s* portInfo)
     ret = dbtable_sequence_search(g_eth_ports, portInfo->eth_port_ifindex, &port);
 
     if (0 != memcmp(portInfo, &port, sizeof(struct eth_port_s)))
+    {
         ret = dbtable_sequence_update(g_eth_ports, portInfo->eth_port_ifindex, &port, portInfo);
+		if(ret != 0)
+		{
+		    syslog_ax_eth_port_dbg("Faild to update ethernet port struct.(%d)\r\n", ret);
+		}
+    }
     npd_key_database_unlock();
     free(portInfo);
     //pthread_mutex_unlock(&port_lock);
@@ -2481,7 +2487,7 @@ long npd_eth_port_insert(void *data)
             {
                 if (!SYS_LOCAL_MODULE_ISMASTERACTIVE && npd_startup_end)
                 {
-#ifdef HAVE_CHASSIS_SUPPORT	
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     				new_port->state = PORT_NORMAL;
                     if (link_status == ETH_ATTR_LINKDOWN)
                         netif_remote_notify_event(SYS_MASTER_ACTIVE_SLOT_INDEX,
@@ -2560,7 +2566,21 @@ long npd_eth_port_insert(void *data)
                                __FILE__, __LINE__, "npd_set_port_eee");
         }
     }
-    
+    if(new_port->stacking)
+    {
+        ret = nam_set_ethport_stacking(new_port->eth_port_ifindex, new_port->stacking); 
+        if(ret != NPD_SUCCESS)
+        {
+           npd_syslog_dbg("ret is not 0: %s(%d): %s\r\n",
+                               __FILE__, __LINE__, "nam_set_ethport_stacking");
+        }
+    	ret = nam_set_ethport_stack_remote_unit(new_port->eth_port_ifindex, (unsigned char)new_port->remote_unit); 
+        if(ret != NPD_SUCCESS)
+        {
+           npd_syslog_dbg("ret is not 0: %s(%d): %s\r\n",
+                               __FILE__, __LINE__, "nam_set_ethport_stack_remote_unit");
+        }
+    }
     return 0;
 }
 
@@ -2951,7 +2971,7 @@ long npd_eth_port_update(void *newdata, void *olddata)
         {
             if (link_status != (new_port->attr_bitmap & ETH_ATTR_LINK_STATUS)>>ETH_LINK_STATUS_BIT)
             {
-#ifdef HAVE_CHASSIS_SUPPORT	
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
                 if (!SYS_LOCAL_MODULE_ISMASTERACTIVE && npd_startup_end)
                 {
                     if (link_status == ETH_ATTR_LINKDOWN)
@@ -3141,6 +3161,17 @@ long npd_eth_port_update(void *newdata, void *olddata)
 	{
 		ret = nam_set_port_loopback(new_port->eth_port_ifindex, new_port->loopback);
 	}
+#ifdef HAVE_STACKING
+	if(new_port->stacking != old_port->stacking)
+	{
+	    ret = nam_set_ethport_stacking(new_port->eth_port_ifindex, new_port->stacking);
+	}
+	
+	if(new_port->remote_unit != old_port->remote_unit)
+	{
+	    ret = nam_set_ethport_stack_remote_unit(new_port->eth_port_ifindex, (unsigned char)new_port->remote_unit);
+	}
+#endif
     return retval;
 }
 
@@ -5331,7 +5362,7 @@ int npd_eth_port_thread_notifier
 		
 		netif_notify_event(eth_g_index, event);
     }
-#ifdef HAVE_CHASSIS_SUPPORT	
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     else
     {
         syslog_ax_eth_port_dbg("Eth port(0x%x) event(%d) to MCU slot %d.\r\n", eth_g_index, event, SYS_MASTER_ACTIVE_SLOT_INDEX + 1);
@@ -6504,7 +6535,19 @@ int npd_ethport_show_running(void *data, char *string, int* size)
         else
             goto error;
 	}
+#ifdef HAVE_STACKING
+	if(portInfo->stacking)
+	{
+        enter_node = 1;
+        sprintf(tmpCommand," stack remote-unit %d\n", portInfo->remote_unit);
+        length = length+strlen(tmpCommand);
 
+        if (length < *size)
+            strcat(tmpBuf, tmpCommand);
+        else
+            goto error;
+	}
+#endif
 	/* eee_state - if  auto-nego is on and eee_state mode not default*/
 	/*default eee_state is disable*/
     if ((local_eee_state != ETH_ATTR_OFF) && (an_state == ETH_ATTR_ON))
@@ -8718,7 +8761,84 @@ error:
 									 &op_ret);
 	return reply;
 } 
+#ifdef HAVE_STACKING
+DBusMessage* npd_dbus_set_eth_port_stacking(DBusConnection *conn, DBusMessage *msg, void *user_data)
+{
+	DBusMessage* reply;
+	DBusError err;
+	DBusMessageIter  iter;
 
+	unsigned int eth_g_index = 0;
+	int stacking = 0;
+	int remote_unit = 0;
+	int ret  = ETHPORT_RETURN_CODE_ERR_NONE;
+    struct eth_port_s* g_ptr = NULL;
+
+	dbus_error_init(&err);
+	
+	if (!(dbus_message_get_args ( msg, &err,
+		DBUS_TYPE_UINT32,&eth_g_index,
+		DBUS_TYPE_UINT32,&stacking,
+		DBUS_TYPE_UINT32,&remote_unit,
+		DBUS_TYPE_INVALID)))
+	{
+		npd_syslog_err("Unable to get input args ");
+		if (dbus_error_is_set(&err))
+		{
+			npd_syslog_err("%s raised: %s",err.name,err.message);
+			dbus_error_free(&err);
+		}
+        ret = ETHPORT_RETURN_CODE_ERR_GENERAL;
+		goto error;
+	}
+
+
+    g_ptr = npd_get_port_by_index(eth_g_index);
+
+    if (g_ptr)
+    {
+        if(g_ptr->stacking == stacking)
+        {
+            
+        }
+		else
+		{
+		    if(stacking == TRUE)
+		    {
+		        /*first, delete switchport*/
+                netif_notify_event(g_ptr->eth_port_ifindex, PORT_NOTIFIER_L2DELETE);
+                netif_app_notify_event(g_ptr->eth_port_ifindex, PORT_NOTIFIER_L2DELETE, NULL, 0);
+                npd_delete_switch_port(g_ptr->switch_port_index);
+				g_ptr->stacking = TRUE;
+				g_ptr->remote_unit = remote_unit;
+		    }
+			else
+			{
+                npd_create_switch_port(eth_g_index, "ethernet", &g_ptr->switch_port_index, npd_check_eth_port_status(eth_g_index));
+				netif_notify_event(eth_g_index, PORT_NOTIFIER_L2CREATE);
+				g_ptr->stacking = FALSE;
+				g_ptr->remote_unit = remote_unit;
+			}
+		}
+        npd_put_port(g_ptr);
+    }
+    else
+    {
+        ret = ETHPORT_RETURN_CODE_NO_SUCH_PORT;
+    }
+
+error:
+  
+	reply = dbus_message_new_method_return(msg);
+	
+	dbus_message_iter_init_append (reply, &iter);
+	
+	dbus_message_iter_append_basic (&iter,
+									 DBUS_TYPE_UINT32,
+									 &ret);
+	return reply;
+} 
+#endif
 
 #define NPD_PACKET_TYPE_OTHER 31
 DBusMessage * npd_dbus_clear_cpu_stats(DBusConnection *conn, DBusMessage *msg, void *user_data)

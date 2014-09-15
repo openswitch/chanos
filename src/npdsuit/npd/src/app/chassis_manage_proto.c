@@ -602,7 +602,7 @@ DBusMessage * npd_dbus_boardmng_board_switchover(DBusConnection *conn, DBusMessa
     npd_syslog_dbg("Switch master board to slot %d.\n", slot_no);
 
 	opt_ret = chasm_local_check(slot_no);
-#ifdef HAVE_CHASSIS_SUPPORT		
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 	if(BOARD_RETURN_CODE_ERR_NONE == opt_ret)
 	{
 		slot_index = CHASSIS_SLOT_NO2INDEX(slot_no);
@@ -647,7 +647,7 @@ DBusMessage * npd_dbus_boardmng_board_isstandby(DBusConnection *conn, DBusMessag
     npd_syslog_dbg("Switch master board to slot %d.\n", slot_no);
 
 	opt_ret = chasm_local_check(slot_no);
-#ifdef HAVE_CHASSIS_SUPPORT		
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)		
 	if(BOARD_RETURN_CODE_ERR_NONE == opt_ret)
 	{
 		slot_index = CHASSIS_SLOT_NO2INDEX(slot_no);
@@ -1090,7 +1090,7 @@ int chasm_board_support_product(int board_type, int product_type, int slot_id, i
 
     return ret;
 }
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 int chasm_switchover_event()
 {
     npd_syslog_dbg("Switch over app event notify.\n");
@@ -1141,7 +1141,7 @@ long chasm_wait_startup_config_done()
 	return NPD_SUCCESS;
 }
 
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 long chasm_pdu_print(char* pdu, int len)
 {
 
@@ -1646,7 +1646,7 @@ int chassis_only_one_mcu_running()
     
 }
 
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 int chassis_manage_high_priority(int slot_index)
 {
     int i;
@@ -1686,7 +1686,7 @@ int npd_find_real_img_filename(char *img_file, char *real_img_file)
 	return -1;
 }
 
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 //image upgrade--pangxf
 long  chasm_os_upgrade(unsigned int slot_index)
 {
@@ -1770,7 +1770,7 @@ long chasm_ready_check(board_param_t *src_board)
 
 	return NPD_SUCCESS;
 }
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 long chasm_board_issbymaster_connected(board_param_t *board)
 {
 	int i;
@@ -1966,7 +1966,7 @@ int chasm_subboard_online_insert(board_param_t *board, board_param_t *sub_board)
     
 	return NPD_SUCCESS;
 }
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 
 int chasm_board_isneed_reported(int slot_index)
 {
@@ -2934,12 +2934,12 @@ void chasm_pdu_recv(int sock, void *circle_data, void *user_data)
         (*(*(localmoduleinfo->state_function)[state].funcs)[evt])
             (localmoduleinfo, board, evt, NULL);
         chasm_unlock();
+		sleep(1);
         return;
     }
 	
 	if(chasm_debug_pkt)
     {
-			
         npd_syslog_dbg("chasm_pdu_recv<header>: Receive packet from board %d:\r\n", board->slot_index+1);		
 		chasm_pdu_print(pdu, len);
 		npd_syslog_dbg("\r\n Receive packet length is %ld byte\r\n", len);
@@ -3255,7 +3255,7 @@ long chasm_config_board(int slot_id, int subslot_id, int board_type)
     }
 		
     chasm_lock();
-#ifdef HAVE_CHASSIS_SUPPORT	
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)	
     if(slot_id != SYS_LOCAL_MODULE_SLOT_INDEX)
     {
         if(SYS_CHASSIS_ISMASTERSLOT(slot_id))
@@ -3350,7 +3350,7 @@ long chasm_no_board(int slot_id, int subslot_id)
     if((slot_id == SYS_LOCAL_MODULE_SLOT_INDEX)
 		&& (subslot_id == 0))
         return BOARD_RETURN_CODE_WRONG_SLOTNO;
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 	npd_syslog_dbg("runstate  is  %d ok!\n", chassis_slots[slot_id]->sub_board[subslot_id]->runstate);
 
     if(chassis_slots[slot_id]->sub_board[subslot_id]->runstate != RMT_BOARD_NOEXIST
@@ -3397,7 +3397,7 @@ long chasm_no_board(int slot_id, int subslot_id)
    
 }
 
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 void wait_chasm_slave_server(int sd, void *circle_data, void *user_data)
 {
     chasm_circle_data_t *data = (chasm_circle_data_t *)circle_data;
@@ -3467,7 +3467,7 @@ long rmt_board_noexist_hw_insert(board_param_t *board, board_param_t *src_board,
 
 long rmt_board_noexist_sw_insert(board_param_t *board, board_param_t *src_board, state_event_e event, char* pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
    	struct sockaddr_tipc server_addr = {0};
     int fd;
     int ret;
@@ -3518,7 +3518,7 @@ long rmt_board_noexist_sw_insert(board_param_t *board, board_param_t *src_board,
 
 long rmt_board_noexist_status_report(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     npd_syslog_dbg("********Entering function %s  ********\r\n", __FUNCTION__);
     if(SYS_LOCAL_MODULE_ISMASTERACTIVE)
     {
@@ -3658,7 +3658,7 @@ state_event_func_t rmt_board_noexist_funcs =
 
 long rmt_board_hwinserted_timer(board_param_t *board, board_param_t *src_board, state_event_e event, char* pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 	npd_syslog_dbg("********Entering function %s  ********\r\n", __FUNCTION__);
     if(board->reset_times == 3)
     {
@@ -3690,7 +3690,7 @@ long rmt_board_hwinserted_sw_insert(board_param_t *board, board_param_t *src_boa
 
 long rmt_board_hwinserted_hw_remove(board_param_t *board, board_param_t *src_board, state_event_e event, char* pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 	npd_syslog_dbg("********Entering function %s  ********\r\n", __FUNCTION__);
     npd_syslog_cslot_event("\n%% Remote board %d is removed.\r\n", board->slot_index+1);
     board->inserted = FALSE;
@@ -3703,7 +3703,7 @@ long rmt_board_hwinserted_hw_remove(board_param_t *board, board_param_t *src_boa
 
 long rmt_board_hwinserted_reset(board_param_t *board, board_param_t *src_board, state_event_e event, char* pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 	npd_syslog_dbg("********Entering function %s  ********\r\n", __FUNCTION__);
     chasm_circle_data_t *data = &chasm_circle_data[board->slot_index];
 
@@ -3747,7 +3747,7 @@ state_event_func_t rmt_board_hwinserted_funcs =
 
 long rmt_board_swinserted_timer(board_param_t *board, board_param_t *src_board, state_event_e event, char* pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     chasm_circle_data_t *data = &chasm_circle_data[board->slot_index];
     int sd = data->sock;
     int state = board->runstate;
@@ -3771,7 +3771,7 @@ long rmt_board_swinserted_timer(board_param_t *board, board_param_t *src_board, 
 
 long rmt_board_swinserted_hw_remove(board_param_t *board, board_param_t *src_board, state_event_e event, char* pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     chasm_circle_data_t *data;
 
 	npd_syslog_dbg("********Entering function %s  ********\r\n", __FUNCTION__);
@@ -3800,7 +3800,7 @@ long rmt_board_swinserted_sw_remove(board_param_t *board, board_param_t *src_boa
 
 long rmt_board_swinserted_tipc_connect(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     /*get board type and init board_param_t*/
     int error;
     unsigned int n;
@@ -3840,7 +3840,7 @@ long rmt_board_swinserted_tipc_connect(board_param_t *board, board_param_t *src_
 
 long rmt_board_swinserted_reset(board_param_t *board, board_param_t *src_board, state_event_e event, char* pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     chasm_circle_data_t *data = &chasm_circle_data[board->slot_index];
 	char *status_pdu;
 	int len;
@@ -3913,7 +3913,7 @@ state_event_func_t rmt_board_swinserted_funcs =
 
 long rmt_board_registering_timer(board_param_t *board, board_param_t *src_board, state_event_e event, char* pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     chasm_circle_data_t *data = &chasm_circle_data[board->slot_index];
     int sd = data->sock;
 
@@ -3935,7 +3935,7 @@ long rmt_board_registering_timer(board_param_t *board, board_param_t *src_board,
 
 long rmt_board_registering_hw_remove(board_param_t *board, board_param_t *src_board, state_event_e event, char* pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     chasm_circle_data_t *data;
 	char *status_pdu;
 	int len = 0;
@@ -3980,7 +3980,7 @@ long rmt_board_registering_tipc_break(board_param_t *board, board_param_t *src_b
 
 long rmt_board_subboard_reg_req(board_param_t *board, board_param_t *src_board, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     chasm_board_reginfo_tlv_t *sub_tlv = chasm_board_reginfo_tlv_ntoh((chasm_board_reginfo_tlv_t *)pdu);
     chasm_ams_reginfo_tlv_t *ams_tlv = chasm_board_asm_reginfo_tlv_ntoh((chasm_ams_reginfo_tlv_t *)(sub_tlv+1));
     int i;
@@ -4139,7 +4139,7 @@ long rmt_board_registering_reg_request(board_param_t *board, board_param_t *src_
 
 long rmt_board_registering_switchover_report(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     /*we can not confirm that the board have done all things, so the better 
           way is reset the board*/
    	if (board->runstate >= RMT_BOARD_READY && 
@@ -4184,7 +4184,7 @@ state_event_func_t rmt_board_registering_funcs =
 
 long rmt_board_registered_timer(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     char *status_pdu;
     int len;
     
@@ -4214,7 +4214,7 @@ long rmt_board_registered_swinsert(board_param_t *board, board_param_t *src_boar
 
 long rmt_board_registered_hwremove(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     chasm_circle_data_t *data;
     char *status_pdu;
     int len;
@@ -4286,7 +4286,7 @@ long rmt_board_registered_hwremove(board_param_t *board, board_param_t *src_boar
 
 long rmt_board_registered_swremove(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 	npd_syslog_dbg("********Entering function %s  ********\r\n", __FUNCTION__);
 
 	/*   */
@@ -4337,7 +4337,7 @@ long rmt_board_registered_tipc_break(board_param_t *board, board_param_t *src_bo
 
 long rmt_board_registered_reg_req(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     chasm_board_reginfo_tlv_t *sub_tlv = chasm_board_reginfo_tlv_ntoh((chasm_board_reginfo_tlv_t *)pdu);
     
     npd_syslog_dbg("********Entering function %s  ********\r\n", __FUNCTION__);
@@ -4441,7 +4441,7 @@ long rmt_board_registered_reg_req(board_param_t *board, board_param_t *src_board
 
 long rmt_board_registered_status_report(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 	npd_syslog_dbg("********Entering function %s  ********\r\n", __FUNCTION__);
     if(!SYS_LOCAL_MODULE_ISMASTERACTIVE)
         return board_state_event_error(board, src_board, event, pdu);
@@ -4487,7 +4487,7 @@ long rmt_board_registered_status_report(board_param_t *board, board_param_t *src
 
 long rmt_board_registered_switchover_report(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 	npd_syslog_dbg("********Entering function %s  ********\r\n", __FUNCTION__);
     /*we can not confirm that the board have done all things, so the better 
           way is reset the board*/
@@ -4513,7 +4513,7 @@ long rmt_board_registered_switchover_report(board_param_t *board, board_param_t 
 
 long rmt_board_registered_reset(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     chasm_circle_data_t *data = &chasm_circle_data[board->slot_index];
     char *status_pdu;
     int len;
@@ -4718,7 +4718,7 @@ long rmt_board_ready_tipc_break(board_param_t *board, board_param_t *src_board, 
 
 long rmt_board_ready_req_reg(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 	npd_syslog_dbg("********Entering function %s  ********\r\n", __FUNCTION__);
     if(board->online_removed == FALSE)
         return NPD_SUCCESS;
@@ -4727,7 +4727,7 @@ long rmt_board_ready_req_reg(board_param_t *board, board_param_t *src_board, sta
 }
 long rmt_board_ready_status_report(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     char *status_pdu;
     int len;
 
@@ -4872,7 +4872,7 @@ long rmt_board_ready_status_report(board_param_t *board, board_param_t *src_boar
 
 long rmt_board_ready_switchover_report(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 	npd_syslog_dbg("********Entering function %s  ********\r\n", __FUNCTION__);
     /*we can not confirm that the board have done all things, so the better 
           way is reset the board*/
@@ -5101,7 +5101,7 @@ long rmt_board_running_swinsert(board_param_t *board, board_param_t *src_board, 
 
 long rmt_board_running_status_report(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     char *status_pdu;
     int len;
 
@@ -5223,7 +5223,7 @@ long rmt_board_running_reset(board_param_t *board, board_param_t *src_board, sta
 
 long rmt_board_running_reg_request(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     //return rmt_board_registering_reg_request(board, src_board, event, pdu);
 	chasm_board_reginfo_tlv_t *sub_tlv = chasm_board_reginfo_tlv_ntoh((chasm_board_reginfo_tlv_t *)pdu);
 
@@ -5343,7 +5343,7 @@ long rmt_board_running_tipc_break(board_param_t *board, board_param_t *src_board
 
 long rmt_board_running_switchover_report(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     chasm_circle_data_t *data = &chasm_circle_data[board->slot_index];
     int ret = 0;
 
@@ -5415,7 +5415,7 @@ long rmt_board_switchovering_swremove(board_param_t *board, board_param_t *src_b
 
 long rmt_board_switchovering_status_report(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 	
     chasm_board_statusinfo_tlv_t *board_tlv = (chasm_board_statusinfo_tlv_t *)pdu;
 	
@@ -5501,7 +5501,7 @@ long rmt_board_switchovering_reg_request(board_param_t *board, board_param_t *sr
 
 long rmt_board_switchovering_swinsert(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
    	struct sockaddr_tipc server_addr = {0};
     int fd;
     int ret;
@@ -5656,7 +5656,7 @@ state_desc_t rmt_board_state_desc[] =
 
 int local_wait_for_mcu_exist_server(struct tipc_name_seq* name,int wait)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     struct sockaddr_tipc topsrv = {0};
     struct tipc_subscr *subscr = malloc(sizeof(struct tipc_subscr));
     struct tipc_event event;
@@ -5768,7 +5768,7 @@ int local_wait_for_mcu_exist_server(struct tipc_name_seq* name,int wait)
 
 long local_slave_init_sw_insert(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
    	struct sockaddr_tipc server_addr = {0};
     int fd;
     int ret;
@@ -5847,7 +5847,7 @@ state_event_func_t local_slave_init_funcs =
 
 long local_slave_wait_connect_timer(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     int state;
 
 	npd_syslog_dbg("********Entering function %s  ********\r\n", __FUNCTION__);
@@ -5866,7 +5866,7 @@ long local_slave_wait_connect_timer(board_param_t *board, board_param_t *src_boa
 
 long local_slave_wait_connect_tipc_connect(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     int fd;
     chasm_circle_data_t *data;
     char *reg_pdu;
@@ -5922,7 +5922,7 @@ long local_slave_wait_connect_tipc_connect(board_param_t *board, board_param_t *
 
 long local_slave_noncompat_request(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 #ifdef HAVE_AC_BOARD	
 	long product_type = PRODUCT_AX8603;
 	/* AX8603 */
@@ -5977,7 +5977,7 @@ state_event_func_t local_slave_wait_connect_funcs =
 
 long local_slave_registering_timer(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     int fd;
     chasm_circle_data_t *data;
     
@@ -6058,7 +6058,7 @@ long local_slave_registering_tipc_connect(board_param_t *board, board_param_t *s
 
 long local_slave_registering_tipc_break(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     int fd;
     chasm_circle_data_t *data;
 
@@ -6090,7 +6090,7 @@ long local_slave_registering_tipc_break(board_param_t *board, board_param_t *src
 
 long local_slave_registering_reg_response(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     chasm_product_info_tlv_t *regres_tlv;
     char *status_pdu;
     int len;
@@ -6260,7 +6260,7 @@ state_event_func_t local_slave_sw_upgrading_funcs =
 
 long local_slave_ready_timeout(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 	npd_syslog_dbg("********Entering function %s  ********\r\n", __FUNCTION__);
     snros_local_board_spec->reset();
 #endif
@@ -6317,7 +6317,7 @@ long local_slave_ready_tipc_connect(board_param_t *board, board_param_t *src_boa
 
 long local_slave_ready_tipc_break(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     int fd;
     chasm_circle_data_t *data;
 
@@ -6351,7 +6351,7 @@ long local_slave_ready_tipc_break(board_param_t *board, board_param_t *src_board
 
 long local_slave_ready_reg_res(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     char * status_pdu;
     int len;
     npd_syslog_dbg("********Entering function %s  ********\r\n", __FUNCTION__);
@@ -6367,7 +6367,7 @@ long local_slave_ready_reg_res(board_param_t *board, board_param_t *src_board, s
 
 long local_slave_ready_status_report(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     chasm_board_statusinfo_tlv_t *board_tlv = chasm_board_statusnfo_tlv_ntoh((chasm_board_statusinfo_tlv_t *)pdu);
     int evt = STATUS_REPORT;
     board_param_t *dest_board = chassis_slots[board_tlv->slotid];
@@ -6505,7 +6505,7 @@ long local_slave_running_timer(board_param_t *board, board_param_t *src_board, s
 
 long local_slave_running_tipc_connect(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     int fd;
     chasm_circle_data_t *data;
 
@@ -6538,7 +6538,7 @@ long local_slave_running_tipc_connect(board_param_t *board, board_param_t *src_b
 
 long local_slave_act_break(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     int fd;
     chasm_circle_data_t *data;
     char *reg_pdu;
@@ -6592,7 +6592,7 @@ long local_slave_act_break(board_param_t *board, board_param_t *src_board, state
 
 long local_slave_running_tipc_break(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     /*disable asic*/
 	npd_syslog_dbg("********Entering function %s  ********\r\n", __FUNCTION__);
     src_board->redundancystate = MASTER_STANDBY;
@@ -6611,7 +6611,7 @@ long local_slave_running_tipc_break(board_param_t *board, board_param_t *src_boa
 
 long local_slave_running_status_report(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     chasm_board_statusinfo_tlv_t *board_tlv = chasm_board_statusnfo_tlv_ntoh((chasm_board_statusinfo_tlv_t *)pdu);
     board_param_t *dest_board;
     int state ;
@@ -6643,7 +6643,7 @@ long local_slave_running_master_cmd(board_param_t *board, board_param_t *src_boa
 
 long local_slave_running_swichover_report(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 	npd_syslog_dbg("********Entering function %s  ********\r\n", __FUNCTION__);
     char *reg_pdu;
 	char *switchover_pdu;
@@ -6721,7 +6721,7 @@ long local_slave_switchovering_timer(board_param_t *board, board_param_t *src_bo
 
 long local_slave_switchovering_tipc_connect(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     int fd;
     chasm_circle_data_t *data;
     char *reg_pdu;
@@ -6882,7 +6882,7 @@ state_desc_t local_slave_state_desc[] =
     }
 };
 
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 static int chasm_man_mon_sock = 0;
 void  wait_server_handle(int sd, void *circle_data, void *user_data)
 {
@@ -6978,6 +6978,7 @@ void  wait_server_handle(int sd, void *circle_data, void *user_data)
     		    (*(*(localmoduleinfo->state_function)[state].funcs)[evt])
     		        (localmoduleinfo, board, evt, NULL);
     		    chasm_unlock();
+				sleep(1);
     		}
         }
 	}
@@ -7121,7 +7122,7 @@ long local_master_init_timer(board_param_t *board, board_param_t *src_board, sta
 }
 long local_master_init_swinsert(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     struct tipc_name_seq name;
 
 	npd_syslog_dbg("********Entering function %s  ********\r\n", __FUNCTION__);
@@ -7146,7 +7147,7 @@ long local_master_init_act_enable(board_param_t *board, board_param_t *src_board
 
 	npd_syslog_dbg("********Entering function %s  ********\r\n", __FUNCTION__);
     npd_syslog_dbg("\nLocal master init as active master board.\r\n");
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     if(1 != app_slave_indpnt_get())
     {
         /*firstly, build the MCU_EXIST server*/
@@ -7236,8 +7237,7 @@ long local_master_init_act_enable(board_param_t *board, board_param_t *src_board
         }
     }
     
-	
-#ifdef HAVE_CHASSIS_SUPPORT	
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)	
 	nam_thread_create("NpdDBSync",(void *)npd_dbtable_thread_main,NULL,NPD_TRUE,NPD_FALSE);
 #endif
     localmoduleinfo->runstate = LOCAL_ACTMASTER_DISCOVERING;
@@ -7254,7 +7254,7 @@ long local_master_init_act_enable(board_param_t *board, board_param_t *src_board
 	npd_syslog_cslot_event("\n%% Local board works as active master board and is discovering other boards.\r\n");
 	npd_syslog_dbg("rmtstate of Local board index %d  move to state RMT_BOARD_READY\r\n", localmoduleinfo->slot_index+1);
 	data->board = localmoduleinfo;
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 	data->sock = fd;
 
 	if (chasm_board_is_onlyone() 
@@ -7269,7 +7269,7 @@ long local_master_init_act_enable(board_param_t *board, board_param_t *src_board
 		
 		npd_syslog_dbg("Only One Board %d itself.\r\n", data->board->slot_index+1);
 	}
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 	else
 	{
 	    circle_register_timeout(CHASM_MANTEST_TIMEOUT, 0, chasm_timeout, data, NULL);
@@ -7281,7 +7281,7 @@ long local_master_init_act_enable(board_param_t *board, board_param_t *src_board
 
 long local_master_init_sby_enable(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
    	struct sockaddr_tipc server_addr = {0};
     int fd;
     int ret;
@@ -7376,7 +7376,7 @@ state_event_func_t local_master_init_funcs =
 
 long local_sbymaster_wait_connect_timer(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     int state;
     int ent;
     chasm_circle_data_t * data = &chasm_circle_data[board->slot_index];
@@ -7400,7 +7400,7 @@ long local_sbymaster_wait_connect_timer(board_param_t *board, board_param_t *src
 
 long local_sbymaster_tipc_connect(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     chasm_circle_data_t *data;
     char* reg_pdu;
     int len;
@@ -7475,7 +7475,7 @@ state_event_func_t local_sbymaster_wait_connect_funcs =
 
 long local_sbymaster_registering_timer(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     chasm_circle_data_t *data = &chasm_circle_data[board->slot_index];
 
 	npd_syslog_dbg("********Entering function %s  ********\r\n", __FUNCTION__);
@@ -7488,7 +7488,7 @@ long local_sbymaster_registering_timer(board_param_t *board, board_param_t *src_
 
 long local_sbymaster_registering_tipc_break(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     chasm_circle_data_t *data;
  
 	npd_syslog_dbg("********Entering function %s  ********\r\n", __FUNCTION__);
@@ -7530,7 +7530,7 @@ long local_sbymaster_registering_tipc_break(board_param_t *board, board_param_t 
 
 long local_sbymaster_registering_reg_response(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     chasm_product_info_tlv_t *regres_tlv;
     char *status_pdu;
     int len;
@@ -7650,7 +7650,7 @@ state_event_func_t local_sbymaster_sw_vererr_funcs =
 
 long local_sbymaster_act_break(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     int i;
     chasm_circle_data_t *data;
    	struct sockaddr_tipc server_addr = {0};
@@ -7747,7 +7747,7 @@ long local_sbymaster_act_break(board_param_t *board, board_param_t *src_board, s
 }
 long local_sbymaster_ready_tipc_break(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     int i;
     for(i = 0; i < SYS_CHASSIS_SLOTNUM; i++)
     {
@@ -7780,7 +7780,7 @@ long local_sbymaster_ready_tipc_break(board_param_t *board, board_param_t *src_b
 
 long local_sbymaster_ready_status_report(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     chasm_board_statusinfo_tlv_t *board_tlv = chasm_board_statusnfo_tlv_ntoh((chasm_board_statusinfo_tlv_t *)pdu);
     //int state = board->runstate;
     board_param_t * dest_board = chassis_slots[board_tlv->slotid];
@@ -7917,7 +7917,7 @@ long local_sbymaster_running_timer(board_param_t *board, board_param_t *src_boar
 
 long local_sbymaster_running_status_report(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     chasm_board_statusinfo_tlv_t *board_tlv = chasm_board_statusnfo_tlv_ntoh((chasm_board_statusinfo_tlv_t *)pdu);
     int evt = STATUS_REPORT;
     board_param_t * dest_board = chassis_slots[board_tlv->slotid];
@@ -7962,7 +7962,7 @@ long local_sbymaster_running_reset(board_param_t *board, board_param_t *src_boar
 long local_sbymaster_running_tipc_break(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
     int ret = NPD_SUCCESS;
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     int i;
     
 	npd_syslog_dbg("********Entering function %s  ********\r\n", __FUNCTION__);
@@ -8011,7 +8011,7 @@ long local_sbymaster_running_tipc_break(board_param_t *board, board_param_t *src
 
 long local_sbymaster_running_reg_req(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     chasm_board_reginfo_tlv_t *sub_tlv = 
         (chasm_board_reginfo_tlv_t *)pdu;
 	
@@ -8027,7 +8027,7 @@ long local_sbymaster_running_reg_req(board_param_t *board, board_param_t *src_bo
 long local_sbymaster_running_switchover_report(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
     long ret = NPD_SUCCESS;
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 	npd_syslog_dbg("********Entering function %s  ********\r\n", __FUNCTION__);
     npd_syslog_cslot_event("\n%% Local standby master receive switchover request from active master.\r\n");
     npd_syslog_cslot_event("\n%% Local standby master switchovering to active master.\r\n");
@@ -8089,7 +8089,7 @@ state_event_func_t local_sbymaster_error_funcs =
 
 long local_actmaster_discovering_timer(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     char *status_pdu;
     int len;
 	int i;
@@ -8151,7 +8151,7 @@ long local_actmaster_discovering_timer(board_param_t *board, board_param_t *src_
 
 long local_actmaster_discovering_hwremove(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     int state = src_board->runstate;
     int evt = HW_REMOVE;
 
@@ -8165,7 +8165,7 @@ long local_actmaster_discovering_hwremove(board_param_t *board, board_param_t *s
 
 long local_actmaster_discovering_swremove(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     int state = src_board->runstate;
     int evt = SW_REMOVE;
 
@@ -8177,7 +8177,7 @@ long local_actmaster_discovering_swremove(board_param_t *board, board_param_t *s
 }
 long local_actmaster_discovering_hwinsert(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     int state = src_board->runstate;
     int evt = HW_INSERT;
 
@@ -8190,7 +8190,7 @@ long local_actmaster_discovering_hwinsert(board_param_t *board, board_param_t *s
 
 long local_actmaster_discovering_swinsert(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     int state = src_board->runstate;
     int evt = SW_INSERT;
 
@@ -8203,7 +8203,7 @@ long local_actmaster_discovering_swinsert(board_param_t *board, board_param_t *s
 
 long local_actmaster_discovering_tipc_connect(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 
 	npd_syslog_dbg("********Entering function %s  ********\r\n", __FUNCTION__);
 
@@ -8218,7 +8218,7 @@ long local_actmaster_discovering_tipc_connect(board_param_t *board, board_param_
 
 long local_actmaster_discovering_tipc_break(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     int state = src_board->runstate;
     int evt = TIPC_BREAK;
 
@@ -8231,7 +8231,7 @@ long local_actmaster_discovering_tipc_break(board_param_t *board, board_param_t 
 
 long local_actmaster_discovering_req_request(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     int state = src_board->runstate;
     int evt = REGISTER_REQUEST;
 	npd_syslog_dbg("********Entering function %s  ********\r\n", __FUNCTION__);
@@ -8245,7 +8245,7 @@ long local_actmaster_discovering_req_request(board_param_t *board, board_param_t
 
 long local_actmaster_discovering_status_report(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     chasm_board_statusinfo_tlv_t *board_tlv = chasm_board_statusnfo_tlv_ntoh((chasm_board_statusinfo_tlv_t *)pdu); 
     board_param_t *dest_board = chassis_slots[board_tlv->slotid];
     int state = dest_board->runstate;
@@ -8392,7 +8392,7 @@ state_event_func_t local_actmaster_discovering_funcs =
 
 long local_actmaster_running_timer(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     char *status_pdu;
     int len;
     npd_syslog_dbg("********Entering function %s  ********\r\n", __FUNCTION__);
@@ -8405,7 +8405,7 @@ long local_actmaster_running_timer(board_param_t *board, board_param_t *src_boar
 
 long local_actmaster_running_hwinsert(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     int state = src_board->runstate;
     int evt = HW_INSERT;
     npd_syslog_official_event("\nRemote board %d is inserted.\r\n", src_board->slot_index+1);
@@ -8417,7 +8417,7 @@ long local_actmaster_running_hwinsert(board_param_t *board, board_param_t *src_b
 
 long local_actmaster_running_swinsert(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     int state = src_board->runstate;
     int evt = SW_INSERT;
     return (*(*(src_board->state_function)[state].funcs)[evt])
@@ -8428,7 +8428,7 @@ long local_actmaster_running_swinsert(board_param_t *board, board_param_t *src_b
 
 long local_actmaster_running_hwremove(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     int state = src_board->runstate;
     int evt = HW_REMOVE;
     npd_syslog_official_event("\nRemote board %d is removed.\r\n", src_board->slot_index+1);
@@ -8440,7 +8440,7 @@ long local_actmaster_running_hwremove(board_param_t *board, board_param_t *src_b
 
 long local_actmaster_running_swremove(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     int state = src_board->runstate;
     int evt = SW_REMOVE;
 	npd_syslog_dbg("********Entering function %s  ********\r\n", __FUNCTION__);
@@ -8452,7 +8452,7 @@ long local_actmaster_running_swremove(board_param_t *board, board_param_t *src_b
 
 long local_actmaster_running_tipc_connect(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 	npd_syslog_dbg("********Entering function %s  ********\r\n", __FUNCTION__);
 
     if(!SYS_MODULE_SLOT_ISMCU(SYS_LOCAL_MODULE_SLOT_INDEX)
@@ -8467,7 +8467,7 @@ long local_actmaster_running_tipc_connect(board_param_t *board, board_param_t *s
 
 long local_actmaster_running_tipc_break(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     int state = src_board->runstate;
     int evt = TIPC_BREAK;
 	npd_syslog_dbg("********Entering function %s  ********\r\n", __FUNCTION__);
@@ -8479,7 +8479,7 @@ long local_actmaster_running_tipc_break(board_param_t *board, board_param_t *src
 
 long local_actmaster_running_req_request(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     int state = src_board->runstate;
     int evt = REGISTER_REQUEST;
 	npd_syslog_dbg("********Entering function %s  ********\r\n", __FUNCTION__);
@@ -8491,7 +8491,7 @@ long local_actmaster_running_req_request(board_param_t *board, board_param_t *sr
 
 long local_actmaster_running_status_report(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     chasm_board_statusinfo_tlv_t *board_tlv = chasm_board_statusnfo_tlv_ntoh((chasm_board_statusinfo_tlv_t *)pdu); 
     board_param_t *dest_board = chassis_slots[board_tlv->slotid];
     int state = dest_board->runstate;
@@ -8600,7 +8600,7 @@ long local_actmaster_running_status_report(board_param_t *board, board_param_t *
 
 long local_actmaster_running_switchover_report(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     chasm_circle_data_t *data = &chasm_circle_data[localmoduleinfo->slot_index];
     char *switch_pdu;
     int len;
@@ -8716,7 +8716,7 @@ state_event_func_t local_actmaster_running_funcs =
 
 long local_actmaster_dbsyncing_timer(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     char *status_pdu;
     int len;
     int i;
@@ -8798,7 +8798,7 @@ state_event_func_t local_actmaster_dbsyncing_funcs =
 
 long local_sbymaster_switchovering_timer(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 	npd_syslog_dbg("********Entering function %s  ********\r\n", __FUNCTION__);
     //localmoduleinfo->runstate = LOCAL_ACTMASTER_RUNNING;
     {
@@ -8856,7 +8856,7 @@ long local_sbymaster_switchovering_timer(board_param_t *board, board_param_t *sr
 
 long local_sbymaster_switchovering_hwinsert(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     int state = src_board->runstate;
     int evt = HW_INSERT;
 	npd_syslog_dbg("********Entering function %s  ********\r\n", __FUNCTION__);
@@ -8868,7 +8868,7 @@ long local_sbymaster_switchovering_hwinsert(board_param_t *board, board_param_t 
 
 long local_sbymaster_switchovering_swinsert(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     int state = src_board->runstate;
     int evt = SW_INSERT;
 	npd_syslog_dbg("********Entering function %s  ********\r\n", __FUNCTION__);
@@ -8903,7 +8903,7 @@ long local_sbymaster_switchovering_swinsert(board_param_t *board, board_param_t 
 
 long local_sbymaster_switchovering_hwremove(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     int state = src_board->runstate;
     int evt = HW_REMOVE;
     int i;
@@ -8936,7 +8936,7 @@ long local_sbymaster_switchovering_hwremove(board_param_t *board, board_param_t 
 
 long local_sbymaster_switchovering_swremove(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     int state = src_board->runstate;
     int evt = SW_REMOVE;
 	npd_syslog_dbg("********Entering function %s  ********\r\n", __FUNCTION__);
@@ -8975,7 +8975,7 @@ long local_sbymaster_switchovering_switchover_report(board_param_t *board, board
 
 long local_sbymaster_switchovering_status_report(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 	chasm_board_statusinfo_tlv_t *board_tlv = chasm_board_statusnfo_tlv_ntoh((chasm_board_statusinfo_tlv_t *)pdu); 
     board_param_t *dest_board = chassis_slots[board_tlv->slotid];
     int state = dest_board->runstate;
@@ -9059,7 +9059,7 @@ state_event_func_t local_sbymaster_switchovering_funcs =
 
 long local_actmaster_switchovering_timer(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 	npd_syslog_dbg("********Entering function %s  ********\r\n", __FUNCTION__);
     chasm_circle_data_t *data = &chasm_circle_data[board->slot_index];
     circle_cancel_timeout(chasm_timeout, (void*)data, circle_ALL_CTX);
@@ -9077,7 +9077,7 @@ long local_actmaster_switchovering_timer(board_param_t *board, board_param_t *sr
 }
 long local_actmaster_switchovering_swremove(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     int fd = 0;
     int ret;
     chasm_circle_data_t *data = &chasm_circle_data[src_board->slot_index];
@@ -9171,7 +9171,7 @@ long local_actmaster_switchovering_swremove(board_param_t *board, board_param_t 
 
 long local_actmaster_switchovering_tipc_connect(board_param_t *board, board_param_t *src_board, state_event_e event, char *pdu)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     chasm_circle_data_t *data;
     char* reg_pdu;
     int len;
@@ -9309,7 +9309,7 @@ state_desc_t local_master_state_desc[] =
 };
 
 
-#if HAVE_CHASSIS_SUPPORT 
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)	
 
 void chasm_board_oir_handle(int sock, void *circle_data, void *user_data)
 {
@@ -9330,7 +9330,7 @@ int chassis_manage_board_check_init()
         
         if(i == SYS_LOCAL_MODULE_SLOT_INDEX)
             continue;
-#ifdef HAVE_CHASSIS_SUPPORT        
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)        
         /*for dbtable sync flag, for avoid switchover complex logic*/
         npd_dbtable_slot_sync_done(i);
         
@@ -9354,7 +9354,7 @@ int chassis_manage_board_check_init()
 		npd_syslog_dbg("system power and fan info init \n");
 		npd_pne_info_init();		
 	}
-#if HAVE_CHASSIS_SUPPORT 
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)	
     circle_register_sock(g_bm_fd, EVENT_TYPE_READ, chasm_board_oir_handle, NULL, NULL);
     circle_register_sock(g_bm_fd, EVENT_TYPE_EXCEPTION, chasm_board_oir_handle, NULL, NULL);
 #endif
@@ -10080,7 +10080,7 @@ int chassis_manage_board_noncompat_init()
 int chasm_clear_resource()
 {
     int i;
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     for(i = 0; i < SYS_CHASSIS_SLOTNUM; i++)
     {
         if(chasm_circle_data[i].sock)
@@ -10103,7 +10103,7 @@ static void handle_term(int sig, void *circle_ctx, void *signal_ctx)
 	//circle_terminate();
 }
 
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 int npd_chassis_board_info_notify(unsigned int chassisId)
 {
 	int i = 0, ret = 0;
@@ -10190,7 +10190,7 @@ int npd_chassis_manage
 
     npd_syslog_dbg("Finish circle init\r\n");
 	chasm_write_board_type_string();
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 	if (1 == app_slave_indpnt_get())
 	{
 		//jump to master active routine

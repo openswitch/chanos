@@ -33,7 +33,7 @@ extern "C"
 
 int npd_dbtable_recv(int fd, char* buf, int len, void *private_data)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)	
     static int recv_first = 1;
     int nRecvBuf;
     if(len <= 0)
@@ -66,7 +66,7 @@ int npd_dbtable_recv(int fd, char* buf, int len, void *private_data)
 
 int npd_dbtable_slot_sync_begin(int slot_index)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)	
     char buf[4];
     char filename[32];
 
@@ -104,7 +104,7 @@ int npd_dbtable_sync_alldone()
 
 int npd_dbtable_slot_event(int event, int service_type, int instance)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)	
 	int slot_index = INSTANCE_TO_SLOT(instance);
     int ret;
     if (event == TIPC_PUBLISHED)
@@ -175,7 +175,7 @@ int npd_fdb_async_unlock()
 int npd_dbtable_sync(char *buffer, int len, unsigned int sync_flag, int slot_index)
 {
     int op_ret = 0;
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)	
 	npd_sync_msg_header_t *header = NULL;
 	char *buffer_head = NULL;
     int i;
@@ -303,10 +303,10 @@ void npd_fdb_async_thread_start()
 }
 #endif
 
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)	
 int npd_dbtable_thread_main()
 {
-#ifdef HAVE_CHASSIS_SUPPORT	
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)	
 	npd_dbtable_init();
     if(SYS_LOCAL_MODULE_ISMASTERACTIVE)
     {

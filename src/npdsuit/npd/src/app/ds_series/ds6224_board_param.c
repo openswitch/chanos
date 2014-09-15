@@ -176,6 +176,7 @@ board_feature_t ds6224_board_feature =
 int ds6224_board_support_product[] =
 {
     PRODUCT_DS6224,
+    PRODUCT_DS6502,
     0
 };
 

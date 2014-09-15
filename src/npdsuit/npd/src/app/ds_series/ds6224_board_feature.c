@@ -20,7 +20,6 @@ long ds6224_board_sfp_info_get(unsigned long panel_port, fiber_module_man_param_
 
 long ds6224_board_slotno_get()
 {
-	return 0;
     int tipc_node_temp = tipc_get_own_node();
 	return (tipc_node_temp&0x0F) - 1;
 }
@@ -65,6 +64,7 @@ long ds6224_board_sal_config_init_defaults(void)
 
 	appDemoDbEntryAdd("boardIdx", 27);/*LION2 4 cores board*/
 	appDemoDbEntryAdd("boardRevId", 12);
+	appDemoDbEntryAdd("hwDevNum", ds6224_board_slotno_get()*2);
     return 0;
 }
 

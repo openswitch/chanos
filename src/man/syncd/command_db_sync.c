@@ -366,7 +366,7 @@ int command_dbtable_slot_event(int event, int service_type, int instance)
 
 int command_dbtable_sync(char *buffer, int len, unsigned int sync_flag, int slot_index)
 {
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 	npd_sync_msg_header_t *header = NULL;
     int op_ret = 0;
     if (SYS_LOCAL_MODULE_ISMASTERACTIVE)
@@ -506,7 +506,7 @@ int command_dbtable_thread_main()
 {
     int ret = -1;
     SYS_LOCAL_MODULE_SLOT_INDEX = app_local_slot_get();
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)	
     if (SYS_LOCAL_MODULE_ISMASTERACTIVE)
     {
         ret = tipc_server_init(COMMAND_SERVICE, SYS_LOCAL_MODULE_SLOT_INDEX, command_dbtable_recv, NULL, NULL);

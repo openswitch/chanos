@@ -8,7 +8,7 @@
 #include <asm/uaccess.h>
 #include "bmk_hwmon.h"
 
-int ds5600_reset_board(int slot_index)
+int ds6502_reset_board(int slot_index)
 {
 	int ret = 0;
 	
@@ -17,12 +17,12 @@ int ds5600_reset_board(int slot_index)
 
 
 /* 暂时隔开。 这个和产品相关性挺大 */
-int ds5600_get_board_online_state(int slot_index)
+int ds6502_get_board_online_state(int slot_index)
 {
 	return BOARD_INSERT ;
 }
 
-int ds5600_ioctl_proc_cpld_fan(struct file *filp, unsigned int cmd, unsigned long arg)
+int ds6502_ioctl_proc_cpld_fan(struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	int op_ret = 0;
 	int ret = 0;
@@ -67,7 +67,7 @@ int ds5600_ioctl_proc_cpld_fan(struct file *filp, unsigned int cmd, unsigned lon
 
 }
 
-int ds5600_ioctl_proc_power_present(struct file *filp, unsigned int cmd, unsigned long arg)
+int ds6502_ioctl_proc_power_present(struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	cpld_op_args cpld_op_data;
 	int  op_ret= 0;
@@ -88,7 +88,7 @@ int ds5600_ioctl_proc_power_present(struct file *filp, unsigned int cmd, unsigne
 	return op_ret;
 }
 
-int ds5600_ioctl_proc_power_state(struct file *filp, unsigned int cmd, unsigned long arg)
+int ds6502_ioctl_proc_power_state(struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	power_op_args power_data;
 	ds_fix_param_t * ptr_ds_fix_param ;
@@ -112,7 +112,7 @@ int ds5600_ioctl_proc_power_state(struct file *filp, unsigned int cmd, unsigned 
 	return ret;
 }
 
-int ds5600_ioctl_proc_power_info(struct file *filp, unsigned int cmd, unsigned long arg)
+int ds6502_ioctl_proc_power_info(struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	power_info_args power_info ;
 	ds_fix_param_t * ptr_ds_fix_param ;
@@ -147,7 +147,7 @@ int ds5600_ioctl_proc_power_info(struct file *filp, unsigned int cmd, unsigned l
 }
 
 
-int ds5600_ioctl_proc_temp_info(struct file *filp, unsigned int cmd, unsigned long arg)
+int ds6502_ioctl_proc_temp_info(struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	temp_info_args temp_data;
 	int  op_ret= 0;
@@ -167,7 +167,7 @@ int ds5600_ioctl_proc_temp_info(struct file *filp, unsigned int cmd, unsigned lo
 }
 
 
-int ds5600_ioctl_proc_master_slot_id(/*struct inode *inode, */struct file *filp, unsigned int cmd, unsigned long arg)
+int ds6502_ioctl_proc_master_slot_id(/*struct inode *inode, */struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	cpld_op_args cpld_op_data;
 	int op_ret= 0;
@@ -183,12 +183,43 @@ int ds5600_ioctl_proc_master_slot_id(/*struct inode *inode, */struct file *filp,
 }
 
 
-int ds5600_get_slot_index(void)
+int ds6502_get_slot_index(void)
 {
-	return 1;	
+    int ret = 0;
+	char buf[2] = {0, 0};
+	struct file *fp;
+    mm_segment_t fs;
+	loff_t pos = 0;
+	fp = filp_open("/mnt/stack_unit", O_RDONLY, 0);
+	if(IS_ERR(fp))
+	{
+	    printk("Standlone pizza box.Slot index is 1.\r\n");
+	}
+	else
+	{
+	    fs = get_fs();
+        set_fs(KERNEL_DS);
+        pos = 0;
+		ret = vfs_read(fp, buf, 1, &pos);
+		filp_close(fp, NULL);
+        set_fs(fs);
+		if(ret == 0)
+		{
+		    return 0;
+		}
+		if(buf[0] == '1')
+		{
+		    return 	0;
+		}
+		else if(buf[0] == '2')
+		{
+		    return 	1;
+		}
+	}
+	return 0;	
  }
 
-int ds5600_ioctl_proc_cpld_slot_id(/*struct inode *inode,*/ struct file *filp, unsigned int cmd, unsigned long arg)
+int ds6502_ioctl_proc_cpld_slot_id(/*struct inode *inode,*/ struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	int op_ret;
 	cpld_op_args cpld_op_data;
@@ -201,7 +232,7 @@ int ds5600_ioctl_proc_cpld_slot_id(/*struct inode *inode,*/ struct file *filp, u
 	return 0;
 }
 
-proc_file ds5600_common_files[] = 
+proc_file ds6502_common_files[] = 
 {
 	{"module_sn",				&bm_proc_module_sn},
 	{"module_name", 			&bm_proc_module_name},
@@ -222,11 +253,11 @@ proc_file ds5600_common_files[] =
 	{"slot_num", 				&bm_proc_slot_num},
 };
 
-proc_file_struct ds5600_board_spec_files_arr[] = 
+proc_file_struct ds6502_board_spec_files_arr[] = 
 {
 };
 
-ioctl_proc ds5652_ioctl_proc_arr[] = 
+ioctl_proc ds6502_ioctl_proc_arr[] = 
 {
 	{BM_IOC_CPLD_MASTER_SLOT_ID, 	ds5600_ioctl_proc_master_slot_id},
  	{BM_IOC_CPLD_SLOT_ID,			ds5600_ioctl_proc_cpld_slot_id},
@@ -240,29 +271,29 @@ ioctl_proc ds5652_ioctl_proc_arr[] =
 };
 
 
-int ds5600_init(void)
+int ds6502_init(void)
 {
 	
-	ko_product->proc_common_count = LENGTH(ds5600_common_files);
+	ko_product->proc_common_count = LENGTH(ds6502_common_files);
 	DBG(debug_ioctl,  "proc_common_count is %d.\n", ko_product->proc_common_count);
 
 	ko_product->proc_board_spec_files = NULL;
 	ko_product->proc_board_spec_count = 0;
 	DBG(debug_ioctl,  "proc_board_spec_count is %d.\n", ko_product->proc_board_spec_count);
 
-	ko_product->ioctl_proc_count = LENGTH(ds5652_ioctl_proc_arr);
+	ko_product->ioctl_proc_count = LENGTH(ds6502_ioctl_proc_arr);
 	DBG(debug_ioctl,  "ioctl_proc_count is %d.\n", ko_product->ioctl_proc_count);
 
 
 	return 0;
 }
 
-void ds5600_cleanup(void)
+void ds6502_cleanup(void)
 {
 	/* do nothing */
 }	
 
-int ds5600_proc_init(void)
+int ds6502_proc_init(void)
 {
 	struct proc_dir_entry * bm_proc_entry = NULL;
 	int i ;
@@ -273,7 +304,7 @@ int ds5600_proc_init(void)
 		return -1;
 	}
 
-	DBG(debug_ioctl, "bm: show proc common file.\n");
+	DBG(debug_ioctl, "bm: ds6502 show proc common file.\n");
 
 	for (i = 0; i < ko_product->proc_common_count; i++)
 	{
@@ -313,11 +344,11 @@ int ds5600_proc_init(void)
 	
 }
 
-int ds5600_proc_cleanup(void)
+int ds6502_proc_cleanup(void)
 {
 	int i;
 
-	DBG(debug_ioctl, "bm: ds5600_proc_cleanup.\n");
+	DBG(debug_ioctl, "bm: ds6502__proc_cleanup.\n");
 	
 	for (i = 0; i < ko_product->proc_board_spec_count; i++)
 	{
@@ -340,52 +371,52 @@ int ds5600_proc_cleanup(void)
 
 
 
-ds_fix_param_t ds5652_ds_fix_param_array[] = 
+ds_fix_param_t ds6502_ds_fix_param_array[] = 
 {
 	{.ds_index = 0,  .info_dev_addr = 0x54},
 	{.ds_index = 1,  .info_dev_addr = 0x55},			
 };
 
-ds_param_t ds5652_ds_param = 
+ds_param_t ds6502_ds_param = 
 {
 	.power_num = 2,
-	.ds_fix_array = ds5652_ds_fix_param_array,
+	.ds_fix_array = ds6502_ds_fix_param_array,
 	
 };
 
-kfan_param_t ds5652_fan_param = 
+kfan_param_t ds6502_fan_param = 
 {
 	.num = 3,
 };
 
-kproduct_fix_param ds5600_product_fix_param = 
+kproduct_fix_param ds6502_product_fix_param = 
 {
-	.product_type = PRODUCT_DS5600,
-	.product_code = PPAL_PRODUCT_HWCODE_DS5652,
+	.product_type = PRODUCT_DS6502,
+	.product_code = PPAL_PRODUCT_HWCODE_DS6502,
 	
-	.product_short_name = "DS5652",
+	.product_short_name = "DS6502",
 	.product_name = "",
 	
-	.slotnum = 1,
-	.master_slotnum = 1,
-	.master_slot_id = {0},
+	.slotnum = 2,
+	.master_slotnum = 2,
+	.master_slot_id = {0, 1},
 
 	.ioctl		= bm_product_ioctl,
-	.ioctl_proc_arr = ds5652_ioctl_proc_arr,
+	.ioctl_proc_arr = ds6502_ioctl_proc_arr,
 
 	
 	.proc_dir_name = "sysinfo",
-	.proc_common_files = ds5600_common_files,
-	.ds_param = &ds5652_ds_param,
-	.fan_param = &ds5652_fan_param,
+	.proc_common_files = ds6502_common_files,
+	.ds_param = &ds6502_ds_param,
+	.fan_param = &ds6502_fan_param,
 
-	.product_param_init		= ds5600_init,
-	.product_param_cleanup	= ds5600_cleanup,
-	.proc_files_init		= ds5600_proc_init,
-	.proc_files_cleanup		= ds5600_proc_cleanup,
-	.get_board_online_state = ds5600_get_board_online_state,
-	.reset_board	= ds5600_reset_board,
-	.slot_index_get = ds5600_get_slot_index,	
+	.product_param_init		= ds6502_init,
+	.product_param_cleanup	= ds6502_cleanup,
+	.proc_files_init		= ds6502_proc_init,
+	.proc_files_cleanup		= ds6502_proc_cleanup,
+	.get_board_online_state = ds6502_get_board_online_state,
+	.reset_board	= ds6502_reset_board,
+	.slot_index_get = ds6502_get_slot_index,	
 };
 
 

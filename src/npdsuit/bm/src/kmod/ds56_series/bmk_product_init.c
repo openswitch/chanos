@@ -38,6 +38,12 @@ extern kproduct_fix_param * ds5600_series_product_param_arr[];
 
 #include "bmk_ds6224_board_param.c"
 #include "bmk_ds6224_product_param.c"
+
+#include "bmk_ds5662_board_param.c"
+#include "bmk_ds5662_product_param.c"
+
+#include "bmk_ds6502_param.c"
+
 /* ********** variables ***************** */
 kfamily_fix_param ** kfamily_type_arr = NULL;
 kproduct_fix_param ** kproduct_type_arr = NULL;
@@ -56,6 +62,7 @@ kboard_fix_param * ds5600_series_board_param_arr[] =
 
 	[PPAL_BOARD_TYPE_DS5652]	= &ds5600_board,
 	[PPAL_BOARD_TYPE_DS6224]	= &ds6224_board,
+	[PPAL_BOARD_TYPE_DS5662]	= &ds5662_board,
 	[PPAL_BOARD_TYPE_NH_MAX]	= NULL,	
 };
 
@@ -64,6 +71,8 @@ kproduct_fix_param * ds5600_series_product_param_arr[] =
 {
 	[PRODUCT_DS5600] = &ds5600_product_fix_param,
 	[PRODUCT_DS6224] = &ds6224_product_fix_param,
+	[PRODUCT_DS5662] = &ds5662_product_fix_param,
+	[PRODUCT_DS6502] = &ds6502_product_fix_param,
 	[PRODUCT_NH_MAX_NUM]	= NULL,
 };
 
@@ -109,7 +118,19 @@ long bm_get_family_code(void)
 long bm_get_product_code(void)
 {
     int ret = 0;
-	char buf[2];
+	char buf[2] = {0, 0};
+	struct file *fp;
+	fp = filp_open("/mnt/stack_unit", O_RDONLY, 0);
+	if(IS_ERR(fp))
+	{
+	    printk("Standlone pizza box.\r\n");
+	}
+	else
+	{
+	    printk("Work in stacking mode.\r\n");
+		filp_close(fp, NULL);
+		return 	PPAL_PRODUCT_HWCODE_DS6502;
+	}
     ret = bmk_ds5652_twsi_eeprom_read_byte(0x50, 0x10, buf);
 	if(ret == 0)
 	{
@@ -152,7 +173,8 @@ long bm_get_board_code(void)
 		    }
 		}
 	}
-	return 	PPAL_BOARD_HWCODE_DS5662;
+	return PPAL_BOARD_HWCODE_DS5652;
+	return PPAL_BOARD_HWCODE_DS5662;
 }
 
 int bm_get_family_type(void)
@@ -228,7 +250,7 @@ int bm_get_board_type(void)
 
 int bm_common_ioctl(/*struct inode *inode, */struct file *filp, unsigned int cmd, unsigned long arg)
 {
-	DBG(debug_octeon, KERN_INFO DRIVER_NAME ":Enter bm_conmmon_ioctl. cmd = %x\n", cmd);
+	DBG(debug_octeon, KERN_INFO DRIVER_NAME ":Enter bm_common_ioctl. cmd = %x\n", cmd);
 	
 	return -2;
 }

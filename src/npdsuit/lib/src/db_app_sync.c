@@ -36,7 +36,7 @@ extern "C"
 #include "db_app_sync.h"
 
 
-int (*app_log)(int level, char *fmt, ...);
+int (*app_log)(int level, char *fmt, ...) = NULL;
 unsigned int dbsync_app_service_type = 0;
 unsigned int dbsync_app_local_slot = -1;
 unsigned int dbsync_app_sbymaster_slot = -1;
@@ -274,7 +274,8 @@ int dbsync_chassis_switchover()
                     &monitor_sock);
         if (0 != ret)
         {
-            (*app_log)(LOG_ERR, "Fatal error, can not init tipc client sock.\n");
+            if(app_log)
+                (*app_log)(LOG_ERR, "Fatal error, can not init tipc client sock.\n");
         }
         dbsync_monitor_cb = dbtable_sync_client_monitor; 
         dbsync_switchovering = TRUE;
@@ -293,7 +294,8 @@ int dbsync_chassis_switchover()
                     &monitor_sock);
         if (0 != ret)
         {
-            (*app_log)(LOG_ERR, "Fatal error, can not init tipc client sock.\n");
+            if(app_log)
+                (*app_log)(LOG_ERR, "Fatal error, can not init tipc client sock.\n");
         }
         dbsync_monitor_cb = dbtable_sync_server_monitor; 
         if(app_running_on_slaveindp != 1)
@@ -312,7 +314,8 @@ int dbtable_sync_slot_event(int event, int service_type, int slot_index)
         if(app_running_on_actmaster)
         {
             int count = 0;
-            (*app_log)(LOG_DEBUG, "Slot %d inserted.\n", slot_index+1);
+			if(app_log)
+                (*app_log)(LOG_DEBUG, "Slot %d inserted.\n", slot_index+1);
             while(!npd_sync_done)
             {
                 npd_sync_done = app_npd_sync_done_state_get(slot_index);

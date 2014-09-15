@@ -343,7 +343,7 @@ int del_community_by_name(char *name)
 
     for (; i< gpstSnmpSummary->community_num; i++)
     {
-        if (!strncmp(gpstSnmpSummary->community[i].community, name, strlen(name)))
+        if (!strcmp(gpstSnmpSummary->community[i].community, name))
         {
             index_of_name = i;
             break;
@@ -907,6 +907,38 @@ int del_trap_receiver_by_name(char *name)
     return SE_OK;
 }
 
+int get_v1_status_enable(void)
+{
+    if (NULL == gpstSnmpSummary)
+    {
+        return 0;
+    }
+
+    return gpstSnmpSummary->snmp_sysinfo.v1_status;
+}
+
+int get_v2c_status_enable(void)
+{
+    if (NULL == gpstSnmpSummary)
+    {
+        return 0;
+    }
+
+    return gpstSnmpSummary->snmp_sysinfo.v2c_status;
+}
+
+int get_v3_status_enable(void)
+{
+    if (NULL == gpstSnmpSummary)
+    {
+        return 0;
+    }
+
+    return gpstSnmpSummary->snmp_sysinfo.v3_status;
+}
+
+
+
 int get_view_num()
 {
     if (NULL == gpstSnmpSummary)
@@ -920,6 +952,7 @@ int get_view_num()
 
 int add_view(STSNMPView *pstView)
 {
+    int i = 0;
     if (NULL == gpstSnmpSummary)
     {
         return SE_ERROR_NOT_INITIAL;
@@ -933,6 +966,12 @@ int add_view(STSNMPView *pstView)
     if (gpstSnmpSummary->view_num>= MAX_SNMP_VIEW_NUM)
     {
         return SE_ERROR_COMMU_MAX_LIMIT;
+    }
+
+    for (i = 0; i < gpstSnmpSummary->view_num; i++)
+    {
+        if(!strcmp(gpstSnmpSummary->view[i].name, pstView->name))
+            return SE_ERROR_ERR_INPUT;
     }
 
     memcpy(&(gpstSnmpSummary->view[gpstSnmpSummary->view_num]),
@@ -1041,14 +1080,15 @@ int add_access(STSNMPAccess *pstAccess)
 
 
 
-int del_access_by_comname(char *name)
+int del_access_by_index(STSNMPAccess *paccess)
 {
     int index_of_name = -1;
     int i = 0;
 
     for (; i< gpstSnmpSummary->access_num; i++)
     {
-        if (!strncmp(gpstSnmpSummary->access[i].accommunity, name, strlen(name)))
+        if (!strncmp(gpstSnmpSummary->access[i].accommunity, paccess->accommunity, strlen(gpstSnmpSummary->access[i].accommunity))
+            && !strncmp(gpstSnmpSummary->access[i].acview, paccess->acview, strlen(gpstSnmpSummary->access[i].acview)))
         {
             index_of_name = i;
             break;
@@ -1640,6 +1680,7 @@ static int write_snmp_config(STSNMPSummary *pstSummary, char *file_path)
             memset(syscommand, 0, 500);
 			strcat(File_content,"\n\n");      
     }	
+    #if 0
 	sprintf(syscommand , "group NoOptionGroup v1   no_option \n");
     strcat(File_content, syscommand);
     memset(syscommand, 0, 500);
@@ -1653,7 +1694,22 @@ static int write_snmp_config(STSNMPSummary *pstSummary, char *file_path)
     strcat(File_content, syscommand);
     memset(syscommand, 0, 500);
 	strcat(File_content,"\n");	
+    #endif
+    
+    memset(syscommand,0,500);
+    sprintf(syscommand , "group_status v1 %s \n",pstSummary->snmp_sysinfo.v1_status ? "enable":"disable");
+    strcat(File_content , syscommand);
 
+    memset(syscommand,0,500);
+    sprintf(syscommand , "group_status v2c %s \n",pstSummary->snmp_sysinfo.v2c_status ? "enable":"disable");
+    strcat(File_content , syscommand);
+
+    memset(syscommand,0,500);
+    sprintf(syscommand , "group_status usm %s \n",pstSummary->snmp_sysinfo.v3_status ? "enable":"disable");
+    strcat(File_content , syscommand);
+    
+    strcat(File_content,"\n\n");
+    
     for (i=0 ; i < pstSummary->community_num ; i++)
     {
         //////////////com2sec/////////////////////////////////////////////////
@@ -1678,19 +1734,19 @@ static int write_snmp_config(STSNMPSummary *pstSummary, char *file_path)
         else if (pstSummary->community[i].access_mode == ACCESS_MODE_RW)
             sprintf(group_name , "%s_rw_grp",pstSummary->community[i].community);
 
-        if (pstSummary->snmp_sysinfo.v1_status == RULE_ENABLE)
+        if (pstSummary->snmp_sysinfo.v1_status == ENABLE_STATUS)
         {
             sprintf(syscommand , "group %s v1 %s \n",group_name,sec_name);
             strcat(File_content , syscommand);
         }
 
-        if (pstSummary->snmp_sysinfo.v2c_status == RULE_ENABLE)
+        if (pstSummary->snmp_sysinfo.v2c_status == ENABLE_STATUS)
         {
             sprintf(syscommand , "group %s v2c %s \n",group_name,sec_name);
             strcat(File_content , syscommand);
         }
 
-        if (pstSummary->snmp_sysinfo.v3_status == RULE_ENABLE)
+        if (pstSummary->snmp_sysinfo.v3_status == ENABLE_STATUS)
         {
             sprintf(syscommand , "group %s usm %s \n",group_name,sec_name);
             strcat(File_content , syscommand);
@@ -1735,7 +1791,7 @@ static int write_snmp_config(STSNMPSummary *pstSummary, char *file_path)
 		}
 
 	}
-    if (pstSummary->snmp_sysinfo.v3_status == RULE_ENABLE)
+    if (pstSummary->snmp_sysinfo.v3_status == ENABLE_STATUS)
     {
         for (i=0 ; i < pstSummary->v3user_num; i++)
         {
@@ -5637,6 +5693,11 @@ int load_snmp_conf( char *conf_file ,STSNMPSummary *pstSummary)
 	char priv_type[32] = {0};
 	char priv_passwd[32] = {0};
 
+    char group_type[16] = {0};
+    char group_status[16] = {0};
+    int group_status_num = 0;
+    
+
 	char *access_view_tmp=NULL;
 	
 	if(NULL == (fp = fopen( conf_file, "r") ))
@@ -5677,7 +5738,7 @@ int load_snmp_conf( char *conf_file ,STSNMPSummary *pstSummary)
 		}
 		else if((strncmp(line,"com2sec",strlen("com2sec"))==0)&&(strncmp(line,"com2sec no_option",strlen("com2sec no_option"))!=0))
 		{	
-			sscanf(line, "com2sec %[a-zA-Z]_%[a-zA-Z] %32[0-9.]/%32[0-9.]",comm_name,comm_mode,comm_ipdaddr,comm_mask);
+			sscanf(line, "com2sec %[0-9a-zA-Z]_%[a-zA-Z] %32[0-9.]/%32[0-9.]",comm_name,comm_mode,comm_ipdaddr,comm_mask);
 			for(i=0;i<pstSummary->community_num;i++)
 			{
 				if(!strcmp(comm_name,pstSummary->community[i].community))
@@ -5730,7 +5791,7 @@ int load_snmp_conf( char *conf_file ,STSNMPSummary *pstSummary)
 		}
 		else if((strncmp(line,"access",strlen("access"))==0)&&(strncmp(line,"access NoOptionGroup",strlen("access NoOptionGroup"))!=0))
 		{
-			sscanf(line, "access %[a-zA-Z]_",access_comm);
+			sscanf(line, "access %[0-9a-zA-Z]_",access_comm);
 			access_view_tmp = strstr(line, "exact");
 			sscanf(access_view_tmp+strlen("exact  "),"%[^ ]",access_view);
 			strcpy(pstSummary->access[pstSummary->access_num].accommunity, access_comm);
@@ -5853,24 +5914,25 @@ int load_snmp_conf( char *conf_file ,STSNMPSummary *pstSummary)
 				strcpy(pstSummary->v3user[pstSummary->v3user_num].name,username);
 				if(!strcmp(auth_type, "MD5"))
 				{
-					pstSummary->v3user[pstSummary->v3user_num].authentication.protocal = 1;
+					pstSummary->v3user[pstSummary->v3user_num].authentication.protocal = AUTH_PRO_MD5;
 				}
 				else if(!strcmp(auth_type, "SHA"))
 				{
-					pstSummary->v3user[pstSummary->v3user_num].authentication.protocal = 2;
+					pstSummary->v3user[pstSummary->v3user_num].authentication.protocal = AUTH_PRO_SHA;
 				}
 				else
 				{
-					pstSummary->v3user[pstSummary->v3user_num].authentication.protocal = 0;
+					pstSummary->v3user[pstSummary->v3user_num].authentication.protocal = AUTH_PRO_NONE;
 				}
+                
 				strcpy(pstSummary->v3user[pstSummary->v3user_num].authentication.passwd,auth_passwd);
 				if(!strcmp(priv_type, "DES"))
 				{
-					pstSummary->v3user[pstSummary->v3user_num].privacy.protocal = 2;
+					pstSummary->v3user[pstSummary->v3user_num].privacy.protocal = PRIV_PRO_DES;
 				}	
 				else
 				{
-					pstSummary->v3user[pstSummary->v3user_num].privacy.protocal = 0;
+					pstSummary->v3user[pstSummary->v3user_num].privacy.protocal = PRIV_PRO_NONE;
 				}
 				strcpy(pstSummary->v3user[pstSummary->v3user_num].privacy.passwd,priv_passwd);
 				pstSummary->v3user_num++;		
@@ -5901,6 +5963,30 @@ int load_snmp_conf( char *conf_file ,STSNMPSummary *pstSummary)
 					pstSummary->v3user[i].access_mode = 1;
 				}
 			}
+			memset(line, 0, 256);
+		}
+        else if(0 == strncmp(line,"group_status",strlen("group_status")))
+		{ 
+			sscanf(line, "group_status %s %s", group_type, group_status);
+
+            if(0 == strncmp(group_status,"disable",strlen("disable")))
+                group_status_num = DISABLE_STATUS;
+            else
+                group_status_num = ENABLE_STATUS;
+
+            if(!strncmp(group_type,"v1",strlen("v1")))
+            {
+                pstSummary->snmp_sysinfo.v1_status = group_status_num;
+            }
+            else if(!strncmp(group_type,"v2c",strlen("v2c")))
+            {
+                pstSummary->snmp_sysinfo.v2c_status = group_status_num;
+            }
+            else if(!strncmp(group_type,"usm",strlen("usm")))
+            {
+                pstSummary->snmp_sysinfo.v3_status = group_status_num;
+            }
+
 			memset(line, 0, 256);
 		}
 	}

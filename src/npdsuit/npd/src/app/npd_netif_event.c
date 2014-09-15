@@ -53,7 +53,7 @@ typedef struct netif_event_s
     unsigned int son_index;
 }netif_event_t;
 void (*netif_notify_remote_event_callback)(void *private_data, int private_data_len) = NULL;
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 int netif_remote_notify_relate_event(int dest_slot, unsigned int netif_index, unsigned int son_netif, enum PORT_RELATE_ENT event, void *private_data, int len)
 {
 	char *tmp_buf = NULL;
@@ -247,7 +247,7 @@ int netif_event_init()
     pthread_mutexattr_init(&attr);
     pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE_NP);
     pthread_mutex_init(&port_notify_mutex, &attr);
-#ifdef HAVE_CHASSIS_SUPPORT	
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
 	netif_remote_event_init(SYS_LOCAL_MODULE_SLOT_INDEX + 1);
 #endif
     return 0;

@@ -200,6 +200,8 @@ struct eth_port_s {
     int ip_sg;  /*source guard*/
 	int loopback;
 	int real_speed;
+	int stacking;
+	int remote_unit;
 };
  
 typedef struct _eth_port_sfp_

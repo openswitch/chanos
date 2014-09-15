@@ -3,7 +3,7 @@
 ifneq ($(KERNELRELEASE),)
 obj-m	:= bm.o 
 
-bm-y := bmk_main.o bmk_read_eeprom.o bmk_write_eeprom.o bmk_operation_boot_env.o
+bm-y := bmk_main.o bmk_read_eeprom.o bmk_write_eeprom.o bmk_operation_boot_env.o bmk_hwmon.o
 
 bm-y += bmk_ds5600_series_info.o bmk_product_init.o 
 

@@ -1721,7 +1721,7 @@ module_init(kap_init);
 module_exit(kap_cleanup);
 MODULE_DESCRIPTION(DRV_DESCRIPTION);
 MODULE_AUTHOR(DRV_COPYRIGHT);
-MODULE_LICENSE("Autelan");
+MODULE_LICENSE("CHANOS");
 MODULE_ALIAS_MISCDEV(KAP_MINOR);
 
 #ifdef __cplusplus

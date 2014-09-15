@@ -66,6 +66,8 @@
 #include "ws/ws_ec.h"
 
 
+#define DISABLE_STATUS 0
+#define ENABLE_STATUS  1
 
 #endif
 

@@ -17,6 +17,7 @@ extern "C"
 
 #include "ds5652_board_feature.c"
 #include "ds6224_board_feature.c"
+#include "ds5662_board_feature.c"
 
 
 
@@ -24,6 +25,7 @@ board_spec_fix_param_t   *ds_series_board_spec_param_arr[] =
 {
     [PPAL_BOARD_TYPE_DS5652] = &ds5652_board_spec_param,
 	[PPAL_BOARD_TYPE_DS6224] = &ds6224_board_spec_param,
+	[PPAL_BOARD_TYPE_DS5662] = &ds5662_board_spec_param,
     [PPAL_BOARD_TYPE_NH_MAX] = NULL,
 };
 

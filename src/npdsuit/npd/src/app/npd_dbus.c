@@ -2212,6 +2212,12 @@ static DBusHandlerResult npd_dbus_ethports_message_handler (DBusConnection *conn
     		{
     			reply = npd_dbus_config_eth_port_attr(connection,message,user_data);
     		}
+#ifdef HAVE_STACKING
+    		else if(dbus_message_is_method_call(message,NPD_DBUS_ETHPORTS_INTERFACE,NPD_DBUS_ETHPORTS_INTERFACE_METHOD_CONFIG_PORT_STACKING))
+    		{
+    			reply = npd_dbus_set_eth_port_stacking(connection,message,user_data);
+    		}
+#endif
 #ifdef HAVE_BRIDGE_STP
     		else if(dbus_message_is_method_call(message,NPD_DBUS_ETHPORTS_INTERFACE,NPD_DBUS_ETHPORTS_METHOD_CONFIG_STP))
     		{
@@ -2322,12 +2328,12 @@ static DBusHandlerResult npd_dbus_ethports_message_handler (DBusConnection *conn
 static DBusHandlerResult npd_dbus_relay_message_handler (DBusConnection *connection, DBusMessage *message, void *user_data)
 {
 	DBusMessage		*reply = NULL;
-	#ifdef HAVE_DBUS_RELAY
+#ifdef HAVE_DBUS_RELAY
 	if(SYS_LOCAL_MODULE_ISMASTERACTIVE)
 	{
         reply = dbus_relay_to_slave(connection, message, user_data);/*massage from active master to all active slave*/
 	}
-	#endif
+#endif
 	if(reply == NULL)
 	{
 	    if (strcmp(dbus_message_get_path(message),NPD_DBUS_RELAY_OBJPATH) == 0) 

@@ -27,7 +27,6 @@ long ds5600_load_backinfo(product_man_param_t *param)
 
 long ds5600_slotno_get()
 {
-    return 0;
 	int tipc_node_temp = tipc_get_own_node();
 	printf("(%s)Local board slot no.: %d\r\n", __func__, ((tipc_node_temp&0x0F) - 1));
     return (tipc_node_temp&0x0F) - 1;
@@ -228,6 +227,23 @@ product_fix_param_t ds6224_fix_param =
     .product_type = PRODUCT_DS6224,
     .product_short_name = "DS6224",
     .product_name = "CHANOS DS5600 Multi-Layer Datacenter Switch with 24X10GE",
+    .product_pp_feature = &ds5600_feature,
+    .serial_no = "1001",
+    .board_manage = &ds5600_boardmn_fix_param,
+    .pne_fix_param_t = &ds5600_pne_fix_param,
+    .product_man_param_get = &ds5600_load_backinfo,
+    .product_reset = &ds_sys_reset,
+    .product_show_chassis = &ds_chassis_show,
+    .slotno_get = &ds5600_slotno_get,
+    .master_set = &ds5600_npd_master_set
+};
+
+product_fix_param_t ds5662_fix_param =
+{
+	.product_code = PPAL_PRODUCT_HWCODE_DS5662,
+    .product_type = PRODUCT_DS5662,
+    .product_short_name = "DS5660",
+    .product_name = "CHANOS DS5600 Multi-Layer Datacenter Switch with 48X10GE+12X40GE",
     .product_pp_feature = &ds5600_feature,
     .serial_no = "1001",
     .board_manage = &ds5600_boardmn_fix_param,

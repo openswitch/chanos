@@ -23,32 +23,39 @@ extern "C"
 #include "ds5600_conn.c"
 #include "ds5600_feature.c"
 
+#include "ds6502_conn.c"
+#include "ds6502_feature.c"
+
 #include "ds5652_board_conn.c"
 #include "ds5652_board_param.c"
 
 #include "ds6224_board_conn.c"
 #include "ds6224_board_param.c"
 
+#include "ds5662_board_conn.c"
+#include "ds5662_board_param.c"
+
+
 unsigned int PPAL_BOARD_TYPE_NONE = PPAL_BOARD_TYPE_NH_NONE;
 unsigned int PPAL_BOARD_TYPE_MAX = PPAL_BOARD_TYPE_NH_MAX;
 unsigned int PRODUCT_MAX_NUM = PRODUCT_NH_MAX_NUM;
-
-
-
-/* us3k series   */
 
 product_fix_param_t *ds5600_series_product_param_arr[] =
 {
     [PRODUCT_DS5600] = &ds5600_fix_param,
 	[PRODUCT_DS6224] = &ds6224_fix_param,
-    [PRODUCT_NH_MAX_NUM] = NULL,    		
+	[PRODUCT_DS5662] = &ds5662_fix_param,
+	[PRODUCT_DS6502] = &ds6502_fix_param,
+    [PRODUCT_NH_MAX_NUM] = NULL,
 };
-
 
 product_conn_type_t *ds5600_series_product_conn_arr[] =
 {
     [PRODUCT_DS5600] = &ds5600_product_conn,
 	[PRODUCT_DS6224] = &ds6224_product_conn,
+	[PRODUCT_DS5662] = &ds5662_product_conn,
+	[PRODUCT_DS6502] = &ds6502_product_conn,
+		
     [PRODUCT_NH_MAX_NUM] = NULL,    				
 };
 
@@ -56,6 +63,7 @@ struct board_conn_type_s *ds5600_series_board_conn_arr[] =
 {
     [PPAL_BOARD_TYPE_DS5652] = &ds5652_board_board_conn,
     [PPAL_BOARD_TYPE_DS6224] = &ds6224_board_board_conn,
+    [PPAL_BOARD_TYPE_DS5662] = &ds5662_board_board_conn,
     [PPAL_BOARD_TYPE_NH_MAX] = NULL,    				
 };
 
@@ -63,6 +71,7 @@ struct board_fix_param_t *ds5600_series_board_param_arr[] =
 {
     [PPAL_BOARD_TYPE_DS5652] = &ds5652_board_param,
     [PPAL_BOARD_TYPE_DS6224] = &ds6224_board_param,
+    [PPAL_BOARD_TYPE_DS5662] = &ds5662_board_param,
     [PPAL_BOARD_TYPE_NH_MAX] = NULL,    
 };
 

@@ -3,31 +3,31 @@ extern "C"
 {
 #endif
 
-long ds5652_board_npd_os_upgrade(unsigned int slot_index)
+long ds5662_board_npd_os_upgrade(unsigned int slot_index)
 {
 	npd_syslog_err("NH 3052 not be supported.\n");
 	return NPD_SUCCESS;
 }
 
-ipp_fix_param_t  ds5652_board_ipp_param =
+ipp_fix_param_t  ds5662_board_ipp_param =
 {
     .ipp_portnum = 1,
     .ipp_phyport_map = {"eth0-1"},
     .ipp_board_map = {-2}
 };
 
-sub_board_fix_param_t ds5652_board_subboard_param = 
+sub_board_fix_param_t ds5662_board_subboard_param = 
 {
     .sub_slotnum = 1,     // more than 1
     .sub_slot_portnum = 0
 };
 
-temper_fix_param_t ds5652_board_temper_param =
+temper_fix_param_t ds5662_board_temper_param =
 {
     .num = 0,
 };
 
-board_feature_t ds5652_board_feature = 
+board_feature_t ds5662_board_feature = 
 {
     .jumbo_size = 16384,
     .max_macaddr = 65536,
@@ -177,31 +177,31 @@ board_feature_t ds5652_board_feature =
 	.sg_filter = TRUE 
 };
 
-int ds5652_board_support_product[] =
+int ds5662_board_support_product[] =
 {
-    PRODUCT_DS5600,
+    PRODUCT_DS5662,
     PRODUCT_DS6502,
     0
 };
 
 
-board_fix_param_t ds5652_board_param =
+board_fix_param_t ds5662_board_param =
 {
-    .board_code = PPAL_BOARD_HWCODE_DS5652,
-    .board_type = PPAL_BOARD_TYPE_DS5652,
-    .full_name = "CHANOS Multi-Layer Datacenter Switch with 48X10GE+4X40GE",
-    .short_name = "DS5652",
+    .board_code = PPAL_BOARD_HWCODE_DS5662,
+    .board_type = PPAL_BOARD_TYPE_DS5662,
+    .full_name = "CHANOS Multi-Layer Datacenter Switch with 48X10GE+14X40GE",
+    .short_name = "DS5662",
     .have_pp = TRUE,
     .master_flag = FALSE,
     .service_flag = TRUE,
-    .panel_portnum = 52,
-    .subboard_fix_param = &ds5652_board_subboard_param,
-    .ipp_fix_param = &ds5652_board_ipp_param,
-    .temper_fix_param = &ds5652_board_temper_param,
-    .os_upgrade = &ds5652_board_npd_os_upgrade,
-    .feature = &ds5652_board_feature,
+    .panel_portnum = 60,
+    .subboard_fix_param = &ds5662_board_subboard_param,
+    .ipp_fix_param = &ds5662_board_ipp_param,
+    .temper_fix_param = &ds5662_board_temper_param,
+    .os_upgrade = &ds5662_board_npd_os_upgrade,
+    .feature = &ds5662_board_feature,
     .sdk_type = SDK_MARVELL,
-    .board_support_product = (int *)ds5652_board_support_product,
+    .board_support_product = (int *)ds5662_board_support_product,
     
 };
 

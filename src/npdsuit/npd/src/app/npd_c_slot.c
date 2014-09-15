@@ -493,8 +493,8 @@ int chassis_info_init()
         productinfo.sys_info.sn = "1000";
         productinfo.sys_info.name = "AS9600";
         productinfo.sys_info.basemac = "000A7AFE0106";
-        productinfo.sys_info.sw_name = "Auteware";
-        productinfo.sys_info.enterprise_name = "Autelan";
+        productinfo.sys_info.sw_name = "CHANOS";
+        productinfo.sys_info.enterprise_name = "OPEN-SWITCH";
         productinfo.sys_info.enterprise_snmp_oid = "";
         productinfo.sys_info.snmp_sys_oid = "";
         productinfo.sys_info.built_in_admin_username = "admin";

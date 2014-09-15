@@ -1165,7 +1165,7 @@ int db_table_insert_entry(
             (*db_index->index_insert)(db_index, data, entry_id);            
         }
     }
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     if(db->sync_mode != DB_SYNC_NONE)
     {
     	if (local_flag || platform_relay_flag)
@@ -1225,7 +1225,7 @@ int db_table_delete_entry(
 
     if(!(entry->flags & DB_ENTRY_EXIST))
         return 0;
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     if(db->sync_mode != DB_SYNC_NONE)
     {
         if (local_flag || platform_relay_flag)
@@ -1291,7 +1291,7 @@ int db_table_update_entry(
 
     if (list_empty(&db->element_list)||local_flag)
     {
-#ifdef HAVE_CHASSIS_SUPPORT		
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)		
         if(0 == memcmp(data, entry->real_data, db->sync_size))
             sync_remote = FALSE;
 #endif		
@@ -1321,7 +1321,7 @@ int db_table_update_entry(
             (*db_index->index_insert)(db_index, data, entry_id);
         }
     }
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     if(db->sync_mode != DB_SYNC_NONE)
     {
 	    if (sync_remote && (local_flag || platform_relay_flag))

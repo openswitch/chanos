@@ -3512,6 +3512,9 @@ enum npd_dbus_result_no_e {
 #define NPD_DBUS_ETHPORTS_INTERFACE_METHOD_CONFIG_PORT_LOOPBACK  "config_eth_port_loopback"
 
 #define NPD_DBUS_ETHPORTS_INTERFACE_METHOD_GET_PORT_LOOPBACK  "get_eth_port_loopback"
+
+#define NPD_DBUS_ETHPORTS_INTERFACE_METHOD_CONFIG_PORT_STACKING  "config_eth_port_stacking"
+
 /************************************************************************
  * DESCRIPTION:
  * 	arg lists for method NPD_DBUS_ETHPORTS_INTERFACE_METHOD_CONFIG_RATELIMIT
@@ -3721,22 +3724,6 @@ enum npd_dbus_result_no_e {
 *		OTHER VALUE
 ********************************************************************************/
 #define NPD_DBUS_ETHPORTS_INTERFACE_METHOD_CONFIG_ETHPORT_MEDIA "config_ethport_media"
-
-/*****************************************************************************
-*	DESCRIPTION: 
-*		get slot/port by port_index
-*
-*	INPUT:
-*		uint32 	-  port_index
-*  	
-*	OUTPUT:  
-*
-*	REUTURN
-*	
-*		NPD_SUCCESS
-*		OTHER VALUE
-********************************************************************************/
-#define NPD_DBUS_ETHPORTS_INTERFACE_METHOD_GET_SLOT_PORT "get_slot_port"
 
 /*****************************************************************************
 *	DESCRIPTION: 

@@ -474,7 +474,7 @@ int main(int argc,char **argv)
 
 	syslog_ax_main_dbg("Create Attack Check Polling thread\n");
 	nam_thread_create("SysAttackCheck",(void *)npd_check_system_attack,NULL,NPD_TRUE,NPD_FALSE);
-#ifdef HAVE_CHASSIS_SUPPORT
+#if defined(HAVE_CHASSIS_SUPPORT) || defined(HAVE_STACKING)
     if(!SYS_LOCAL_MODULE_ISMASTERACTIVE)
         nam_thread_create("NpdDBSync",(void *)npd_dbtable_thread_main,NULL,NPD_TRUE,NPD_FALSE);
 #endif
