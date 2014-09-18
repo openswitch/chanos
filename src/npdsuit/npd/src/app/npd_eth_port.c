@@ -2566,6 +2566,7 @@ long npd_eth_port_insert(void *data)
                                __FILE__, __LINE__, "npd_set_port_eee");
         }
     }
+#ifdef HAVE_STACKING
     if(new_port->stacking)
     {
         ret = nam_set_ethport_stacking(new_port->eth_port_ifindex, new_port->stacking); 
@@ -2581,6 +2582,7 @@ long npd_eth_port_insert(void *data)
                                __FILE__, __LINE__, "nam_set_ethport_stack_remote_unit");
         }
     }
+#endif
     return 0;
 }
 

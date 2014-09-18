@@ -200,8 +200,12 @@ product_feature_t ds5600_feature =
 
     .stack = TRUE,
     .rspan = TRUE,
-    .sflow = TRUE
+    .sflow = TRUE,
     
+    .support_acl_based_vlan = TRUE,
+    .support_acl_policy_route = TRUE,
+    .num_of_tcp_comparator = 16,
+    .num_of_udp_comparator = 16
 };
 product_fix_param_t ds5600_fix_param =
 {

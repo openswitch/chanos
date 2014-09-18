@@ -227,7 +227,7 @@ int ds6502_ioctl_proc_cpld_slot_id(/*struct inode *inode,*/ struct file *filp, u
 	memset(&cpld_op_data, 0, sizeof(cpld_op_args));
 	
 	op_ret = copy_from_user(&cpld_op_data, (cpld_op_args *)arg, sizeof(cpld_op_args));
-	cpld_op_data.value = ds5600_get_slot_index();
+	cpld_op_data.value = ds6502_get_slot_index();
 	op_ret = copy_to_user((cpld_op_args *)arg, &cpld_op_data, sizeof(cpld_op_args));
 	return 0;
 }
@@ -260,7 +260,7 @@ proc_file_struct ds6502_board_spec_files_arr[] =
 ioctl_proc ds6502_ioctl_proc_arr[] = 
 {
 	{BM_IOC_CPLD_MASTER_SLOT_ID, 	ds5600_ioctl_proc_master_slot_id},
- 	{BM_IOC_CPLD_SLOT_ID,			ds5600_ioctl_proc_cpld_slot_id},
+ 	{BM_IOC_CPLD_SLOT_ID,			ds6502_ioctl_proc_cpld_slot_id},
 	{BM_IOC_CPLD_FAN_PRESENT, 		ds5600_ioctl_proc_cpld_fan},
 	{BM_IOC_CPLD_FAN_ALARM, 		ds5600_ioctl_proc_cpld_fan},
 	{BM_IOC_CPLD_FAN_SPEED,			ds5600_ioctl_proc_cpld_fan},

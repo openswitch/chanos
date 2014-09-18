@@ -40,7 +40,38 @@ int ds5662_ioctl_proc_master_slot_id(/*struct inode *inode, */struct file *filp,
 
 int ds5662_get_slot_index(void)
 {
-	return 1;	
+    int ret = 0;
+	char buf[2] = {0, 0};
+	struct file *fp;
+    mm_segment_t fs;
+	loff_t pos = 0;
+	fp = filp_open("/mnt/stack_unit", O_RDONLY, 0);
+	if(IS_ERR(fp))
+	{
+	    printk("Standlone pizza box.Slot index is 1.\r\n");
+	}
+	else
+	{
+	    fs = get_fs();
+        set_fs(KERNEL_DS);
+        pos = 0;
+		ret = vfs_read(fp, buf, 1, &pos);
+		filp_close(fp, NULL);
+        set_fs(fs);
+		if(ret == 0)
+		{
+		    return 0;
+		}
+		if(buf[0] == '1')
+		{
+		    return 	0;
+		}
+		else if(buf[0] == '2')
+		{
+		    return 	1;
+		}
+	}
+	return 0;	
  }
 
 int ds5662_ioctl_proc_cpld_slot_id(/*struct inode *inode,*/ struct file *filp, unsigned int cmd, unsigned long arg)

@@ -269,7 +269,7 @@ void smart_link_assembly_packet(char* data, struct smart_link_s* entry)
     memset(frame, 0, sizeof(struct ethernet_header_s));
     memcpy(frame->dmac, SL_MUTICAST_MAC, sizeof(sl_sys_mac));
     memcpy(frame->smac, sl_sys_mac, sizeof(sl_sys_mac));
-    frame->type = SL_STLK_TYPE;
+    frame->type = htons(SL_STLK_TYPE);
 
     packet = (struct advertise_s*)(data + sizeof(struct ethernet_header_s) + sizeof(union smart_link_packet_sync_ctrl_u));
     memset(packet, 0, sizeof(struct advertise_s));
