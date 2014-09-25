@@ -5,7 +5,7 @@ APP_TARGET_NAME = npd
 
 CC  = $(COMPILER_PREFIX)gcc
 
-CFLAGS = -Wall -D_GNU_SOURCE $(INCLUDE_AUTEWARE_MODULES)
+CFLAGS = -Wall -D_GNU_SOURCE $(INCLUDE_CHANOS_MODULES)
 LDFLAGS = -L$(LIB_EXPORT_DIR) -L$(USER_ADDITION_LIB_ROOT_PATH)/lib -lzcommon -ltipc_api -lnpdlib 
 CFLAGS += -g
 
@@ -58,7 +58,7 @@ ifeq ($(DRV_LIB_FLAG),ASX)
 CFLAGS += -DBCM_ESW_SUPPORT #-ansi
 endif
 
-ifneq ($(findstring DBUS_RELAY,$(INCLUDE_AUTEWARE_MODULES)),)
+ifneq ($(findstring DBUS_RELAY,$(INCLUDE_CHANOS_MODULES)),)
 LDFLAGS += -ldbus_relay -ldbus-convenience
 endif
 #CFLAGS += -DDBUS_API_SUBJECT_TO_CHANGE
@@ -76,13 +76,13 @@ NPD_COMMON_OBJS := npd_main.o npd_dbus.o npd_log.o npd_vlan.o npd_trunk.o npd_et
 			circle.o os_unix.o npd_asd.o npd_database.o npd_netif_event.o npd_switch_port.o npd_lacp.o npd_dhcp_relay.o \
                         npd_rx.o npd_tx.o npd_udld.o \
                         npd_pkt_list.o npd_tracking.o npd_poe.o npd_erpp.o npd_sflow.o
-ifneq ($(findstring GVRP,$(INCLUDE_AUTEWARE_MODULES)),)
+ifneq ($(findstring GVRP,$(INCLUDE_CHANOS_MODULES)),)
 NPD_COMMON_OBJS += npd_gvrp.o npd_gvrp_gid.o npd_gvrp_gidtt.o npd_gvrp_timer.o npd_gvrp_gip.o 
 endif
-ifneq ($(findstring NPD_IPV6,$(INCLUDE_AUTEWARE_MODULES)),)
+ifneq ($(findstring NPD_IPV6,$(INCLUDE_CHANOS_MODULES)),)
 NPD_COMMON_OBJS += npd_ndisc_snooping.o npd_dhcpv6_relay.o
 endif
-ifneq ($(findstring CAPWAP_ENGINE,$(INCLUDE_AUTEWARE_MODULES)),)
+ifneq ($(findstring CAPWAP_ENGINE,$(INCLUDE_CHANOS_MODULES)),)
 NPD_COMMON_OBJS += npd_capwap.o
 endif
 
