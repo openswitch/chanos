@@ -148,7 +148,6 @@ default:
 	echo "stpsuit			-Make rstp and mstp."
 	echo "had			-Make HA daemon."
 	echo "smartlink			-Make Smart-Link daemon."
-	echo "ccgi			-Make AuteCS ccgi."
 	echo "tipc_api			-Make tipc api."
 	echo "libnpd                    -Make bit operation and database."
 	echo "dbus_relay		-Make dbus relay."
@@ -174,11 +173,6 @@ default:
 	echo 
 	echo "==System level targets"
 	echo 
-	echo "x7x5img			-Make x7x5 img with kernel2.6.16.26"
-	echo "x3img			-Make x3 img with kernel2.6.16.26"
-	echo "x3img2			-Make x3 img with kernel2.6.21.7cn3"
-	echo "awimgs			-Make x7x5 and x3img x3img2 within one build"
-	echo
 	echo "For other possible targets, please try: make TABKEY"
 	echo "==========================================================="
 
@@ -214,7 +208,7 @@ tipc_api:
 lldp:
 	@echo "Building lldp module..."
 	-rm -rf ${BUILD_ROOTFS_DIR}/usr/bin/lldpd
-ifeq ($(findstring -DHAVE_LLDP,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_LLDP)
+ifeq ($(findstring -DHAVE_LLDP,$(INCLUDE_CHANOS_MODULES)), -DHAVE_LLDP)
 	if [ ! -d ${PROJECT_BUILD_DIR}/$@ ]; then mkdir ${PROJECT_BUILD_DIR}/$@; fi
 	$(MAKE) -C ${LLDP_APP_MOD} install
 	cp $(USER_ADDITION_LIB_ROOT_PATH)/bin/lldpd ${BUILD_ROOTFS_DIR}/usr/bin
@@ -241,7 +235,7 @@ cleandecrypt:
 pam_radius:
 	@echo "Building pam_radius module..."
 	-rm -rf ${BUILD_ROOTFS_DIR}/lib/security/pam_radius_auth.so
-ifeq ($(findstring -DHAVE_PAM,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_PAM)
+ifeq ($(findstring -DHAVE_PAM,$(INCLUDE_CHANOS_MODULES)), -DHAVE_PAM)
 	if [ ! -d ${PROJECT_BUILD_DIR}/$@ ]; then mkdir ${PROJECT_BUILD_DIR}/$@; fi
 	$(MAKE) -C ${PAM_RADIUS_MOD} install
 	cp $(USER_ADDITION_LIB_ROOT_PATH)/lib/pam_radius_auth.so ${BUILD_ROOTFS_DIR}/lib/security
@@ -250,7 +244,7 @@ endif
 pam_tacplus:
 	@echo "Building pam_tacplus module..."
 	-rm -rf ${BUILD_ROOTFS_DIR}/lib/security/pam_tacplus.so
-ifeq ($(findstring -DHAVE_PAM,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_PAM)
+ifeq ($(findstring -DHAVE_PAM,$(INCLUDE_CHANOS_MODULES)), -DHAVE_PAM)
 	if [ ! -d ${PROJECT_BUILD_DIR}/$@ ]; then mkdir ${PROJECT_BUILD_DIR}/$@; fi
 	$(MAKE) -C ${PAM_TACPLUS_MOD} install
 	cp $(USER_ADDITION_LIB_ROOT_PATH)/lib/pam_tacplus.so ${BUILD_ROOTFS_DIR}/lib/security
@@ -331,7 +325,7 @@ ccgi:
 	@echo "Building ccgi ..."
 	-rm -rf ${WWW_EXPORT_DIR}/ccgi-bin/*.cgi
 	-rm -rf ${BUILD_ROOTFS_DIR}/opt/www/ccgi-bin/*.cgi	
-ifeq ($(findstring -DHAVE_WEBMNG,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_WEBMNG)	
+ifeq ($(findstring -DHAVE_WEBMNG,$(INCLUDE_CHANOS_MODULES)), -DHAVE_WEBMNG)	
 	if [ ! -d ${PROJECT_BUILD_DIR}/$@ ]; then mkdir ${PROJECT_BUILD_DIR}/$@; fi
 	$(MAKE) -C ${CCGI_MOD}/cgic205 OLDEAG=$(OLDEAG)
 	cp ${CCGI_MOD}/cgic205/*.cgi ${WWW_EXPORT_DIR}/ccgi-bin
@@ -370,7 +364,7 @@ snmpd:
 	rm -rf $(USER_ADDITION_LIB_ROOT_PATH)/lib/libnetsnmptrapd.so*
 	rm -rf ${BUILD_ROOTFS_DIR}/usr/lib/libnetsnmp.so* 
 	rm -rf $(USER_ADDITION_LIB_ROOT_PATH)/lib/libnetsnmp.so*
-ifeq ($(findstring -DHAVE_MAN_SNMP,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_MAN_SNMP)	
+ifeq ($(findstring -DHAVE_MAN_SNMP,$(INCLUDE_CHANOS_MODULES)), -DHAVE_MAN_SNMP)	
 	chmod 777 ${SNMP_MOD} -R
 	if [ ! -d ${PROJECT_BUILD_DIR}/$@ ] ; then \
 		cd ${SNMP_MOD} ; \
@@ -402,7 +396,7 @@ snmp: snmpd trap-helper
 	rm -rf ${LIB_EXPORT_DIR}/subagent_plugin.so
 	rm -rf ${BIN_EXPORT_DIR}/subagent
 	rm -rf ${BUILD_ROOTFS_DIR}/opt/bin/subagent
-ifeq ($(findstring -DHAVE_MAN_SNMP,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_MAN_SNMP)	
+ifeq ($(findstring -DHAVE_MAN_SNMP,$(INCLUDE_CHANOS_MODULES)), -DHAVE_MAN_SNMP)	
 	if [ ! -d ${PROJECT_BUILD_DIR}/$@ ]; then mkdir ${PROJECT_BUILD_DIR}/$@; fi	
 	$(MAKE) -C ${SUBAGENT_MOD} subagent_plugin.so
 	cp ${SUBAGENT_MOD}/subagent_plugin.so ${LIB_EXPORT_DIR}
@@ -417,7 +411,7 @@ trap-helper:
 	@echo "Building trap-helper..."
 	rm -rf $(BIN_EXPORT_DIR)/trap-helper
 	rm -rf ${BUILD_ROOTFS_DIR}/opt/bin/trap-helper
-ifeq ($(findstring -DHAVE_MAN_SNMP,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_MAN_SNMP)		
+ifeq ($(findstring -DHAVE_MAN_SNMP,$(INCLUDE_CHANOS_MODULES)), -DHAVE_MAN_SNMP)		
 	$(MAKE) -C ${TRAP_HELPER_MOD}
 	cp ${TRAP_HELPER_MOD}/trap-helper $(BIN_EXPORT_DIR)
 	cp ${TRAP_HELPER_MOD}/trap-helper ${BUILD_ROOTFS_DIR}/opt/bin
@@ -426,7 +420,7 @@ endif
 asd:
 	@echo "Building asd..."
 	rm -rf ${BUILD_ROOTFS_DIR}/opt/bin/asd
-ifeq ($(findstring -DHAVE_AAA,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_AAA)		
+ifeq ($(findstring -DHAVE_AAA,$(INCLUDE_CHANOS_MODULES)), -DHAVE_AAA)		
 	if [ ! -d ${PROJECT_BUILD_DIR}/$@ ]; then mkdir ${PROJECT_BUILD_DIR}/$@; fi
 	$(MAKE) -C ${ASD_MOD}/src/app
 	cp ${PROJECT_BUILD_DIR}/$@/$@ ${BUILD_ROOTFS_DIR}/opt/bin/
@@ -439,7 +433,7 @@ endif
 wcpss: wid wsm
 	echo "Finished making wcpss."
 	rm -rf ${BUILD_ROOTFS_DIR}/etc/version/wtpcompatible*
-ifeq ($(findstring -DHAVE_WCPSS,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_WCPSS)	
+ifeq ($(findstring -DHAVE_WCPSS,$(INCLUDE_CHANOS_MODULES)), -DHAVE_WCPSS)	
 	cp ${WTPVERFILE} ${BUILD_ROOTFS_DIR}/etc/version/
 endif
 
@@ -447,7 +441,7 @@ wsm: wcpsspub_ac
 	@echo "Building wsm ..."
 	rm -rf $(BIN_EXPORT_DIR)/wsm
 	rm -rf ${BUILD_ROOTFS_DIR}/opt/bin/wsm
-ifeq ($(findstring -DHAVE_WCPSS,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_WCPSS)	
+ifeq ($(findstring -DHAVE_WCPSS,$(INCLUDE_CHANOS_MODULES)), -DHAVE_WCPSS)	
 	$(MAKE) -C ${WCPSS_MOD}/src/app/wsm
 	cp ${WCPSS_MOD}/src/app/wsm/wsm $(BIN_EXPORT_DIR)
 	cp ${WCPSS_MOD}/src/app/wsm/wsm ${BUILD_ROOTFS_DIR}/opt/bin/
@@ -457,7 +451,7 @@ wid: wcpsspub_ac
 	@echo "Building wid ..."
 	rm -rf $(BIN_EXPORT_DIR)/wid
 	rm -rf ${BUILD_ROOTFS_DIR}/opt/bin/wid
-ifeq ($(findstring -DHAVE_WCPSS,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_WCPSS)	
+ifeq ($(findstring -DHAVE_WCPSS,$(INCLUDE_CHANOS_MODULES)), -DHAVE_WCPSS)	
 	$(MAKE) -C ${WCPSS_MOD}/src/app/wid
 	cp ${WCPSS_MOD}/src/app/wid/wid $(BIN_EXPORT_DIR)
 	cp ${WCPSS_MOD}/src/app/wid/wid ${BUILD_ROOTFS_DIR}/opt/bin/
@@ -467,7 +461,7 @@ wtpd: wcpsspub_wtp
 	@echo "Building wtpd ..."
 	rm -rf $(BIN_EXPORT_DIR)/wtpd
 	rm -rf ${BUILD_ROOTFS_DIR}/opt/bin/wtpd
-ifeq ($(findstring -DHAVE_WCPSS,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_WCPSS)		
+ifeq ($(findstring -DHAVE_WCPSS,$(INCLUDE_CHANOS_MODULES)), -DHAVE_WCPSS)		
 	$(MAKE) -C ${WCPSS_MOD}/src/app/wtpd
 	cp ${WCPSS_MOD}/src/app/wtpd/wtpd $(BIN_EXPORT_DIR)
 	cp ${WCPSS_MOD}/src/app/wtpd/wtpd ${BUILD_ROOTFS_DIR}/opt/bin/
@@ -476,7 +470,7 @@ endif
 wcpsspub_ac:
 	@echo "Building wcpss public lib for AC side..."
 	rm -rf ${BUILD_ROOTFS_DIR}/opt/lib/*.a
-ifeq ($(findstring -DHAVE_WCPSS,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_WCPSS)		
+ifeq ($(findstring -DHAVE_WCPSS,$(INCLUDE_CHANOS_MODULES)), -DHAVE_WCPSS)		
 	$(MAKE) -C ${WCPSS_MOD}/src/app/pub
 	cp ${WCPSS_MOD}/src/app/pub/*.a ${BUILD_ROOTFS_DIR}/opt/lib/
 endif
@@ -489,7 +483,7 @@ pimd:
 	@echo "Building pimd suit ..."
 	rm -rf ${BUILD_ROOTFS_DIR}/opt/bin/pimd
 
-ifeq ($(findstring -DHAVE_PIM,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_PIM)		
+ifeq ($(findstring -DHAVE_PIM,$(INCLUDE_CHANOS_MODULES)), -DHAVE_PIM)		
 	if [ ! -d ${PROJECT_BUILD_DIR}/$@ ]; then mkdir ${PROJECT_BUILD_DIR}/$@; fi
 	$(MAKE) -C ${PIMD_MOD}
 	cp ${PROJECT_BUILD_DIR}/$@/pimd ${BUILD_ROOTFS_DIR}/opt/bin/
@@ -501,7 +495,7 @@ endif
 dvmrp:
 	@echo "Building dvmrp suit ..."
 	rm -rf ${BUILD_ROOTFS_DIR}/opt/bin/dvmrp
-ifeq ($(findstring -DHAVE_DVMRP,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_DVMRP)		
+ifeq ($(findstring -DHAVE_DVMRP,$(INCLUDE_CHANOS_MODULES)), -DHAVE_DVMRP)		
 	if [ ! -d ${PROJECT_BUILD_DIR}/$@ ]; then mkdir ${PROJECT_BUILD_DIR}/$@; fi
 	$(MAKE) -C ${DVMRP_MOD} 
 	cp ${PROJECT_BUILD_DIR}/$@/dvmrp ${BUILD_ROOTFS_DIR}/opt/bin/
@@ -510,7 +504,7 @@ endif
 quagga:
 	@echo "Building quagga suit ..."
 	chmod 777 ${QUAGGA_MOD} -R
-ifeq ($(findstring -DHAVE_OSPF_GR,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_OSPF_GR)
+ifeq ($(findstring -DHAVE_OSPF_GR,$(INCLUDE_CHANOS_MODULES)), -DHAVE_OSPF_GR)
 	if [ ! -d ${PROJECT_BUILD_DIR}/$@ ] ; then \
 		cd ${QUAGGA_MOD} ; \
 		./configpkg_gr ${TARGET_NAME}; \
@@ -544,7 +538,7 @@ endif
 	rm -rf ${BUILD_ROOTFS_DIR}/opt/lib/libzcommon.so*  
 	rm -rf ${BUILD_ROOTFS_DIR}/opt/lib/libospf.so*     
   
-ifeq ($(findstring -DHAVE_ZEBRA,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_ZEBRA)  
+ifeq ($(findstring -DHAVE_ZEBRA,$(INCLUDE_CHANOS_MODULES)), -DHAVE_ZEBRA)  
 	if [ -e ${PROJECT_BUILD_DIR}/$@/zebra/.libs/zebra ] ; then \
 		cp ${PROJECT_BUILD_DIR}/$@/zebra/.libs/zebra $(BIN_EXPORT_DIR) ; \
 		cp -d ${BIN_EXPORT_DIR}/zebra ${BUILD_ROOTFS_DIR}/opt/bin/ ; \
@@ -556,42 +550,42 @@ endif
 		cp -d ${BIN_EXPORT_DIR}/vtysh ${BUILD_ROOTFS_DIR}/opt/bin/ ; \
 	    chmod 777 ${BUILD_ROOTFS_DIR}/opt/bin/vtysh ; \
 	fi
-ifeq ($(findstring -DHAVE_RIP,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_RIP)  	
+ifeq ($(findstring -DHAVE_RIP,$(INCLUDE_CHANOS_MODULES)), -DHAVE_RIP)  	
 	if [ -e ${PROJECT_BUILD_DIR}/$@/ripd/.libs/ripd ] ; then \
 		cp ${PROJECT_BUILD_DIR}/$@/ripd/.libs/ripd $(BIN_EXPORT_DIR) ; \
 		cp -d ${BIN_EXPORT_DIR}/ripd ${BUILD_ROOTFS_DIR}/opt/bin/  ; \
 	    chmod 777 ${BUILD_ROOTFS_DIR}/opt/bin/ripd ; \
 	fi
 endif
-ifeq ($(findstring -DHAVE_OSPF,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_OSPF)	
+ifeq ($(findstring -DHAVE_OSPF,$(INCLUDE_CHANOS_MODULES)), -DHAVE_OSPF)	
 	if [ -e ${PROJECT_BUILD_DIR}/$@/ospfd/.libs/ospfd ] ; then \
 		cp ${PROJECT_BUILD_DIR}/$@/ospfd/.libs/ospfd $(BIN_EXPORT_DIR) ; \
 		cp -d ${BIN_EXPORT_DIR}/ospfd ${BUILD_ROOTFS_DIR}/opt/bin/  ; \
 	    chmod 777 ${BUILD_ROOTFS_DIR}/opt/bin/ospfd ; \
 	fi
 endif
-ifeq ($(findstring -DHAVE_OSPF6,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_OSPF6)		
+ifeq ($(findstring -DHAVE_OSPF6,$(INCLUDE_CHANOS_MODULES)), -DHAVE_OSPF6)		
 	if [ -e ${PROJECT_BUILD_DIR}/$@/ospf6d/.libs/ospf6d ] ; then \
 		cp ${PROJECT_BUILD_DIR}/$@/ospf6d/.libs/ospf6d $(BIN_EXPORT_DIR) ; \
 		cp -d ${BIN_EXPORT_DIR}/ospf6d ${BUILD_ROOTFS_DIR}/opt/bin/  ; \
 	    chmod 777 ${BUILD_ROOTFS_DIR}/opt/bin/ospf6d ; \
 	fi
 endif
-ifeq ($(findstring -DHAVE_BGP,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_BGP)			
+ifeq ($(findstring -DHAVE_BGP,$(INCLUDE_CHANOS_MODULES)), -DHAVE_BGP)			
 	if [ -e ${PROJECT_BUILD_DIR}/$@/bgpd/.libs/bgpd ] ; then \
 		cp ${PROJECT_BUILD_DIR}/$@/bgpd/.libs/bgpd $(BIN_EXPORT_DIR) ; \
 		cp -d ${BIN_EXPORT_DIR}/bgpd ${BUILD_ROOTFS_DIR}/opt/bin/  ; \
 	    chmod 777 ${BUILD_ROOTFS_DIR}/opt/bin/bgpd ; \
 	fi
 endif
-ifeq ($(findstring -DHAVE_RIPNG,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_RIPNG)		
+ifeq ($(findstring -DHAVE_RIPNG,$(INCLUDE_CHANOS_MODULES)), -DHAVE_RIPNG)		
 	if [ -e ${PROJECT_BUILD_DIR}/$@/ripngd/.libs/ripngd ] ; then \
 		cp ${PROJECT_BUILD_DIR}/$@/ripngd/.libs/ripngd $(BIN_EXPORT_DIR) ; \
 		cp -d ${BIN_EXPORT_DIR}/ripngd ${BUILD_ROOTFS_DIR}/opt/bin/  ; \
 	    chmod 777 ${BUILD_ROOTFS_DIR}/opt/bin/ripngd ; \
 	fi
 endif
-ifeq ($(findstring -DHAVE_ISIS,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_ISIS)		
+ifeq ($(findstring -DHAVE_ISIS,$(INCLUDE_CHANOS_MODULES)), -DHAVE_ISIS)		
 	if [ -e ${PROJECT_BUILD_DIR}/$@/isisd/.libs/isisd ] ; then \
 		cp ${PROJECT_BUILD_DIR}/$@/isisd/.libs/isisd $(BIN_EXPORT_DIR) ; \
 		cp -d ${BIN_EXPORT_DIR}/isisd ${BUILD_ROOTFS_DIR}/opt/bin/  ; \
@@ -615,7 +609,7 @@ endif
 		cp -d $(LIB_EXPORT_DIR)/libzcommon.so* $(USER_ADDITION_LIB_ROOT_PATH)/lib/ ; \
 	    chmod 777 ${BUILD_ROOTFS_DIR}/opt/lib/libzcommon.so*   ; \
 	fi 
-ifeq ($(findstring -DHAVE_OSPF,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_OSPF)			
+ifeq ($(findstring -DHAVE_OSPF,$(INCLUDE_CHANOS_MODULES)), -DHAVE_OSPF)			
 	if [ -e ${PROJECT_BUILD_DIR}/$@/ospfd/.libs/libospf.so.0.0.0 ] ; then \
 		cp ${PROJECT_BUILD_DIR}/$@/ospfd/.libs/libospf.so.0.0.0 $(LIB_EXPORT_DIR) ; \
 		ln -sf libospf.so.0.0.0 $(LIB_EXPORT_DIR)/libospf.so ; \
@@ -693,7 +687,7 @@ npd:
 udld:
 	@echo "Building UDLD..."
 	rm -rf ${BUILD_ROOTFS_DIR}/opt/bin/udld
-ifeq ($(findstring -DHAVE_UDLD,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_UDLD)				
+ifeq ($(findstring -DHAVE_UDLD,$(INCLUDE_CHANOS_MODULES)), -DHAVE_UDLD)				
 	if [ ! -d ${PROJECT_BUILD_DIR}/$@ ]; then mkdir ${PROJECT_BUILD_DIR}/$@; fi
 	$(MAKE) -C ${UDLD_MOD}/src
 	cp ${PROJECT_BUILD_DIR}/$@/$@ ${BIN_EXPORT_DIR}
@@ -707,7 +701,7 @@ cleanudld:
 sflow:
 	@echo "Building SFLOW..."
 	rm -rf ${BUILD_ROOTFS_DIR}/opt/bin/sflow
-#ifeq ($(findstring -DHAVE_SFLOW,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_SFLOW)				
+#ifeq ($(findstring -DHAVE_SFLOW,$(INCLUDE_CHANOS_MODULES)), -DHAVE_SFLOW)				
 	if [ ! -d ${PROJECT_BUILD_DIR}/$@ ]; then mkdir ${PROJECT_BUILD_DIR}/$@; fi
 	$(MAKE) -C ${SFLOW_MOD}/src
 	cp ${PROJECT_BUILD_DIR}/$@/$@ ${BIN_EXPORT_DIR}
@@ -726,7 +720,7 @@ cleannpd:
 stpsuit:
 	@echo "Building stp suit..."
 	rm -rf ${BUILD_ROOTFS_DIR}/opt/bin/bridge
-ifeq ($(findstring -DHAVE_BRIDGE_STP,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_BRIDGE_STP)			
+ifeq ($(findstring -DHAVE_BRIDGE_STP,$(INCLUDE_CHANOS_MODULES)), -DHAVE_BRIDGE_STP)			
 	if [ ! -d ${PROJECT_BUILD_DIR}/$@ ]; then mkdir ${PROJECT_BUILD_DIR}/$@; fi
 	$(MAKE) -C ${STPSUIT_MOD}/src
 	cp ${STPSUIT_MOD}/src/OBJ/bridge ${BUILD_ROOTFS_DIR}/opt/bin/
@@ -735,7 +729,7 @@ endif
 had:
 	@echo "Building HA daemon..."
 	rm -rf ${BUILD_ROOTFS_DIR}/opt/bin/had
-ifeq ($(findstring -DHAVE_VRRP,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_VRRP)
+ifeq ($(findstring -DHAVE_VRRP,$(INCLUDE_CHANOS_MODULES)), -DHAVE_VRRP)
 	if [ ! -d ${PROJECT_BUILD_DIR}/$@ ]; then mkdir ${PROJECT_BUILD_DIR}/$@; fi
 	$(MAKE) -C ${HAD_MOD}/src/lib
 	cp ${PROJECT_BUILD_DIR}/$@/$@ ${BUILD_ROOTFS_DIR}/opt/bin/
@@ -744,7 +738,7 @@ endif
 smartlink:
 	@echo "Building Smart-Link daemon..."
 	rm -rf ${BUILD_ROOTFS_DIR}/opt/bin/smartlink
-ifeq ($(findstring -DHAVE_SMART_LINK,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_SMART_LINK)
+ifeq ($(findstring -DHAVE_SMART_LINK,$(INCLUDE_CHANOS_MODULES)), -DHAVE_SMART_LINK)
 	if [ ! -d ${PROJECT_BUILD_DIR}/$@ ]; then mkdir ${PROJECT_BUILD_DIR}/$@; fi
 	$(MAKE) -C ${SMART_LINK_MOD}/src
 	cp ${PROJECT_BUILD_DIR}/$@/$@ ${BUILD_ROOTFS_DIR}/opt/bin/
@@ -753,7 +747,7 @@ endif
 erpp:
 	@echo "Building erpp daemon..."
 	rm -rf ${BUILD_ROOTFS_DIR}/opt/bin/erpp
-ifeq ($(findstring -DHAVE_ERPP,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_ERPP)
+ifeq ($(findstring -DHAVE_ERPP,$(INCLUDE_CHANOS_MODULES)), -DHAVE_ERPP)
 	if [ ! -d ${PROJECT_BUILD_DIR}/$@ ]; then mkdir ${PROJECT_BUILD_DIR}/$@; fi
 	$(MAKE) -C ${ERPP_MOD}/src
 	cp ${PROJECT_BUILD_DIR}/$@/$@ ${BUILD_ROOTFS_DIR}/opt/bin/
@@ -767,7 +761,7 @@ hbip:
 igmp:
 	@echo "Building igmp snooping ..."
 	rm -rf ${BUILD_ROOTFS_DIR}/opt/bin/igmp_snoop
-ifeq ($(findstring -DHAVE_IGMP_SNP,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_IGMP_SNP)		
+ifeq ($(findstring -DHAVE_IGMP_SNP,$(INCLUDE_CHANOS_MODULES)), -DHAVE_IGMP_SNP)		
 	if [ ! -d ${PROJECT_BUILD_DIR}/$@ ]; then mkdir ${PROJECT_BUILD_DIR}/$@; fi
 	$(MAKE) -C ${IGMP_MOD}/
 	cp ${PROJECT_BUILD_DIR}/$@/igmp_snoop ${BUILD_ROOTFS_DIR}/opt/bin/
@@ -776,7 +770,7 @@ endif
 mld:
 	@echo "Building mld snooping ..."
 	rm -rf ${BUILD_ROOTFS_DIR}/opt/bin/mld_snp
-ifeq ($(findstring -DHAVE_MLD_SNP,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_MLD_SNP)		
+ifeq ($(findstring -DHAVE_MLD_SNP,$(INCLUDE_CHANOS_MODULES)), -DHAVE_MLD_SNP)		
 	if [ ! -d ${PROJECT_BUILD_DIR}/$@ ]; then mkdir ${PROJECT_BUILD_DIR}/$@; fi
 	$(MAKE) -C ${MLD_MOD}/
 	cp ${PROJECT_BUILD_DIR}/$@/mld_snp ${BUILD_ROOTFS_DIR}/opt/bin/
@@ -792,7 +786,7 @@ radvd:
 dldp:
 	@echo "Building DLDP..."
 	rm -rf ${BUILD_ROOTFS_DIR}/opt/bin/dldp
-ifeq ($(findstring -DHAVE_DLDP,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_DLDP)		
+ifeq ($(findstring -DHAVE_DLDP,$(INCLUDE_CHANOS_MODULES)), -DHAVE_DLDP)		
 	$(MAKE) -C ${DLDP_MOD}/src/lib
 	cp ${DLDP_MOD}/src/lib/dldp ${BIN_EXPORT_DIR}/
 	cp ${DLDP_MOD}/src/lib/dldp ${BUILD_ROOTFS_DIR}/opt/bin/
@@ -807,7 +801,7 @@ chkpwd:
 dhcp:
 	@echo "Building dhcp ..."
 	@echo $(DHCP_CONFIG_HOSTCC)
-ifeq ($(findstring -DHAVE_DHCP,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_DHCP)		
+ifeq ($(findstring -DHAVE_DHCP,$(INCLUDE_CHANOS_MODULES)), -DHAVE_DHCP)		
 	if [ ! -d ${PROJECT_BUILD_DIR}/$@ ]; then mkdir ${PROJECT_BUILD_DIR}/$@; fi
 	if [ ! -f ${PROJECT_BUILD_DIR}/$@/Makefile ] ; then 		\
 		${DHCP_MOD}/configpkg ;                                   \
@@ -818,10 +812,10 @@ endif
 	rm -rf ${BUILD_ROOTFS_DIR}/opt/bin/dhcprelay
 	$(MAKE) -C ${PROJECT_BUILD_DIR}/$@
 	
-ifeq ($(findstring -DHAVE_DHCP,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_DHCP)	
+ifeq ($(findstring -DHAVE_DHCP,$(INCLUDE_CHANOS_MODULES)), -DHAVE_DHCP)	
 	cp ${PROJECT_BUILD_DIR}/$@/server/dhcpd ${BUILD_ROOTFS_DIR}/opt/bin
 endif
-ifeq ($(findstring -DHAVE_DHCP_CLIENT,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_DHCP_CLIENT)		
+ifeq ($(findstring -DHAVE_DHCP_CLIENT,$(INCLUDE_CHANOS_MODULES)), -DHAVE_DHCP_CLIENT)		
 	cp ${PROJECT_BUILD_DIR}/$@/client/dhclient ${BUILD_ROOTFS_DIR}/opt/bin
 endif	
 	cp ${DHCP_MOD}/server/dhcpd.conf ${BUILD_ROOTFS_DIR}/etc/
@@ -847,7 +841,7 @@ cavium-ethernet: kmod
 wifikmod:
 	@echo "Building wifi-ehternet ..."
 	rm -rf ${ROOTFS_KMOD_DIR}/misc/wifi-ethernet.ko
-ifeq ($(findstring -DHAVE_WCPSS,$(INCLUDE_AUTEWARE_MODULES)), -DHAVE_WCPSS)		
+ifeq ($(findstring -DHAVE_WCPSS,$(INCLUDE_CHANOS_MODULES)), -DHAVE_WCPSS)		
 	$(MAKE) -C ${WCPSS_MOD}/src/kmod/wifi-ethernet/
 	cp ${WCPSS_MOD}/src/kmod/wifi-ethernet/wifi-ethernet.ko ${KMOD_EXPORT_DIR}/
 	cp ${WCPSS_MOD}/src/kmod/wifi-ethernet/wifi-ethernet.ko ${ROOTFS_KMOD_DIR}/misc/
