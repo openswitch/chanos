@@ -1,7 +1,7 @@
 
-export INCLUDE_AUTEWARE_MODULES += $(foreach module,$(AUTEWARE_MODULES_LIST), -DHAVE_$(module))
+export INCLUDE_CHANOS_MODULES += $(foreach module,$(CHANOS_MODULES_LIST), -DHAVE_$(module))
 
-ifneq (,$(findstring DEBUG,$(AUTEWARE_MODULES_LIST)))
-export INCLUDE_AUTEWARE_MODULES += -g
+ifneq (,$(findstring DEBUG,$(CHANOS_MODULES_LIST)))
+export INCLUDE_CHANOS_MODULES += -g
 endif
 
