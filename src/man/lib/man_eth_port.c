@@ -648,9 +648,7 @@ int dcli_get_eth_port_rate(
     DBusMessage *query = NULL, *reply = NULL;
 	DBusError err;
 	DBusMessageIter	 iter;
-	DBusMessageIter	 iter_struct,iter_array;
-	unsigned int op_ret = 0, i = 0;
-	unsigned long long tmp = 0;
+	unsigned int op_ret = 0;
 
 
 	query = dbus_message_new_method_call(
@@ -743,9 +741,7 @@ int clear_eth_port_stat(unsigned int eth_g_index)
 	DBusMessage *query = NULL, *reply = NULL;
 	DBusError err;
 	unsigned int op_ret = 0;
-	struct eth_port_counter_s *ptr, stat = {{0}};
-	ptr = &stat;
-
+	
 	query = dbus_message_new_method_call(
 								NPD_DBUS_BUSNAME,		\
 								NPD_DBUS_RELAY_OBJPATH,		\
@@ -1630,8 +1626,6 @@ int man_clear_eth_port_cpu_stats(unsigned int eth_g_index)
 	DBusMessage *query = NULL, *reply = NULL;
 	DBusError err;
 	unsigned int op_ret = 0;
-	struct eth_port_counter_s *ptr, stat = {{0}};
-	ptr = &stat;
 
 	query = dbus_message_new_method_call(
 								NPD_DBUS_BUSNAME,		\
@@ -1772,7 +1766,6 @@ int man_set_eth_port_stacking(unsigned int port_index, int enable, int remote_un
 	DBusError err;
 	int op_ret = 0;
 	unsigned int eth_g_index = port_index;
-    unsigned int route;
 
 	dbus_error_init(&err);
 
@@ -1788,6 +1781,395 @@ int man_set_eth_port_stacking(unsigned int port_index, int enable, int remote_un
 							 DBUS_TYPE_UINT32,&eth_g_index,
 							 DBUS_TYPE_UINT32,&enable,
 							 DBUS_TYPE_UINT32,&remote_unit,
+							 DBUS_TYPE_INVALID);
+	reply = dbus_connection_send_with_reply_and_block (dcli_dbus_connection,query,-1, &err);
+
+	dbus_message_unref(query);
+	if (NULL == reply)
+	{
+		if (dbus_error_is_set(&err))
+		{
+			dbus_error_free(&err);
+		}
+		return 0;
+	}
+
+	if (dbus_message_get_args ( reply, &err,
+					DBUS_TYPE_UINT32, &op_ret,
+					DBUS_TYPE_INVALID)) 
+	{
+		dbus_message_unref(reply);
+		return op_ret;
+	} 
+	else 
+	{
+		if (dbus_error_is_set(&err)) 
+		{
+			dbus_error_free(&err);
+		}
+    	dbus_message_unref(reply);
+    	return 1;
+	}
+    return 1;
+}
+#endif
+
+
+#ifdef HAVE_SERDES_CONFIG
+
+int man_set_eth_port_serdes(unsigned int port_index, int amplitude, int amp_adj, int emp_en, int emp_level)
+{
+	DBusMessage *query, *reply;
+    
+	DBusError err;
+	int op_ret = 0;
+	unsigned int eth_g_index = port_index;
+
+	dbus_error_init(&err);
+
+	query = dbus_message_new_method_call(
+							NPD_DBUS_BUSNAME,		\
+							NPD_DBUS_ETHPORTS_OBJPATH ,	\
+							NPD_DBUS_ETHPORTS_INTERFACE ,		\
+							NPD_DBUS_ETHPORTS_INTERFACE_METHOD_CONFIG_PORT_SERDES);
+	
+	dbus_error_init(&err);
+
+	dbus_message_append_args(query,
+							 DBUS_TYPE_UINT32,&eth_g_index,
+							 DBUS_TYPE_UINT32,&amplitude,
+							 DBUS_TYPE_UINT32,&amp_adj,
+							 DBUS_TYPE_UINT32,&emp_en,
+							 DBUS_TYPE_UINT32,&emp_level,
+							 DBUS_TYPE_INVALID);
+	reply = dbus_connection_send_with_reply_and_block (dcli_dbus_connection,query,-1, &err);
+
+	dbus_message_unref(query);
+	if (NULL == reply)
+	{
+		if (dbus_error_is_set(&err))
+		{
+			dbus_error_free(&err);
+		}
+		return 0;
+	}
+
+	if (dbus_message_get_args ( reply, &err,
+					DBUS_TYPE_UINT32, &op_ret,
+					DBUS_TYPE_INVALID)) 
+	{
+		dbus_message_unref(reply);
+		return op_ret;
+	} 
+	else 
+	{
+		if (dbus_error_is_set(&err)) 
+		{
+			dbus_error_free(&err);
+		}
+    	dbus_message_unref(reply);
+    	return 1;
+	}
+    return 1;
+}
+
+int man_get_eth_port_serdes(unsigned int port_index, int *amplitude, int *amp_adj, int *emp_en, int *emp_level)
+{
+	DBusMessage *query = NULL, *reply = NULL;
+	DBusError err;
+	
+	unsigned int op_ret;
+
+	query = dbus_message_new_method_call(
+							    NPD_DBUS_BUSNAME,		\
+							    NPD_DBUS_ETHPORTS_OBJPATH ,	\
+							    NPD_DBUS_ETHPORTS_INTERFACE ,		\
+								NPD_DBUS_ETHPORTS_INTERFACE_METHOD_GET_PORT_SERDES);
+	
+	dbus_error_init(&err);
+
+	dbus_message_append_args(query,
+							 DBUS_TYPE_UINT32,&port_index,
+							 DBUS_TYPE_INVALID);
+	
+	reply = dbus_connection_send_with_reply_and_block (dcli_dbus_connection,query,-1, &err);
+	
+	dbus_message_unref(query);
+	if (NULL == reply) {
+		if (dbus_error_is_set(&err)) {
+			dbus_error_free(&err);
+		}
+		return ETHPORT_RETURN_CODE_ERR_GENERAL;
+	}
+	if (!(dbus_message_get_args ( reply, &err,
+		DBUS_TYPE_UINT32, &op_ret,
+		DBUS_TYPE_INT32, amplitude,		
+		DBUS_TYPE_INT32, amp_adj,
+		DBUS_TYPE_INT32, emp_en),		
+		DBUS_TYPE_INT32, emp_level,
+		DBUS_TYPE_INVALID)) {
+		if (dbus_error_is_set(&err)) {
+			dbus_error_free(&err);
+		}
+		dbus_message_unref(reply);
+		return ETHPORT_RETURN_CODE_ERR_GENERAL;
+	} 
+	dbus_message_unref(reply);
+	return op_ret;
+}
+
+#endif
+
+#ifdef HAVE_FORWARD_MODE_CONFIG
+
+int man_set_eth_port_forward_mode(unsigned int port_index, int mode)
+{
+	DBusMessage *query, *reply;
+    
+	DBusError err;
+	int op_ret = 0;
+	unsigned int eth_g_index = port_index;
+	
+	dbus_error_init(&err);
+
+	query = dbus_message_new_method_call(
+							NPD_DBUS_BUSNAME,		\
+							NPD_DBUS_ETHPORTS_OBJPATH ,	\
+							NPD_DBUS_ETHPORTS_INTERFACE ,		\
+							NPD_DBUS_ETHPORTS_INTERFACE_METHOD_CONFIG_PORT_CUT_THROUGH);
+	
+	dbus_error_init(&err);
+
+	dbus_message_append_args(query,
+							 DBUS_TYPE_UINT32,&eth_g_index,
+							 DBUS_TYPE_UINT32,&mode,
+							 DBUS_TYPE_INVALID);
+	reply = dbus_connection_send_with_reply_and_block (dcli_dbus_connection,query,-1, &err);
+
+	dbus_message_unref(query);
+	if (NULL == reply)
+	{
+		if (dbus_error_is_set(&err))
+		{
+			dbus_error_free(&err);
+		}
+		return 0;
+	}
+
+	if (dbus_message_get_args ( reply, &err,
+					DBUS_TYPE_UINT32, &op_ret,
+					DBUS_TYPE_INVALID)) 
+	{
+		dbus_message_unref(reply);
+		return op_ret;
+	} 
+	else 
+	{
+		if (dbus_error_is_set(&err)) 
+		{
+			dbus_error_free(&err);
+		}
+    	dbus_message_unref(reply);
+    	return 1;
+	}
+    return 1;
+}
+
+int man_get_eth_port_forward_mode(unsigned int port_index, int *mode)
+{
+	DBusMessage *query = NULL, *reply = NULL;
+	DBusError err;
+	
+	unsigned int op_ret;
+
+	query = dbus_message_new_method_call(
+							    NPD_DBUS_BUSNAME,		\
+							    NPD_DBUS_ETHPORTS_OBJPATH ,	\
+							    NPD_DBUS_ETHPORTS_INTERFACE ,		\
+								NPD_DBUS_ETHPORTS_INTERFACE_METHOD_GET_PORT_CUT_THROUGH);
+	
+	dbus_error_init(&err);
+
+	dbus_message_append_args(query,
+							 DBUS_TYPE_UINT32,&port_index,
+							 DBUS_TYPE_INVALID);
+	
+	reply = dbus_connection_send_with_reply_and_block (dcli_dbus_connection,query,-1, &err);
+	
+	dbus_message_unref(query);
+	if (NULL == reply) {
+		if (dbus_error_is_set(&err)) {
+			dbus_error_free(&err);
+		}
+		return ETHPORT_RETURN_CODE_ERR_GENERAL;
+	}
+	if (!(dbus_message_get_args ( reply, &err,
+		DBUS_TYPE_UINT32, &op_ret,
+		DBUS_TYPE_INT32, mode),
+		DBUS_TYPE_INVALID)) {
+		if (dbus_error_is_set(&err)) {
+			dbus_error_free(&err);
+		}
+		dbus_message_unref(reply);
+		return ETHPORT_RETURN_CODE_ERR_GENERAL;
+	} 
+	dbus_message_unref(reply);
+	return op_ret;
+}
+
+#endif
+
+#ifdef HAVE_PORT_BUFFER_CONFIG
+int man_set_eth_port_buffer_mode(int mode)
+{
+	DBusMessage *query = NULL, *reply = NULL;
+	DBusError err = {0};
+	unsigned int op_ret;
+
+	query = dbus_message_new_method_call(
+							NPD_DBUS_BUSNAME,		\
+							NPD_DBUS_ETHPORTS_OBJPATH ,	\
+							NPD_DBUS_ETHPORTS_INTERFACE ,		\
+							NPD_DBUS_ETHPORTS_INTERFACE_METHOD_CONFIG_BUFFER_MODE);
+	dbus_error_init(&err);
+	dbus_message_append_args(query,
+							 DBUS_TYPE_UINT32,&mode,
+							 DBUS_TYPE_INVALID);
+	reply = dbus_connection_send_with_reply_and_block (dcli_dbus_connection,query,-1, &err);
+	dbus_message_unref(query);
+	if (NULL == reply) {
+		if (dbus_error_is_set(&err)) {
+			dbus_error_free(&err);
+		}
+		return ETHPORT_RETURN_CODE_ERR_GENERAL;
+	}
+	if (!(dbus_message_get_args ( reply, &err,
+		DBUS_TYPE_UINT32,&op_ret,
+		DBUS_TYPE_INVALID)))
+	{
+		if (dbus_error_is_set(&err)) 
+		{
+			dbus_error_free(&err);
+		}
+		dbus_message_unref(reply);
+		return ETHPORT_RETURN_CODE_ERR_GENERAL;	
+		
+	} 
+	dbus_message_unref(reply);
+	return op_ret;
+}
+int man_get_eth_port_buffer_mode(int *mode)
+{
+	
+	DBusMessage *query = NULL, *reply = NULL;
+	DBusError err;
+	query = dbus_message_new_method_call(
+							NPD_DBUS_BUSNAME,		\
+							NPD_DBUS_ETHPORTS_OBJPATH ,	\
+							NPD_DBUS_ETHPORTS_INTERFACE ,		\
+							NPD_DBUS_ETHPORTS_INTERFACE_METHOD_SHOW_BUFFER_MODE);
+	
+	dbus_error_init(&err);
+	reply = dbus_connection_send_with_reply_and_block (dcli_dbus_connection,query,-1, &err);
+	dbus_message_unref(query);
+	if (NULL == reply) 
+	{
+		if (dbus_error_is_set(&err)) 
+		{
+			dbus_error_free(&err);
+		}
+		return ETHPORT_RETURN_CODE_ERR_GENERAL;
+	}
+	if (!(dbus_message_get_args ( reply, &err,
+		DBUS_TYPE_UINT32, mode,
+		DBUS_TYPE_INVALID)))
+	{						
+		if (dbus_error_is_set(&err)) 
+		{
+			dbus_error_free(&err);
+		}
+		dbus_message_unref(reply);
+		return ETHPORT_RETURN_CODE_ERR_GENERAL;
+	} 
+
+	dbus_message_unref(reply);
+	return ETHPORT_RETURN_CODE_ERR_NONE;
+}
+#endif
+
+#ifdef HAVE_STORM_CONTROL_GLB
+int dcli_eth_port_config_sc_enable(unsigned int netif_index, int enable)
+{
+	DBusMessage *query, *reply;
+    
+	DBusError err;
+	int op_ret = 0;
+	unsigned int eth_g_index = netif_index;
+	
+	dbus_error_init(&err);
+
+	query = dbus_message_new_method_call(
+							NPD_DBUS_BUSNAME,		\
+							NPD_DBUS_ETHPORTS_OBJPATH ,	\
+							NPD_DBUS_ETHPORTS_INTERFACE ,		\
+							NPD_DBUS_ETHPORTS_INTERFACE_METHOD_CONFIG_SC_GLOBAL);
+	
+	dbus_error_init(&err);
+
+	dbus_message_append_args(query,
+							 DBUS_TYPE_UINT32,&eth_g_index,
+							 DBUS_TYPE_UINT32,&enable,
+							 DBUS_TYPE_INVALID);
+	reply = dbus_connection_send_with_reply_and_block (dcli_dbus_connection,query,-1, &err);
+
+	dbus_message_unref(query);
+	if (NULL == reply)
+	{
+		if (dbus_error_is_set(&err))
+		{
+			dbus_error_free(&err);
+		}
+		return 0;
+	}
+
+	if (dbus_message_get_args ( reply, &err,
+					DBUS_TYPE_UINT32, &op_ret,
+					DBUS_TYPE_INVALID)) 
+	{
+		dbus_message_unref(reply);
+		return op_ret;
+	} 
+	else 
+	{
+		if (dbus_error_is_set(&err)) 
+		{
+			dbus_error_free(&err);
+		}
+    	dbus_message_unref(reply);
+    	return 1;
+	}
+    return 1;
+}
+
+int dcli_eth_port_config_sc_global(int sc_type, int kbps)
+{
+	DBusMessage *query, *reply;
+    
+	DBusError err;
+	int op_ret = 0;
+	dbus_error_init(&err);
+
+	query = dbus_message_new_method_call(
+							NPD_DBUS_BUSNAME,		\
+							NPD_DBUS_ETHPORTS_OBJPATH ,	\
+							NPD_DBUS_ETHPORTS_INTERFACE ,		\
+							NPD_DBUS_ETHPORTS_INTERFACE_METHOD_GET_PORT_SC_GLOBAL_KBPS);
+	
+	dbus_error_init(&err);
+
+	dbus_message_append_args(query,
+							 DBUS_TYPE_UINT32,&sc_type,
+							 DBUS_TYPE_UINT32,&kbps,
 							 DBUS_TYPE_INVALID);
 	reply = dbus_connection_send_with_reply_and_block (dcli_dbus_connection,query,-1, &err);
 

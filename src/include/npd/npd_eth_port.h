@@ -34,6 +34,12 @@ typedef struct
 struct npd_eth_cfg_s
 {
     int rate_poll_enable;
+	int buffer_mode;
+	int max_buffer;
+	int sc_glb_dlf_kbps;
+	int sc_glb_mc_kbps;
+	int sc_glb_bc_kbps;
+	int global_load_balance_mode;
 };
 
 #endif

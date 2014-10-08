@@ -2218,6 +2218,56 @@ static DBusHandlerResult npd_dbus_ethports_message_handler (DBusConnection *conn
     			reply = npd_dbus_set_eth_port_stacking(connection,message,user_data);
     		}
 #endif
+#ifdef HAVE_SERDES_CONFIG
+    		else if(dbus_message_is_method_call(message,NPD_DBUS_ETHPORTS_INTERFACE,NPD_DBUS_ETHPORTS_INTERFACE_METHOD_CONFIG_PORT_SERDES))
+    		{
+    			reply = npd_dbus_set_eth_port_serdes(connection,message,user_data);
+    		}
+    		else if(dbus_message_is_method_call(message,NPD_DBUS_ETHPORTS_INTERFACE,NPD_DBUS_ETHPORTS_INTERFACE_METHOD_GET_PORT_SERDES))
+    		{
+    			reply = npd_dbus_get_eth_port_serdes(connection,message,user_data);
+    		}
+#endif
+#ifdef HAVE_FORWARD_MODE_CONFIG
+    		else if(dbus_message_is_method_call(message,NPD_DBUS_ETHPORTS_INTERFACE,NPD_DBUS_ETHPORTS_INTERFACE_METHOD_CONFIG_PORT_CUT_THROUGH))
+    		{
+    			reply = npd_dbus_set_eth_port_cut_through(connection,message,user_data);
+    		}
+    		else if(dbus_message_is_method_call(message,NPD_DBUS_ETHPORTS_INTERFACE,NPD_DBUS_ETHPORTS_INTERFACE_METHOD_GET_PORT_CUT_THROUGH))
+    		{
+    			reply = npd_dbus_get_eth_port_cut_through(connection,message,user_data);
+    		}
+#endif
+#ifdef HAVE_PORT_BUFFER_CONFIG
+    		else if(dbus_message_is_method_call(message,NPD_DBUS_ETHPORTS_INTERFACE,NPD_DBUS_ETHPORTS_INTERFACE_METHOD_CONFIG_BUFFER_MODE))
+    		{
+    			reply = npd_dbus_config_buffer_mode(connection,message,user_data);
+    		}
+    		else if(dbus_message_is_method_call(message,NPD_DBUS_ETHPORTS_INTERFACE,NPD_DBUS_ETHPORTS_INTERFACE_METHOD_SHOW_BUFFER_MODE))
+    		{
+    			reply = npd_dbus_get_buffer_mode(connection,message,user_data);
+    		}
+#endif
+#ifdef HAVE_HASH_MODE_GLB
+    		else if(dbus_message_is_method_call(message,NPD_DBUS_ETHPORTS_INTERFACE,NPD_DBUS_TRUNK_METHOD_GLB_CONFIG_LOAD_BALANCE))
+    		{
+    			reply = npd_dbus_config_load_balance_mode(connection,message,user_data);
+    		}
+    		else if(dbus_message_is_method_call(message,NPD_DBUS_ETHPORTS_INTERFACE,NPD_DBUS_TRUNK_METHOD_GLB_SHOW_LOAD_BALANCE))
+    		{
+    			reply = npd_dbus_get_load_balance_mode(connection,message,user_data);
+    		}
+#endif
+#ifdef HAVE_STORM_CONTROL_GLB
+    		else if(dbus_message_is_method_call(message,NPD_DBUS_ETHPORTS_INTERFACE,NPD_DBUS_ETHPORTS_INTERFACE_METHOD_CONFIG_SC_GLOBAL))
+    		{
+    			reply = npd_dbus_set_eth_port_storm_control_enable(connection,message,user_data);
+    		}
+    		else if(dbus_message_is_method_call(message,NPD_DBUS_ETHPORTS_INTERFACE,NPD_DBUS_ETHPORTS_INTERFACE_METHOD_GET_PORT_SC_GLOBAL_KBPS))
+    		{
+    			reply = npd_dbus_set_eth_port_storm_control_kbps(connection,message,user_data);
+    		}
+#endif
 #ifdef HAVE_BRIDGE_STP
     		else if(dbus_message_is_method_call(message,NPD_DBUS_ETHPORTS_INTERFACE,NPD_DBUS_ETHPORTS_METHOD_CONFIG_STP))
     		{

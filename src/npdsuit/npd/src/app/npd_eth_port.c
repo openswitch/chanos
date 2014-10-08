@@ -369,6 +369,46 @@ long npd_eth_cfgtbl_handle_update(void *newItem, void *oldItem)
     {
         npd_eth_port_rate_poll_enable = npd_eth_cfg_new->rate_poll_enable;
     }
+#ifdef HAVE_PORT_BUFFER_CONFIG
+	if(npd_eth_cfg_new->buffer_mode != npd_eth_cfg_old->buffer_mode)
+    {
+        nam_set_port_global_buffer_mode(npd_eth_cfg_new->buffer_mode);
+		if(npd_eth_cfg_new->max_buffer != 0)
+		{
+	        /*TODO: set the max buffer per port*/
+			nam_eth_port_max_buffer_set(npd_eth_cfg_new->max_buffer);
+		}
+    }
+	if(npd_eth_cfg_new->buffer_mode == 1)
+	{
+	    if(npd_eth_cfg_new->max_buffer != npd_eth_cfg_old->max_buffer)
+	    {
+	        /*TODO: set the max buffer per port*/
+			nam_eth_port_max_buffer_set(npd_eth_cfg_new->max_buffer);
+	    }
+	}
+#endif
+#ifdef HAVE_STORM_CONTROL_GLB
+	if(npd_eth_cfg_new->sc_glb_dlf_kbps != npd_eth_cfg_old->sc_glb_dlf_kbps)
+    {
+        nam_eth_port_sc_global_bps_set(0, npd_eth_cfg_new->sc_glb_dlf_kbps);
+    }
+	if(npd_eth_cfg_new->sc_glb_mc_kbps != npd_eth_cfg_old->sc_glb_mc_kbps)
+    {
+        nam_eth_port_sc_global_bps_set(1, npd_eth_cfg_new->sc_glb_mc_kbps);
+    }
+	if(npd_eth_cfg_new->sc_glb_bc_kbps != npd_eth_cfg_old->sc_glb_bc_kbps)
+    {
+        nam_eth_port_sc_global_bps_set(2, npd_eth_cfg_new->sc_glb_bc_kbps);
+    }
+#endif
+#ifdef HAVE_HASH_MODE_GLB
+	if(npd_eth_cfg_new->global_load_balance_mode != npd_eth_cfg_old->global_load_balance_mode)
+    {
+        nam_asic_global_load_balanc_set(npd_eth_cfg_new->global_load_balance_mode);
+    }
+#endif
+
     return 0;
 }
 
@@ -376,6 +416,37 @@ long npd_eth_cfgtbl_handle_insert(void *newItem)
 {
     struct npd_eth_cfg_s* npd_eth_cfg_new = (struct npd_eth_cfg_s*)newItem;
 	npd_eth_port_rate_poll_enable = npd_eth_cfg_new->rate_poll_enable;
+#ifdef HAVE_PORT_BUFFER_CONFIG
+	if(npd_eth_cfg_new->buffer_mode != 0)
+    {
+        nam_set_port_global_buffer_mode(npd_eth_cfg_new->buffer_mode);
+		if(npd_eth_cfg_new->max_buffer != 0)
+		{
+	        /*TODO: set the max buffer per port*/
+			nam_eth_port_max_buffer_set(npd_eth_cfg_new->max_buffer);
+		}
+    }
+#endif
+
+#ifdef HAVE_STORM_CONTROL_GLB
+	if(npd_eth_cfg_new->sc_glb_dlf_kbps != 0)
+    {
+        nam_eth_port_sc_global_bps_set(0, npd_eth_cfg_new->sc_glb_dlf_kbps);
+    }
+	if(npd_eth_cfg_new->sc_glb_mc_kbps != 0)
+    {
+        nam_eth_port_sc_global_bps_set(1, npd_eth_cfg_new->sc_glb_mc_kbps);
+    }
+	if(npd_eth_cfg_new->sc_glb_bc_kbps != 0)
+    {
+        nam_eth_port_sc_global_bps_set(2, npd_eth_cfg_new->sc_glb_bc_kbps);
+    }
+#endif
+#ifdef HAVE_HASH_MODE_GLB
+    {
+        nam_asic_global_load_balanc_set(npd_eth_cfg_new->global_load_balance_mode);
+    }
+#endif
     return 0;
 }
 
@@ -2583,6 +2654,29 @@ long npd_eth_port_insert(void *data)
         }
     }
 #endif
+#ifdef HAVE_FORWARD_MODE_CONFIG
+	if(new_port->cut_through)
+	{
+	    ret = nam_eth_port_cut_through_enable(new_port->eth_port_ifindex, new_port->cut_through);
+        if(ret != NPD_SUCCESS)
+        {
+           syslog_ax_eth_port_dbg("ret is not 0: %s(%d): Failed to set cut through on port 0x%x.\r\n",
+                               __FILE__, __LINE__, new_port->eth_port_ifindex);
+        }
+	}
+#endif
+#ifdef HAVE_STORM_CONTROL_GLB
+	if(new_port->sc_enable != 0)
+	{
+	    ret = nam_eth_port_storm_control_enable(new_port->eth_port_ifindex, new_port->sc_enable);
+        if(ret != NPD_SUCCESS)
+        {
+           syslog_ax_eth_port_dbg("ret is not 0: %s(%d): Failed to set cut through on port 0x%x.\r\n",
+                               __FILE__, __LINE__, new_port->eth_port_ifindex);
+        }
+	}
+#endif
+
     return 0;
 }
 
@@ -2679,18 +2773,18 @@ long npd_eth_port_update(void *newdata, void *olddata)
 	}
 		
 	if (new_port->mtu != old_port->mtu)
-   {
-	   ret = npd_set_port_mru(new_port->eth_port_ifindex, new_port->mtu);
+    {
+	    ret = npd_set_port_mru(new_port->eth_port_ifindex, new_port->mtu);
 
-	   if (NPD_SUCCESS != ret)
-		   retval = NPD_FAIL;
+	    if (NPD_SUCCESS != ret)
+		    retval = NPD_FAIL;
 
-	   if (NPD_SUCCESS != ret)
-	   {
-		   npd_syslog_dbg("ret is not 0: %s(%d): %s\r\n",
+	    if (NPD_SUCCESS != ret)
+	    {
+		    syslog_ax_eth_port_dbg("ret is not 0: %s(%d): %s\r\n",
 						  __FILE__, __LINE__, "npd_set_port_mru");
-	   }
-   }
+	    }
+    }
 	/*if the port is not in local board, than only return success*/
 
 	ret = npd_get_devport_by_global_index(new_port->eth_port_ifindex, &tmp_devNum, &tmp_portNum);
@@ -2725,7 +2819,7 @@ long npd_eth_port_update(void *newdata, void *olddata)
 
             if (NPD_SUCCESS != ret)
             {
-                npd_syslog_dbg("ret is not 0: %s(%d): %s\r\n",
+                syslog_ax_eth_port_dbg("ret is not 0: %s(%d): %s\r\n",
                                __FILE__, __LINE__, "npd_set_port_admin_status");
             }
         }
@@ -2758,7 +2852,7 @@ long npd_eth_port_update(void *newdata, void *olddata)
 
             if (NPD_SUCCESS != ret)
             {
-                npd_syslog_dbg("ret is not 0: %s(%d): %s\r\n",
+                syslog_ax_eth_port_dbg("ret is not 0: %s(%d): %s\r\n",
                                __FILE__, __LINE__, "npd_set_port_media_type");
             }
         }
@@ -2772,7 +2866,7 @@ long npd_eth_port_update(void *newdata, void *olddata)
 
             if (NPD_SUCCESS != ret)
             {
-                npd_syslog_dbg("ret is not 0: %s(%d): %s\r\n",
+                syslog_ax_eth_port_dbg("ret is not 0: %s(%d): %s\r\n",
                                __FILE__, __LINE__, "npd_set_port_autoNego_status");
             }
         }
@@ -2788,7 +2882,7 @@ long npd_eth_port_update(void *newdata, void *olddata)
 
             if (NPD_SUCCESS != ret)
             {
-                npd_syslog_dbg("ret is not 0: %s(%d): %s\r\n",
+                syslog_ax_eth_port_dbg("ret is not 0: %s(%d): %s\r\n",
                                __FILE__, __LINE__, "npd_set_port_autoNego_speed");
             }
         }
@@ -2804,7 +2898,7 @@ long npd_eth_port_update(void *newdata, void *olddata)
 
             if (NPD_SUCCESS != ret)
             {
-                npd_syslog_dbg("ret is not 0: %s(%d): %s\r\n",
+                syslog_ax_eth_port_dbg("ret is not 0: %s(%d): %s\r\n",
                                __FILE__, __LINE__, "npd_set_port_autoNego_duplex");
             }
         }
@@ -2820,7 +2914,7 @@ long npd_eth_port_update(void *newdata, void *olddata)
 
             if (NPD_SUCCESS != ret)
             {
-                npd_syslog_dbg("ret is not 0: %s(%d): %s\r\n",
+                syslog_ax_eth_port_dbg("ret is not 0: %s(%d): %s\r\n",
                                __FILE__, __LINE__, "npd_set_port_autoNego_flowctrl");
             }
         }
@@ -2836,7 +2930,7 @@ long npd_eth_port_update(void *newdata, void *olddata)
 
             if (NPD_SUCCESS != ret)
             {
-                npd_syslog_dbg("ret is not 0: %s(%d): %s\r\n",
+                syslog_ax_eth_port_dbg("ret is not 0: %s(%d): %s\r\n",
                                __FILE__, __LINE__, "npd_set_port_flowCtrl_state");
             }
         }
@@ -2854,7 +2948,7 @@ long npd_eth_port_update(void *newdata, void *olddata)
 
                 if (NPD_SUCCESS != ret)
                 {
-                    npd_syslog_dbg("ret is not 0: %s(%d): %s\r\n",
+                    syslog_ax_eth_port_dbg("ret is not 0: %s(%d): %s\r\n",
                                    __FILE__, __LINE__, "npd_set_port_duplex_mode");
                 }
             }
@@ -2886,7 +2980,7 @@ long npd_eth_port_update(void *newdata, void *olddata)
 
                 if (NPD_SUCCESS != ret)
                 {
-                    npd_syslog_dbg("ret is not 0: %s(%d): %s\r\n",
+                    syslog_ax_eth_port_dbg("ret is not 0: %s(%d): %s\r\n",
                                    __FILE__, __LINE__, "npd_set_port_speed");
                 }
             }
@@ -2901,7 +2995,7 @@ long npd_eth_port_update(void *newdata, void *olddata)
 
                 if (NPD_SUCCESS != ret)
                 {
-                    npd_syslog_dbg("ret is not 0: %s(%d): %s\r\n",
+                    syslog_ax_eth_port_dbg("ret is not 0: %s(%d): %s\r\n",
                                    __FILE__, __LINE__, "npd_set_port_backPressure_state");
                 }
             }
@@ -2916,7 +3010,7 @@ long npd_eth_port_update(void *newdata, void *olddata)
 
                 if (NPD_SUCCESS != ret)
                 {
-                    npd_syslog_dbg("ret is not 0: %s(%d): %s\r\n",
+                    syslog_ax_eth_port_dbg("ret is not 0: %s(%d): %s\r\n",
                                    __FILE__, __LINE__, "npd_set_port_flowCtrl_state");
                 }
             }
@@ -2953,7 +3047,7 @@ long npd_eth_port_update(void *newdata, void *olddata)
     
                     if (NPD_SUCCESS != ret)
                     {
-                        npd_syslog_dbg("ret is not 0: %s(%d): %s\r\n",
+                        syslog_ax_eth_port_dbg("ret is not 0: %s(%d): %s\r\n",
                                        __FILE__, __LINE__, "npd_set_port_speed");
                     }
                 }
@@ -2966,7 +3060,7 @@ long npd_eth_port_update(void *newdata, void *olddata)
 		
         if (NPD_SUCCESS != ret)
         {
-            npd_syslog_dbg("ret is not 0: %s(%d): %s\r\n",
+            syslog_ax_eth_port_dbg("ret is not 0: %s(%d): %s\r\n",
                            __FILE__, __LINE__, "npd_get_port_link_status");
         }
         else
@@ -3034,7 +3128,7 @@ long npd_eth_port_update(void *newdata, void *olddata)
 
         if (NPD_SUCCESS != ret)
         {
-            npd_syslog_dbg("ret is not 0: %s(%d): %s\r\n",
+            syslog_ax_eth_port_dbg("ret is not 0: %s(%d): %s\r\n",
                            __FILE__, __LINE__, "npd_set_eth_port_ipg");
         }
     }
@@ -3054,7 +3148,7 @@ long npd_eth_port_update(void *newdata, void *olddata)
 
             if (NPD_SUCCESS != ret)
             {
-                npd_syslog_dbg("ret is not 0: %s(%d): %s\r\n",
+                syslog_ax_eth_port_dbg("ret is not 0: %s(%d): %s\r\n",
                                __FILE__, __LINE__, "nam_eth_port_sc_bps_set");
             }
         }
@@ -3066,7 +3160,7 @@ long npd_eth_port_update(void *newdata, void *olddata)
 
             if (NPD_SUCCESS != ret)
             {
-                npd_syslog_dbg("ret is not 0: %s(%d): %s\r\n",
+                syslog_ax_eth_port_dbg("ret is not 0: %s(%d): %s\r\n",
                                __FILE__, __LINE__, "nam_eth_port_sc_pps_set");
             }
         }
@@ -3082,7 +3176,7 @@ long npd_eth_port_update(void *newdata, void *olddata)
 
             if (NPD_SUCCESS != ret)
             {
-                npd_syslog_dbg("ret is not 0: %s(%d): %s\r\n",
+                syslog_ax_eth_port_dbg("ret is not 0: %s(%d): %s\r\n",
                                __FILE__, __LINE__, "nam_eth_port_sc_bps_set");
             }
         }
@@ -3094,7 +3188,7 @@ long npd_eth_port_update(void *newdata, void *olddata)
 
             if (NPD_SUCCESS != ret)
             {
-                npd_syslog_dbg("ret is not 0: %s(%d): %s\r\n",
+                syslog_ax_eth_port_dbg("ret is not 0: %s(%d): %s\r\n",
                                __FILE__, __LINE__, "nam_eth_port_sc_pps_set");
             }
         }
@@ -3110,7 +3204,7 @@ long npd_eth_port_update(void *newdata, void *olddata)
 
             if (NPD_SUCCESS != ret)
             {
-                npd_syslog_dbg("ret is not 0: %s(%d): %s\r\n",
+                syslog_ax_eth_port_dbg("ret is not 0: %s(%d): %s\r\n",
                                __FILE__, __LINE__, "nam_eth_port_sc_bps_set");
             }
         }
@@ -3122,7 +3216,7 @@ long npd_eth_port_update(void *newdata, void *olddata)
 
             if (NPD_SUCCESS != ret)
             {
-                npd_syslog_dbg("ret is not 0: %s(%d): %s\r\n",
+                syslog_ax_eth_port_dbg("ret is not 0: %s(%d): %s\r\n",
                                __FILE__, __LINE__, "nam_eth_port_sc_pps_set");
             }
         }
@@ -3140,7 +3234,7 @@ long npd_eth_port_update(void *newdata, void *olddata)
         
         if (NPD_SUCCESS != ret)
         {
-            npd_syslog_dbg("ret is not 0: %s(%d): %s\r\n",
+            syslog_ax_eth_port_dbg("ret is not 0: %s(%d): %s\r\n",
                            __FILE__, __LINE__, "npd_vct_set");
 			retval = NPD_FAIL;
         }
@@ -3154,7 +3248,7 @@ long npd_eth_port_update(void *newdata, void *olddata)
     	ret = npd_set_port_eee(eth_g_index, value);
         if(ret != NPD_SUCCESS)
         {
-           npd_syslog_dbg("ret is not 0: %s(%d): %s\r\n",
+           syslog_ax_eth_port_dbg("ret is not 0: %s(%d): %s\r\n",
                                __FILE__, __LINE__, "npd_set_port_eee");
         }
     }
@@ -3172,6 +3266,42 @@ long npd_eth_port_update(void *newdata, void *olddata)
 	if(new_port->remote_unit != old_port->remote_unit)
 	{
 	    ret = nam_set_ethport_stack_remote_unit(new_port->eth_port_ifindex, (unsigned char)new_port->remote_unit);
+	}
+#endif
+#ifdef HAVE_FORWARD_MODE_CONFIG
+	if(new_port->cut_through != old_port->cut_through)
+	{
+	    ret = nam_eth_port_cut_through_enable(new_port->eth_port_ifindex, new_port->cut_through);
+        if(ret != NPD_SUCCESS)
+        {
+           syslog_ax_eth_port_dbg("ret is not 0: %s(%d): Failed to set cut through on port 0x%x.\r\n",
+                               __FILE__, __LINE__, new_port->eth_port_ifindex);
+        }
+	}
+#endif
+#ifdef HAVE_SERDES_CONFIG
+	if((new_port->amplitude != old_port->amplitude)
+		|| (new_port->amp_adj != old_port->amp_adj)
+		|| (new_port->emph_en != old_port->emph_en)
+		|| (new_port->emph_level != old_port->emph_level))
+	{
+	    ret = nam_eth_port_serdes_set(new_port->eth_port_ifindex, new_port->amplitude, new_port->amp_adj, new_port->emph_en, new_port->emph_level);
+        if(ret != NPD_SUCCESS)
+        {
+           syslog_ax_eth_port_dbg("ret is not 0: %s(%d): Failed to set serdes configuration on port 0x%x.\r\n",
+                               __FILE__, __LINE__, new_port->eth_port_ifindex);
+        }
+	}
+#endif
+#ifdef HAVE_STORM_CONTROL_GLB
+	if(new_port->sc_enable != old_port->sc_enable)
+	{
+	    ret = nam_eth_port_storm_control_enable(new_port->eth_port_ifindex, new_port->sc_enable);
+        if(ret != NPD_SUCCESS)
+        {
+           syslog_ax_eth_port_dbg("ret is not 0: %s(%d): Failed to set cut through on port 0x%x.\r\n",
+                               __FILE__, __LINE__, new_port->eth_port_ifindex);
+        }
 	}
 #endif
     return retval;
@@ -8842,6 +8972,515 @@ error:
 } 
 #endif
 
+#ifdef HAVE_SERDES_CONFIG
+DBusMessage* npd_dbus_set_eth_port_serdes(DBusConnection *conn, DBusMessage *msg, void *user_data)
+{
+	DBusMessage* reply;
+	DBusError err;
+	DBusMessageIter  iter;
+
+	unsigned int eth_g_index = 0;
+    int amplitude = 0, amp_adj = 0, emp_level = 0;
+	int emp_en = 0;
+	int ret  = ETHPORT_RETURN_CODE_ERR_NONE;
+    struct eth_port_s* g_ptr = NULL;
+
+	dbus_error_init(&err);
+	
+	if (!(dbus_message_get_args ( msg, &err,
+		DBUS_TYPE_UINT32,&eth_g_index,
+		DBUS_TYPE_UINT32,&amplitude,
+		DBUS_TYPE_UINT32,&amp_adj,
+		DBUS_TYPE_UINT32,&emp_en,
+		DBUS_TYPE_UINT32,&emp_level,
+		DBUS_TYPE_INVALID)))
+	{
+		npd_syslog_err("Unable to get input args ");
+		if (dbus_error_is_set(&err))
+		{
+			npd_syslog_err("%s raised: %s",err.name,err.message);
+			dbus_error_free(&err);
+		}
+        ret = ETHPORT_RETURN_CODE_ERR_GENERAL;
+		goto error;
+	}
+
+
+    g_ptr = npd_get_port_by_index(eth_g_index);
+
+    if (g_ptr)
+    {
+        g_ptr->amplitude = amplitude;
+        g_ptr->amp_adj = amp_adj;
+        g_ptr->emph_en = emp_en;
+        g_ptr->emph_level = emp_level;
+        npd_put_port(g_ptr);
+    }
+    else
+    {
+        ret = ETHPORT_RETURN_CODE_NO_SUCH_PORT;
+    }
+
+error:
+  
+	reply = dbus_message_new_method_return(msg);
+	
+	dbus_message_iter_init_append (reply, &iter);
+	
+	dbus_message_iter_append_basic (&iter,
+									 DBUS_TYPE_UINT32,
+									 &ret);
+	return reply;
+} 
+DBusMessage* npd_dbus_get_eth_port_serdes(DBusConnection *conn, DBusMessage *msg, void *user_data)
+{
+	DBusMessage* reply;
+	DBusError err;
+	DBusMessageIter  iter;
+
+	unsigned int eth_g_index = 0;
+    unsigned int op_ret = ETHPORT_RETURN_CODE_ERR_NONE;
+    int amplitude = 0, amp_adj = 0, emp_level = 0;
+	int emp_en = 0;
+    struct eth_port_s* g_ptr = NULL;
+
+	dbus_error_init(&err);
+	
+	if (!(dbus_message_get_args ( msg, &err,
+		DBUS_TYPE_UINT32,&eth_g_index,
+		DBUS_TYPE_INVALID)))
+	{
+		npd_syslog_err("Unable to get input args ");
+		if (dbus_error_is_set(&err))
+		{
+			npd_syslog_err("%s raised: %s",err.name,err.message);
+			dbus_error_free(&err);
+		}
+        op_ret = ETHPORT_RETURN_CODE_ERR_GENERAL;
+		goto error;
+	}
+
+    g_ptr = npd_get_port_by_index(eth_g_index);
+
+    if (g_ptr)
+    {
+        amplitude = g_ptr->amplitude;
+        amp_adj = g_ptr->amp_adj;
+        emp_en = g_ptr->emph_en;
+        emp_level = g_ptr->emph_level;
+		free(g_ptr);
+	}
+	else
+	{
+        op_ret = ETHPORT_RETURN_CODE_NO_SUCH_PORT;
+	}
+error:
+  
+	reply = dbus_message_new_method_return(msg);
+	
+	dbus_message_iter_init_append (reply, &iter);
+	
+	dbus_message_iter_append_basic (&iter,
+									 DBUS_TYPE_UINT32,
+									 &op_ret);
+	dbus_message_iter_append_basic (&iter,
+									 DBUS_TYPE_UINT32,
+									 &amplitude);
+	dbus_message_iter_append_basic (&iter,
+									 DBUS_TYPE_UINT32,
+									 &amp_adj);
+	dbus_message_iter_append_basic (&iter,
+									 DBUS_TYPE_UINT32,
+									 &emp_en);
+	dbus_message_iter_append_basic (&iter,
+									 DBUS_TYPE_UINT32,
+									 &emp_level);
+	return reply;
+} 
+#endif
+
+#ifdef HAVE_FORWARD_MODE_CONFIG
+DBusMessage* npd_dbus_set_eth_port_cut_through(DBusConnection *conn, DBusMessage *msg, void *user_data)
+{
+	DBusMessage* reply;
+	DBusError err;
+	DBusMessageIter  iter;
+
+	unsigned int eth_g_index = 0;
+	int cut_through = 0;
+	int ret  = ETHPORT_RETURN_CODE_ERR_NONE;
+    struct eth_port_s* g_ptr = NULL;
+
+	dbus_error_init(&err);
+	
+	if (!(dbus_message_get_args ( msg, &err,
+		DBUS_TYPE_UINT32,&eth_g_index,
+		DBUS_TYPE_UINT32,&cut_through,
+		DBUS_TYPE_INVALID)))
+	{
+		npd_syslog_err("Unable to get input args ");
+		if (dbus_error_is_set(&err))
+		{
+			npd_syslog_err("%s raised: %s",err.name,err.message);
+			dbus_error_free(&err);
+		}
+        ret = ETHPORT_RETURN_CODE_ERR_GENERAL;
+		goto error;
+	}
+
+
+    g_ptr = npd_get_port_by_index(eth_g_index);
+
+    if (g_ptr)
+    {
+        if(g_ptr->cut_through == cut_through)
+        {
+            free(g_ptr);
+        }
+		else
+		{
+            g_ptr->cut_through = cut_through;
+            npd_put_port(g_ptr);
+		}
+    }
+    else
+    {
+        ret = ETHPORT_RETURN_CODE_NO_SUCH_PORT;
+    }
+
+error:
+  
+	reply = dbus_message_new_method_return(msg);
+	
+	dbus_message_iter_init_append (reply, &iter);
+	
+	dbus_message_iter_append_basic (&iter,
+									 DBUS_TYPE_UINT32,
+									 &ret);
+	return reply;
+} 
+DBusMessage* npd_dbus_get_eth_port_cut_through(DBusConnection *conn, DBusMessage *msg, void *user_data)
+{
+	DBusMessage* reply;
+	DBusError err;
+	DBusMessageIter  iter;
+
+	unsigned int eth_g_index = 0;
+	int cut_through = 0;
+	int ret  = ETHPORT_RETURN_CODE_ERR_NONE;
+    struct eth_port_s* g_ptr = NULL;
+
+	dbus_error_init(&err);
+	
+	if (!(dbus_message_get_args ( msg, &err,
+		DBUS_TYPE_UINT32,&eth_g_index,
+		DBUS_TYPE_INVALID)))
+	{
+		npd_syslog_err("Unable to get input args ");
+		if (dbus_error_is_set(&err))
+		{
+			npd_syslog_err("%s raised: %s",err.name,err.message);
+			dbus_error_free(&err);
+		}
+        ret = ETHPORT_RETURN_CODE_ERR_GENERAL;
+		goto error;
+	}
+
+
+    g_ptr = npd_get_port_by_index(eth_g_index);
+
+    if (g_ptr)
+    {
+        cut_through = g_ptr->cut_through;
+		free(g_ptr);
+    }
+    else
+    {
+        ret = ETHPORT_RETURN_CODE_NO_SUCH_PORT;
+    }
+
+error:
+  
+	reply = dbus_message_new_method_return(msg);
+	
+	dbus_message_iter_init_append (reply, &iter);
+	
+	dbus_message_iter_append_basic (&iter,
+									 DBUS_TYPE_UINT32,
+									 &ret);
+	dbus_message_iter_append_basic (&iter,
+									 DBUS_TYPE_UINT32,
+									 &cut_through);
+	return reply;
+} 
+#endif
+
+#ifdef HAVE_PORT_BUFFER_CONFIG
+DBusMessage * npd_dbus_config_buffer_mode(DBusConnection *conn, DBusMessage *msg, void *user_data)
+{
+    DBusMessage* 	reply = NULL;
+    DBusMessageIter	iter = {0};
+    DBusError 		err;
+    unsigned int	ret = NPD_DBUS_ERROR;
+    int 	buffer_mode;
+    struct npd_eth_cfg_s npd_eth_cfg_set = {0};
+	
+    syslog_ax_acl_dbg("Entering config buffer mode!\n");
+    dbus_error_init(&err);
+
+    if (!(dbus_message_get_args(msg, &err,
+                                DBUS_TYPE_UINT32,&buffer_mode,
+                                DBUS_TYPE_INVALID)))
+    {
+        syslog_ax_eth_port_err("Unable to get input args ");
+
+        if (dbus_error_is_set(&err))
+        {
+            syslog_ax_eth_port_err("%s raised: %s",err.name,err.message);
+            dbus_error_free(&err);
+        }
+
+        return NULL;
+    }
+
+    npd_eth_cfg_set.buffer_mode = buffer_mode;
+    ret = dbtable_array_update(npd_eth_cfg_index, 0, &npd_eth_cfg_set, &npd_eth_cfg_set);
+    if (ret != 0)
+    {
+        syslog_ax_eth_port_err("Failed to set buffer mode to %s : %d\n",buffer_mode? "devided": "shared", ret);
+        ret=NPD_DBUS_ERROR;
+    }
+    else
+    {
+        ret = NPD_DBUS_SUCCESS;
+    }
+
+    reply = dbus_message_new_method_return(msg);
+    dbus_message_iter_init_append(reply, &iter);
+    dbus_message_iter_append_basic(&iter,DBUS_TYPE_UINT32,&ret);
+    return reply;
+}
+
+DBusMessage * npd_dbus_get_buffer_mode(DBusConnection *conn, DBusMessage *msg, void *user_data)
+{
+    DBusMessage* 	reply = NULL;
+    DBusMessageIter	iter = {0};
+    DBusError 		err;
+    unsigned int	ret = NPD_DBUS_ERROR;
+    int 	buffer_mode;
+    struct npd_eth_cfg_s npd_eth_cfg_set = {0};
+
+    dbus_error_init(&err);
+
+    ret = dbtable_array_get(npd_eth_cfg_index, 0, &npd_eth_cfg_set);
+
+    if (ret != 0)
+    {
+        buffer_mode = 0;
+    }
+    else
+    {
+        buffer_mode = npd_eth_cfg_set.buffer_mode;
+    }
+    reply = dbus_message_new_method_return(msg);
+    dbus_message_iter_init_append(reply, &iter);
+    dbus_message_iter_append_basic(&iter,DBUS_TYPE_UINT32,&buffer_mode);
+    return reply;
+}
+
+#endif
+#ifdef HAVE_HASH_MODE_GLB
+DBusMessage * npd_dbus_config_load_balance_mode(DBusConnection *conn, DBusMessage *msg, void *user_data)
+{
+    DBusMessage* 	reply = NULL;
+    DBusMessageIter	iter = {0};
+    DBusError 		err;
+    unsigned int	ret = NPD_DBUS_ERROR;
+    int 	load_balance_mode;
+    struct npd_eth_cfg_s npd_eth_cfg_set = {0};
+	
+    syslog_ax_acl_dbg("Entering config buffer mode!\n");
+    dbus_error_init(&err);
+
+    if (!(dbus_message_get_args(msg, &err,
+                                DBUS_TYPE_UINT32,&load_balance_mode,
+                                DBUS_TYPE_INVALID)))
+    {
+        syslog_ax_eth_port_err("Unable to get input args ");
+
+        if (dbus_error_is_set(&err))
+        {
+            syslog_ax_eth_port_err("%s raised: %s",err.name,err.message);
+            dbus_error_free(&err);
+        }
+
+        return NULL;
+    }
+
+    npd_eth_cfg_set.global_load_balance_mode = load_balance_mode;
+    ret = dbtable_array_update(npd_eth_cfg_index, 0, &npd_eth_cfg_set, &npd_eth_cfg_set);
+    if (ret != 0)
+    {
+        syslog_ax_eth_port_err("Failed to set global load balance mode to %d : %d\n",load_balance_mode, ret);
+        ret=NPD_DBUS_ERROR;
+    }
+    else
+    {
+        ret = NPD_DBUS_SUCCESS;
+    }
+
+    reply = dbus_message_new_method_return(msg);
+    dbus_message_iter_init_append(reply, &iter);
+    dbus_message_iter_append_basic(&iter,DBUS_TYPE_UINT32,&ret);
+    return reply;
+}
+
+DBusMessage * npd_dbus_get_load_balance_mode(DBusConnection *conn, DBusMessage *msg, void *user_data)
+{
+    DBusMessage* 	reply = NULL;
+    DBusMessageIter	iter = {0};
+    DBusError 		err;
+    unsigned int	ret = NPD_DBUS_ERROR;
+    int 	load_balance_mode;
+    struct npd_eth_cfg_s npd_eth_cfg_set = {0};
+
+    dbus_error_init(&err);
+
+    ret = dbtable_array_get(npd_eth_cfg_index, 0, &npd_eth_cfg_set);
+
+    if (ret != 0)
+    {
+        load_balance_mode = 0;
+    }
+    else
+    {
+        load_balance_mode = npd_eth_cfg_set.global_load_balance_mode;
+    }
+    reply = dbus_message_new_method_return(msg);
+    dbus_message_iter_init_append(reply, &iter);
+    dbus_message_iter_append_basic(&iter,DBUS_TYPE_UINT32,&load_balance_mode);
+    return reply;
+}
+
+#endif
+
+#ifdef HAVE_STORM_CONTROL_GLB
+DBusMessage* npd_dbus_set_eth_port_storm_control_enable(DBusConnection *conn, DBusMessage *msg, void *user_data)
+{
+	DBusMessage* reply;
+	DBusError err;
+	DBusMessageIter  iter;
+
+	unsigned int eth_g_index = 0;
+	int enable = 0;
+	int ret  = ETHPORT_RETURN_CODE_ERR_NONE;
+    struct eth_port_s* g_ptr = NULL;
+
+	dbus_error_init(&err);
+	
+	if (!(dbus_message_get_args ( msg, &err,
+		DBUS_TYPE_UINT32,&eth_g_index,
+		DBUS_TYPE_UINT32,&enable,
+		DBUS_TYPE_INVALID)))
+	{
+		npd_syslog_err("Unable to get input args ");
+		if (dbus_error_is_set(&err))
+		{
+			npd_syslog_err("%s raised: %s",err.name,err.message);
+			dbus_error_free(&err);
+		}
+        ret = ETHPORT_RETURN_CODE_ERR_GENERAL;
+		goto error;
+	}
+
+
+    g_ptr = npd_get_port_by_index(eth_g_index);
+
+    if (g_ptr)
+    {
+        if(g_ptr->sc_enable == enable)
+        {
+            free(g_ptr);
+        }
+		else
+		{
+            g_ptr->sc_enable = enable;
+            npd_put_port(g_ptr);
+		}
+    }
+    else
+    {
+        ret = ETHPORT_RETURN_CODE_NO_SUCH_PORT;
+    }
+
+error:
+  
+	reply = dbus_message_new_method_return(msg);
+	
+	dbus_message_iter_init_append (reply, &iter);
+	
+	dbus_message_iter_append_basic (&iter,
+									 DBUS_TYPE_UINT32,
+									 &ret);
+	return reply;
+} 
+
+DBusMessage * npd_dbus_set_eth_port_storm_control_kbps(DBusConnection *conn, DBusMessage *msg, void *user_data)
+{
+    DBusMessage* 	reply = NULL;
+    DBusMessageIter	iter = {0};
+    DBusError 		err;
+    unsigned int	ret = NPD_DBUS_ERROR;
+    int 	type = 0, kbps = 0;
+    struct npd_eth_cfg_s npd_eth_cfg_set = {0};
+	
+    syslog_ax_acl_dbg("Entering config global storm control kbps!\n");
+    dbus_error_init(&err);
+
+    if (!(dbus_message_get_args(msg, &err,
+                                DBUS_TYPE_UINT32,&type,
+                                DBUS_TYPE_UINT32,&kbps,
+                                DBUS_TYPE_INVALID)))
+    {
+        syslog_ax_eth_port_err("Unable to get input args ");
+
+        if (dbus_error_is_set(&err))
+        {
+            syslog_ax_eth_port_err("%s raised: %s",err.name,err.message);
+            dbus_error_free(&err);
+        }
+
+        return NULL;
+    }
+    if(type == PORT_STORM_CONTROL_STREAM_DLF)
+    {
+        npd_eth_cfg_set.sc_glb_dlf_kbps = kbps;
+    }
+	else if(type == PORT_STORM_CONTROL_STREAM_MCAST)
+    {
+        npd_eth_cfg_set.sc_glb_mc_kbps = kbps;
+    }
+	else if(type == PORT_STORM_CONTROL_STREAM_BCAST)
+    {
+        npd_eth_cfg_set.sc_glb_bc_kbps = kbps;
+    }
+	
+    ret = dbtable_array_update(npd_eth_cfg_index, 0, &npd_eth_cfg_set, &npd_eth_cfg_set);
+    if (ret != 0)
+    {
+        ret=NPD_DBUS_ERROR;
+    }
+    else
+    {
+        ret = NPD_DBUS_SUCCESS;
+    }
+
+    reply = dbus_message_new_method_return(msg);
+    dbus_message_iter_init_append(reply, &iter);
+    dbus_message_iter_append_basic(&iter,DBUS_TYPE_UINT32,&ret);
+    return reply;
+}
+#endif
 #define NPD_PACKET_TYPE_OTHER 31
 DBusMessage * npd_dbus_clear_cpu_stats(DBusConnection *conn, DBusMessage *msg, void *user_data)
 {

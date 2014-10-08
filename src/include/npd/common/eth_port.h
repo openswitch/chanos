@@ -202,6 +202,12 @@ struct eth_port_s {
 	int real_speed;
 	int stacking;
 	int remote_unit;
+	int cut_through;
+	int emph_en;
+	int emph_level;
+	int amplitude;
+	int amp_adj;
+	int sc_enable;
 };
  
 typedef struct _eth_port_sfp_

@@ -3159,6 +3159,8 @@ enum npd_dbus_result_no_e {
 #define NPD_DBUS_TRUNK_METHOD_V_CONFIG_CASCADE_LINK "config_vtrunk_cascade_link"
 #define NPD_DBUS_TRUNK_METHOD_V_SHOW_VLAG           "show_vtrunk_vlag"
 
+#define NPD_DBUS_TRUNK_METHOD_GLB_CONFIG_LOAD_BALANCE "config_global_load_balance_mode"
+#define NPD_DBUS_TRUNK_METHOD_GLB_SHOW_LOAD_BALANCE   "show_global_load_balance_mode"
 /*Cascade interface*/
 #define NPD_DBUS_CASCADE_OBJPATH "/aw/cascade"
 #define NPD_DBUS_CASCADE_INTERFACE "aw.cascade"
@@ -3514,6 +3516,22 @@ enum npd_dbus_result_no_e {
 #define NPD_DBUS_ETHPORTS_INTERFACE_METHOD_GET_PORT_LOOPBACK  "get_eth_port_loopback"
 
 #define NPD_DBUS_ETHPORTS_INTERFACE_METHOD_CONFIG_PORT_STACKING  "config_eth_port_stacking"
+
+#define NPD_DBUS_ETHPORTS_INTERFACE_METHOD_CONFIG_PORT_SERDES  "config_eth_port_serdes"
+
+#define NPD_DBUS_ETHPORTS_INTERFACE_METHOD_GET_PORT_SERDES  "get_eth_port_serdes"
+
+#define NPD_DBUS_ETHPORTS_INTERFACE_METHOD_CONFIG_PORT_CUT_THROUGH  "config_eth_port_cut_through"
+
+#define NPD_DBUS_ETHPORTS_INTERFACE_METHOD_GET_PORT_CUT_THROUGH  "get_eth_port_cut_through"
+
+#define NPD_DBUS_ETHPORTS_INTERFACE_METHOD_CONFIG_PORT_BUFFER_MODE  "config_eth_port_buffer_mode"
+
+#define NPD_DBUS_ETHPORTS_INTERFACE_METHOD_GET_PORT_BUFFER_MODE  "get_eth_port_buffer_mode"
+
+#define NPD_DBUS_ETHPORTS_INTERFACE_METHOD_CONFIG_SC_GLOBAL  "config_eth_port_storm_control_enable"
+
+#define NPD_DBUS_ETHPORTS_INTERFACE_METHOD_GET_PORT_SC_GLOBAL_KBPS  "config_eth_port_storm_control_kbps"
 
 /************************************************************************
  * DESCRIPTION:
