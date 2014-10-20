@@ -2650,10 +2650,10 @@ DBusMessage * npd_dbus_policer_set(DBusConnection *conn, DBusMessage *msg, void 
 
 	if( 0 != npd_policer_get_by_index(policerIndex, &policer) )
 	{
-		policer.cir = QOS_CIR_MAX_RATE;
-		policer.cbs = QOS_CBS_BURST;
-		policer.pbs = QOS_PBS_BURST;
-		policer.pir = QOS_PIR_MAX_RATE;
+		policer.cir = QOS_CIR_RATE_DEFAULT;
+		policer.cbs = QOS_CBS_BURST_DEFAULT;
+		policer.pbs = QOS_PBS_BURST_DEFAULT;
+		policer.pir = QOS_PIR_RATE_DEFAULT;
 
 		policer.index = policerIndex;
         policer.direction = dir; 
@@ -4604,20 +4604,21 @@ char* npd_qos_policer_show_running_config(char* showStr, int* safe_len)
 		{
 			totalLen += sprintf(cursor, "policer %d\n", ni);
 			cursor = showStr + totalLen; 
-
-			if (0 != policer.cir && 0 != policer.cbs && 0 != policer.pir && 0 != policer.pbs) 
-			{
-				totalLen += sprintf(cursor, "  policer cir %u pir %u cbs %u pbs %u\n", 
-                    policer.cir, policer.pir, policer.cbs, policer.pbs);
-				cursor = showStr + totalLen; 
-			}
-            else if( 0 != policer.cir && 0 != policer.cbs && 0 != policer.pbs)
+            if(QOS_CIR_RATE_DEFAULT != policer.cir || QOS_CBS_BURST_DEFAULT != policer.cbs || QOS_PIR_RATE_DEFAULT != policer.pir || QOS_PBS_BURST_DEFAULT != policer.pbs)
             {
- 				totalLen += sprintf(cursor, "  policer cir %u cbs %u ebs %u\n", policer.cir, policer.cbs, policer.pbs);
-				cursor = showStr + totalLen; 
-               
+    			if (0 != policer.cir && 0 != policer.cbs && 0 != policer.pir && 0 != policer.pbs) 
+    			{
+    				totalLen += sprintf(cursor, "  policer cir %u pir %u cbs %u pbs %u\n", 
+                        policer.cir, policer.pir, policer.cbs, policer.pbs);
+    				cursor = showStr + totalLen; 
+    			}
+                else if( 0 != policer.cir && 0 != policer.cbs && 0 != policer.pbs)
+                {
+     				totalLen += sprintf(cursor, "  policer cir %u cbs %u ebs %u\n", policer.cir, policer.cbs, policer.pbs);
+    				cursor = showStr + totalLen; 
+                   
+                }
             }
-
             if((policer.gPktParam.cmd == OUT_PROFILE_REMAP_ENTRY) && (policer.gPktParam.qosProfileID != 0))
             {
                 totalLen += sprintf(cursor, "  conform-action remap qos-profile %d\n", policer.gPktParam.qosProfileID);

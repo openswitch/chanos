@@ -1366,7 +1366,13 @@ int eth_port_sw_speed_get(unsigned int eth_g_index)
             return 100;
         case PORT_SPEED_1000_E:
             return 1000;
+        case PORT_SPEED_2500_E:
+            return 2500;
         case PORT_SPEED_10000_E:
+            return 10000;
+        case PORT_SPEED_40G_E:
+            return 40000;
+        case PORT_SPEED_100G_E:
             return 100000;
         default:
             return 0;
@@ -5967,8 +5973,6 @@ int npd_eth_port_sc_cfg
 				}
 				break;
 			case PORT_SPEED_10000_E:
-		    /*\D0?\C4?\B2\BB\D4\CA\D0\ED\C5\E4\D6?\F3\D3\DA1G\B5??\D2\D6\D6\C6\C1\F7\C1\BF*/
-#if 0				
 				if(ETH_PORT_STREAM_PPS_E == scMode)
 				{
 					if(scvalue > 14881000)
@@ -5985,7 +5989,42 @@ int npd_eth_port_sc_cfg
 						return NPD_DBUS_ERROR_NOT_SUPPORT;
 					}
 				}
-#endif				
+				break;
+			case PORT_SPEED_40G_E:
+				if(ETH_PORT_STREAM_PPS_E == scMode)
+				{
+					if(scvalue > 14881000*4)
+					{
+						syslog_ax_eth_port_err("Port working at 10Mbps does not support value larger than 1488100\n");
+						return NPD_DBUS_ERROR_NOT_SUPPORT;
+					}
+				}
+				else
+				{
+					if(scvalue > 40000000000)
+					{
+						syslog_ax_eth_port_err("Port working at 10Mbps does not support value larger than 10000000!\n");
+						return NPD_DBUS_ERROR_NOT_SUPPORT;
+					}
+				}
+				break;
+			case PORT_SPEED_100G_E:
+				if(ETH_PORT_STREAM_PPS_E == scMode)
+				{
+					if(scvalue > 148810000)
+					{
+						syslog_ax_eth_port_err("Port working at 10Mbps does not support value larger than 1488100\n");
+						return NPD_DBUS_ERROR_NOT_SUPPORT;
+					}
+				}
+				else
+				{
+					if(scvalue > 100000000000)
+					{
+						syslog_ax_eth_port_err("Port working at 10Mbps does not support value larger than 10000000!\n");
+						return NPD_DBUS_ERROR_NOT_SUPPORT;
+					}
+				}
 				break;
 			default:
 				syslog_ax_eth_port_err("Port working at unknow speed!\n");
@@ -6059,8 +6098,6 @@ int npd_eth_port_sc_cfg
 			case ETH_XGE_FIBER:
 			case ETH_XGE_SFPPLUS:
 			case ETH_XGE_XFP:
-		    /*\D0?\C4?\B2\BB\D4\CA\D0\ED\C5\E4\D6?\F3\D3\DA1G\B5??\D2\D6\D6\C6\C1\F7\C1\BF*/
-#if 0				
 				if(ETH_PORT_STREAM_PPS_E == scMode)
 				{
 					if(scvalue > 14881000)
@@ -6093,7 +6130,41 @@ int npd_eth_port_sc_cfg
 						valid = 1;
 					}
 				}
-#endif				
+				break;
+			case ETH_40G_QSFP:
+			case ETH_40G_CFP:
+				if(ETH_PORT_STREAM_PPS_E == scMode)
+				{
+					if(scvalue > 14881000*4)
+					{
+						syslog_ax_eth_port_err("Port working at 10000Mbps does not support value larger than 14881000*4\n");
+						return NPD_DBUS_ERROR_NOT_SUPPORT;
+					}
+					else if(scvalue == 14881000*4)
+					{
+						valid = 0;
+					}
+					else
+					{
+						valid = 1;
+					}
+				}
+				else
+				{
+					if(scvalue > 40000000000)
+					{
+						syslog_ax_eth_port_err("Port working at 10000Mbps does not support value larger than 40000000000!\n");
+						return NPD_DBUS_ERROR_NOT_SUPPORT;
+					}
+					else if(scvalue == 40000000000)
+					{
+						valid = 0;
+					}
+					else
+					{
+						valid = 1;
+					}
+				}
 				break;
 			default:
 				syslog_ax_eth_port_err("Port working at unknow speed!\n");
@@ -6152,130 +6223,6 @@ int npd_eth_port_sc_cfg
 retcode:
 	    npd_key_database_unlock();
 		return ret;
-#if 0
-        if ((ETH_FE_TX == portType)||(ETH_FE_FIBER == portType))
-        {
-            portType = ETH_PORT_STREAM_FE_E;
-        }
-        else
-        {
-			if((ETH_GE_COMBO == portType)
-				||(ETH_GTX == portType)
-				||(ETH_GE_FIBER == portType)
-				||(ETH_GE_SFP == portType))
-			{
-                portType = ETH_PORT_STREAM_GE_E;
-			}
-			else if((ETH_XGE_FIBER == portType)
-				||(ETH_XGE_SFPPLUS == portType)
-				||(ETH_XGE_XFP == portType)
-				||(ETH_XGTX == portType))
-			{
-                portType = ETH_PORT_STREAM_XE_E;
-			}
-        }
-
-        portSpeed = (eth_port->attr_bitmap & ETH_ATTR_SPEED_MASK) >> ETH_SPEED_BIT;
-
-        /*GE port support <0-1488100>,FE port support <0-148810>*/
-        if (((PORT_SPEED_100_E == portSpeed)
-			||((0 == portSpeed)
-			&&(ETH_PORT_STREAM_FE_E == portType)))
-			&&(ETH_PORT_STREAM_PPS_E == scMode)
-			&&(scvalue > 148810))
-        {
-            syslog_ax_eth_port_err("FE port or 100Mbps port does not support value larger than 148810!\n");
-            ret = NPD_DBUS_ERROR_NOT_SUPPORT;
-        }
-        else if (((PORT_SPEED_100_E == portSpeed)
-			||((0 == portSpeed)
-			&&(ETH_PORT_STREAM_FE_E == portType)))
-			&&(ETH_PORT_STREAM_BPS_E == scMode)
-			&&(scvalue > 100000000))
-        {
-            syslog_ax_eth_port_err("FE port or 100Mbps portdoes not support value larger than 100000000!\n");
-            ret = NPD_DBUS_ERROR_NOT_SUPPORT;
-        }
-        else
-        {
-            if (ETH_PORT_STREAM_PPS_E == scMode)
-            {
-                valid = ((((portSpeed == PORT_SPEED_100_E)
-					||((0 == portSpeed)
-					&&(ETH_PORT_STREAM_FE_E == portType)))
-					&&(scvalue == 148810))
-					||(((portSpeed == PORT_SPEED_10000_E)
-					||(portSpeed == PORT_SPEED_1000_E)
-					||((0 == portSpeed)
-					&&(ETH_PORT_STREAM_GE_E == portType)))
-					&&(scvalue == 1488100)))? \
-                        0 : 1;
-            }
-            else if (ETH_PORT_STREAM_BPS_E == scMode)
-            {
-                valid = ((((portSpeed == PORT_SPEED_100_E)
-					||((0 == portSpeed)
-					&&(ETH_PORT_STREAM_FE_E == portType)))
-					&&(scvalue == 100000000))
-					||(((portSpeed == PORT_SPEED_10000_E)
-					||(portSpeed == PORT_SPEED_1000_E)
-					||((0 == portSpeed)
-					&&(ETH_PORT_STREAM_GE_E == portType)))
-					&&(scvalue == 1000000000)))? \
-                        0 : 1;
-            }
-
-            port_sc = &eth_port->sc;
-
-            if (PORT_STORM_CONTROL_STREAM_DLF == sctype)
-            {
-                if (ETH_PORT_STREAM_PPS_E == scMode)
-                {
-                    port_sc->dlf.bpsValid = 0;
-                    port_sc->dlf.ppsValid = 1;
-                    port_sc->dlf.value.pps = scvalue;
-                }
-                else if (ETH_PORT_STREAM_BPS_E == scMode)
-                {
-                    port_sc->dlf.ppsValid = 0;
-                    port_sc->dlf.bpsValid = 1;
-                    port_sc->dlf.value.bps = scvalue;
-                }
-            }
-            else if (PORT_STORM_CONTROL_STREAM_MCAST == sctype)
-            {
-                if (ETH_PORT_STREAM_PPS_E == scMode)
-                {
-                    port_sc->mcast.bpsValid = 0;
-                    port_sc->mcast.ppsValid = 1;
-                    port_sc->mcast.value.pps = scvalue;
-                }
-                else if (ETH_PORT_STREAM_BPS_E == scMode)
-                {
-                    port_sc->mcast.ppsValid = 0;
-                    port_sc->mcast.bpsValid = 1;
-                    port_sc->mcast.value.bps = scvalue;
-                }
-            }
-            else if (PORT_STORM_CONTROL_STREAM_BCAST == sctype)
-            {
-                if (ETH_PORT_STREAM_PPS_E == scMode)
-                {
-                    port_sc->bcast.bpsValid = 0;
-                    port_sc->bcast.ppsValid = 1;
-                    port_sc->bcast.value.pps = scvalue;
-                }
-                else if (ETH_PORT_STREAM_BPS_E == scMode)
-                {
-                    port_sc->bcast.ppsValid = 0;
-                    port_sc->bcast.bpsValid = 1;
-                    port_sc->bcast.value.bps = scvalue;
-                }
-            }
-        }
-
-        npd_put_port(eth_port);
-#endif
     }
 
     return ret;

@@ -745,9 +745,9 @@ int npd_arp_snooping_create_kern_arp
 	sin->sin_port = 0;
     sin->sin_addr.s_addr = item->ipAddr;
 	arp_cfg.arp_flags = ATF_COM;
-	if(item->isStatic) {
+	/*if(item->isStatic) {*/
 		arp_cfg.arp_flags |= ATF_PERM;	
-	}
+	/*}*/
 	arp_cfg.arp_ha.sa_family = 1;  /* Ethernet 10Mbps*/
 	memcpy(arp_cfg.arp_ha.sa_data,item->mac,MAC_ADDRESS_LEN);
 	mask = (struct sockaddr_in *) &arp_cfg.arp_netmask;
@@ -1781,12 +1781,6 @@ int npd_arp_snooping_del_all
 	if(NULL == item) {
 		return COMMON_RETURN_CODE_NULL_PTR;
 	}
-	/*first del kernel arp*/
-	if((kern_del_flag == TRUE)&&\
-		((FALSE == item->isStatic)||(TRUE == item->isValid))) 
-	{
-		npd_arp_snooping_del_kern_arp(item);
-	}
 #ifdef HAVE_ROUTE
 	status = npd_route_update_by_nhp(item->ipAddr, FALSE);
 #endif
@@ -1797,6 +1791,10 @@ int npd_arp_snooping_del_all
 
 	status = npd_policy_route_update_by_nhp(item->ipAddr, FALSE);
 
+	if(kern_del_flag == TRUE) 
+	{
+		npd_arp_snooping_del_kern_arp(item);
+	}
 	return ret;	
 }
 
@@ -3333,7 +3331,7 @@ int npd_arp_snooping_learning
                                     item->mac, item->ipAddr);
                 }
 #endif
-
+                npd_arp_snooping_create_kern_arp(item);
 
 			 }
              else
@@ -3437,38 +3435,47 @@ int npd_arp_inspection_check(unsigned int netif_index, unsigned short vid, struc
         && (vlan_flag))
 	{
 #ifdef HAVE_DHCP_SNP
-        if ((DHCP_SNP_RETURN_CODE_OK == npd_dhcp_snp_get_global_status(&endis))
-            && (0 != endis))
-        {
-			if (DHCP_SNP_RETURN_CODE_EN_VLAN == npd_dhcp_snp_check_vlan_status(vid))
-			{
-				if ((ARP_RETURN_CODE_SUCCESS == npd_arp_inspection_check_trust(netif_index, &trust_mode, &user))
-                    && (!trust_mode))
-				{
-					if (ARP_RETURN_CODE_SUCCESS == npd_dhcp_snp_query_arp_inspection(netif_index, arpPacket, &isFound))
-                    {
-						if (!isFound)
-						{
-                            npd_arp_inspection_statistics[nlport].drop++;
+        /*modified by sunhongbao for bug 0004958 2014-09-11*/
+                if ((ARP_RETURN_CODE_SUCCESS == npd_arp_inspection_check_trust(netif_index, &trust_mode, &user))
+                        && (!trust_mode))
+                {
+
+                        if ((DHCP_SNP_RETURN_CODE_OK == npd_dhcp_snp_get_global_status(&endis))
+                                && (0 != endis))
+                        {
+                                if (DHCP_SNP_RETURN_CODE_EN_VLAN == npd_dhcp_snp_check_vlan_status(vid))
+                                {
+                                        /*if ((ARP_RETURN_CODE_SUCCESS == npd_arp_inspection_check_trust(netif_index, &trust_mode, &user))
+                                        && (!trust_mode))
+                                        {*/
+                                        /*end by sunhongbao for bug 0004958 2014-09-11*/
+                                        if (ARP_RETURN_CODE_SUCCESS == npd_dhcp_snp_query_arp_inspection(netif_index, arpPacket, &isFound))
+                                        {
+                                                if (!isFound)
+                                                {
+                                                        npd_arp_inspection_statistics[nlport].drop++;
+                                                        return ARP_RETURN_CODE_ERROR;
+                                                }						
+                                        }
+                                        else
+                                        {
+                                                npd_arp_inspection_statistics[nlport].drop++;
+                                                return ARP_RETURN_CODE_ERROR;
+                                        }		
+                                }
+                                /*added by sunhongbao for bug 0004958 2014-09-11*/
+                                else
+                                {
+                                        return ARP_RETURN_CODE_ERROR;
+                                }
+                                /*end by sunhongbao for bug 0004958 2014-09-11*/
+                        }
+                        else
+                        {
                             return ARP_RETURN_CODE_ERROR;
-						}						
-					}
-                    else
-                    {
-        			    npd_arp_inspection_statistics[nlport].drop++;
-						return ARP_RETURN_CODE_ERROR;
-					}		
-				}
-			}
-            else
-            {
-                return ARP_RETURN_CODE_ERROR;
-            }
-		}
-        else
-        {
-            return ARP_RETURN_CODE_ERROR;
-        }
+                        }
+                }
+            /*deleted by sunhongbao for bug 0004958 2014-09-11*/
 #endif
 	}
 

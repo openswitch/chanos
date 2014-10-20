@@ -5969,7 +5969,7 @@ int load_snmp_conf( char *conf_file ,STSNMPSummary *pstSummary)
 		{ 
 			sscanf(line, "group_status %s %s", group_type, group_status);
 
-            if(0 == strncmp(group_status,"disable",strlen("disable")))
+            if(0 == strcmp(group_status,"disable"))
                 group_status_num = DISABLE_STATUS;
             else
                 group_status_num = ENABLE_STATUS;
