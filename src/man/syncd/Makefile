@@ -6,7 +6,7 @@ CFLAGS = -MMD -O2 -Wall
 endif
 
 INCLUDES += -I./ -I$(ACCAPI_DIR) -I$(ACCAPI_DIR)/lib -I$(MANAPI_DIR)
-CFLAGS += $(INCLUDES) $(INCLUDE_AUTEWARE_MODULES)
+CFLAGS += $(INCLUDES) $(INCLUDE_CHANOS_MODULES)
 OBJS = command_db_sync.o user_configure.o
 TEST_OBJS = test_echo.o
 
