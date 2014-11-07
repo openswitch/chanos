@@ -690,9 +690,6 @@ int dcli_get_eth_port_rate(
 					
 }
 
-
-
-
 int dcli_get_eth_port_sfp_atrr(unsigned int eth_g_index, eth_port_sfp *sfpInfo)
 {
 	DBusMessage *query = NULL, *reply = NULL;
@@ -733,6 +730,60 @@ int dcli_get_eth_port_sfp_atrr(unsigned int eth_g_index, eth_port_sfp *sfpInfo)
 		return ETHPORT_RETURN_CODE_ERR_GENERAL;
 	} 
 	dbus_message_unref(reply);
+	return op_ret;
+}
+
+int dcli_get_eth_port_transceiver_atrr(unsigned int eth_g_index, fiber_module_man_param_t *tcvInfo)
+{
+	DBusMessage *query = NULL, *reply = NULL;
+	DBusError err;
+	DBusMessageIter	 iter, iter_struct, iter_array;
+	unsigned int op_ret = 0, i = 0;
+	unsigned int tmp = 0U;
+
+	query = dbus_message_new_method_call(
+								NPD_DBUS_BUSNAME,		\
+								NPD_DBUS_RELAY_OBJPATH,	\
+								NPD_DBUS_RELAY_INTERFACE,	\
+								NPD_DBUS_ETHPORTS_INTERFACE_METHOD_SHOW_ETHPORT_TCV);
+	
+	dbus_error_init(&err);
+
+	dbus_message_append_args(query,
+							 DBUS_TYPE_UINT32,&eth_g_index,
+							 DBUS_TYPE_INVALID);
+	
+	reply = dbus_connection_send_with_reply_and_block (dcli_dbus_connection,query,-1, &err);
+	
+	dbus_message_unref(query);
+	if (NULL == reply) {
+		if (dbus_error_is_set(&err)) {
+			dbus_error_free(&err);
+		}
+		return ETHPORT_RETURN_CODE_ERR_GENERAL;
+	}
+
+	dbus_message_iter_init(reply,&iter);
+	dbus_message_iter_get_basic(&iter,&op_ret);
+
+	if(ETHPORT_RETURN_CODE_ERR_NONE == op_ret){
+		
+		dbus_message_iter_next(&iter);	
+		dbus_message_iter_recurse(&iter,&iter_array);
+
+		for(i = 0; i < (sizeof(fiber_module_man_param_t)/4); i++)
+		{
+			dbus_message_iter_recurse(&iter_array,&iter_struct);
+			dbus_message_iter_get_basic(&iter_struct,&tmp);
+			*((unsigned int *)tcvInfo + i) = tmp;
+			tmp = 0U;
+			
+			dbus_message_iter_next(&iter_array);
+		}			
+	}
+
+	dbus_message_unref(reply);
+
 	return op_ret;
 }
 

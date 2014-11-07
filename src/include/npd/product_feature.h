@@ -477,7 +477,37 @@ typedef struct sub_board_fix_param_s
 
 typedef struct fiber_module_man_param_s
 {
+	int port_type;
+	int alarm_type;
+
+	int temperature;/* C */
+	int voltage; /* V */
+	int tx_bias[4]; /* mA */
+	int tx_power[4]; /* mw or dBM */
+	int rx_power[4]; /* mw or dBM */
+
+	//int transceiver_type;
+	//int connector_type;
+	unsigned int identifier;
+	unsigned int connector;
+	unsigned int transceiver_class;
+	int wavelength; /* nm */
+	int ddm_implemented; /* 1:YES, 0:NO */
+
+	int transmission_media;
+	int smf_km_length;
+	int smf_100m_length;
+	int om2_length;
+	int om1_length;
+	int om4_or_copper_length;
+	int om3_length;
+	
+	char vendor_name[16];
+	char vendor_pn[16];
+	char vendor_sn[16];
+	char date_code[12];
 }fiber_module_man_param_t;
+
 typedef struct fiber_module_fix_param_s
 {
     long (*fiber_module_inserted)(unsigned long panel_port);

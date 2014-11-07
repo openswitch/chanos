@@ -1977,6 +1977,14 @@ DBusMessage * npd_dbus_show_ethport_sfp
     DBusMessage *msg,
     void *user_data
 );
+
+DBusMessage * npd_dbus_show_ethport_transceiver
+(
+    DBusConnection *conn,
+    DBusMessage *msg,
+    void *user_data
+);
+
 DBusMessage *npd_dbus_clear_stack_stat_by_slotno_and_portno
 (
 	DBusConnection *conn,

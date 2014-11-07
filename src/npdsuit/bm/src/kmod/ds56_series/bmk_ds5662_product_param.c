@@ -1,11 +1,10 @@
-
 #include <linux/fs.h>
 #include <linux/proc_fs.h>
+#include <asm/uaccess.h>
 #include "bmk_main.h"
 #include "bmk_product_feature.h"
 #include "bmk_ds5600_series_info.h"
 #include "ts_product_feature.h"
-#include <asm/uaccess.h>
 
 int ds5662_reset_board(int slot_index)
 {
@@ -14,20 +13,244 @@ int ds5662_reset_board(int slot_index)
 	return ret;
 }
 
-
 /* 暂时隔开。 这个和产品相关性挺大 */
 int ds5662_get_board_online_state(int slot_index)
 {
 	return BOARD_INSERT ;
 }
 
+int ds5662_do_hwmon_fan_op(unsigned int cmd, fan_op_args *ptr_fan_op)
+{
+	int ret = 0;
 
-int ds5662_ioctl_proc_master_slot_id(/*struct inode *inode, */struct file *filp, unsigned int cmd, unsigned long arg)
+	if (ptr_fan_op->rwflag == 0 ) /* read opt */
+	{
+
+	}
+	else /* write opt */
+	{
+
+	}
+	
+	return ret;
+}
+
+int ds5662_ioctl_proc_cpld_fan(struct file *filp, unsigned int cmd, unsigned long arg)
+{
+	int op_ret = 0;
+	int ret = 0;
+	fan_op_args fan_op;
+	
+	memset(&fan_op, 0, sizeof(fan_op_args));
+	
+	op_ret = copy_from_user(&fan_op,(fan_op_args __user *)arg,sizeof(fan_op_args));
+
+	if (0 > fan_op.index || fan_op.index >= ko_product->fan_param->num)
+	{
+		DBG(debug_ioctl, "fan op index %d is out of range.\n", fan_op.index);
+		return -1;
+	}
+#if 0
+	if (PPAL_BOARD_TYPE_DS5662 == ko_board->board_type)
+	{
+		switch(cmd)
+		{
+    		case BM_IOC_CPLD_FAN_ALARM:
+    			fan_op.value = FAN_NORMAL;
+	            DBG(debug_ioctl, "fan op index %d : BM_IOC_CPLD_FAN_ALARM.\n", fan_op.index);
+    			break;
+    		case BM_IOC_CPLD_FAN_PRESENT:
+    			fan_op.value = FAN_INSERT;
+	            DBG(debug_ioctl, "fan op index %d : BM_IOC_CPLD_FAN_PRESENT.\n", fan_op.index);
+    			break;
+    		case BM_IOC_CPLD_FAN_SPEED:
+    			fan_op.value = 100; 
+	            DBG(debug_ioctl, "fan op index %d : BM_IOC_CPLD_FAN_SPEED.\n", fan_op.index);
+    			break;
+			default:
+	            DBG(debug_ioctl, "fan op index %d : Unkown command.\n", fan_op.index);
+				break;
+		}
+		op_ret = copy_to_user((fan_op_args __user *)arg, &fan_op, sizeof(fan_op_args));
+	
+	    return ret;
+	}
+#else
+	//ret = ds5662_do_hwmon_fan_op(cmd, &fan_op );
+	
+	DBG(debug_ioctl, "ret is %d. index is %d, rwflag is %d, value is %d\n", 
+		ret, fan_op.index, fan_op.rwflag, fan_op.value);
+	
+	op_ret = copy_to_user((fan_op_args __user *)arg, &fan_op, sizeof(fan_op_args));
+#endif
+	return ret;
+
+
+}
+
+int ds5662_ioctl_proc_power_present(struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	cpld_op_args cpld_op_data;
+	int  op_ret= 0;
+#if 0
+	unsigned char value = 0 ;
+	cpld_reg_ctl* ptr_cpld_ctl = NULL;
+
+	DBG(debug_ioctl, KERN_INFO DRIVER_NAME ":Enter ds5600_ioctl_proc_power_present\n");
+	memset(&cpld_op_data, 0, sizeof(cpld_op_args));
+
+	op_ret = copy_from_user(&cpld_op_data, (cpld_op_args *)arg, sizeof(cpld_op_args));
+
+	if (0 == cpld_op_data.write_flag) /* read op */
+	{
+		cpld_op_data.value = POWER_INSERT;
+	}
+
+	op_ret = copy_to_user((cpld_op_args *)arg, &cpld_op_data, sizeof(cpld_op_args));
+#endif
+	return op_ret;
+}
+
+int ds5662_ioctl_proc_power_state(struct file *filp, unsigned int cmd, unsigned long arg)
+{
+	power_op_args power_data;
+	ds_fix_param_t * ptr_ds_fix_param ;
+	int ret = 0 ;
+#if 0
+	ret = copy_from_user(&power_data, (power_op_args *)arg, sizeof(power_op_args));
+
+	if (0 > power_data.index || power_data.index >= ko_product->ds_param->power_num)
+	{
+		DBG(debug_ioctl, "power_info index %d is out of range.\n", power_data.index);
+		return -1;
+	}
+
+	if ((PPAL_BOARD_TYPE_DS5652 == ko_board->board_type) || (PPAL_BOARD_TYPE_DS6224 == ko_board->board_type))
+	{
+		power_data.state = POWER_NORMAL;
+		ret = copy_to_user((power_op_args *)arg, &power_data, sizeof(power_op_args));
+		return 0;
+	}
+#endif
+	return ret;
+}
+
+int ds5662_ioctl_proc_power_info(struct file *filp, unsigned int cmd, unsigned long arg)
+{
+	power_info_args power_info ;
+	ds_fix_param_t * ptr_ds_fix_param ;
+	int ret = 0 ;
+#if 0
+	ret = copy_from_user(&power_info, (power_info_args *)arg, sizeof(power_info_args));
+	if (0 > power_info.index || power_info.index >= ko_product->ds_param->power_num)
+	{
+		DBG(debug_ioctl, "power_info index %d is out of range.\n", power_info.index);
+		return -1;
+	}
+	
+	ptr_ds_fix_param = &ko_product->ds_param->ds_fix_array[power_info.index];
+	
+	if (0 != strlen(ptr_ds_fix_param->name) )
+	{
+		memcpy(power_info.name, ptr_ds_fix_param->name, 20 );	
+	}
+	else
+	{
+		char name[20] = "DummyPSName";
+		memcpy(power_info.name, name, 20 );	
+	}
+	DBG(debug_ioctl, "power_info index %d name is %s.\n", 
+					power_info.index, power_info.name);
+	
+	
+	ret = copy_to_user((power_info_args *)arg, &power_info, sizeof(power_info_args));
+#endif	
+
+	return ret;
+}
+
+int ds5662_ioctl_proc_temp_state(struct file *filp, unsigned int cmd, unsigned long arg)
+{
+	int state = 0;
+	int op_ret = 0;
+
+	op_ret = copy_from_user(&state, (int *)arg, sizeof(int));
+	op_ret = bm_get_temp_alarm(&state);
+	if (op_ret != 0)
+	{
+		DBG(debug_ioctl, "get temp state error.\n");
+		return -1;
+	}
+	op_ret = copy_to_user((int *)arg, &state, sizeof(int));
+
+	return op_ret;
+}
+
+int ds5662_ioctl_proc_temp_info(struct file *filp, unsigned int cmd, unsigned long arg)
+{
+	temp_info_args temp_data;
 	int op_ret= 0;
 
-	DBG(debug_ioctl, KERN_INFO DRIVER_NAME ":Enter ds5662_ioctl_proc_master_slot_id\n");
+	memset(&temp_data, 0, sizeof(temp_info_args));
+	op_ret = copy_from_user(&temp_data, (temp_info_args *)arg, sizeof(temp_info_args));
+	op_ret = bm_get_temp_info(&temp_data);
+	if (op_ret != 0)
+	{
+		DBG(debug_ioctl, "get temp data error.\n");
+		return -1;		
+	}
+	op_ret = copy_to_user((temp_info_args *)arg, &temp_data, sizeof(temp_info_args));
+	
+	return op_ret;
+}
+
+int ds5662_ioctl_proc_temp_threshold(struct file *filp, unsigned int cmd, unsigned long arg)
+{
+	temp_op_args temp_op;
+	int op_ret= 0;
+
+	memset(&temp_op, 0, sizeof(temp_op_args));
+	op_ret = copy_from_user(&temp_op, (temp_op_args *)arg, sizeof(temp_op_args));
+	op_ret = bm_set_temp_threshold(temp_op.op_type, temp_op.value);
+	if (op_ret != 0)
+	{
+		DBG(debug_ioctl, "set temp threshold error.\n");
+		return -1;		
+	}
+	
+	return op_ret;
+}
+
+int ds5662_ioctl_proc_led_control(struct file *filp, unsigned int cmd, unsigned long arg)
+{
+	int op_ret = 0;
+	int ret = 0;
+	led_op_args led_data;
+	
+	memset(&led_data, 0, sizeof(led_op_args));
+	op_ret = copy_from_user(&led_data,(led_op_args __user *)arg,sizeof(led_op_args));
+
+	if (led_data.rwflag == 1) /* write opt */
+	{
+
+	}
+	else  /* read opt */
+	{
+
+	}
+	
+	op_ret = copy_to_user((led_op_args __user *)arg,&led_data,sizeof(led_op_args));
+	
+	return ret;
+}
+
+int ds5662_ioctl_proc_master_slot_id(struct file *filp, unsigned int cmd, unsigned long arg)
+{
+	cpld_op_args cpld_op_data;
+	int op_ret;
+
+	DBG(debug_ioctl, "Enter ds5662_ioctl_proc_master_slot_id\n");
+	
 	memset(&cpld_op_data, 0, sizeof(cpld_op_args));
 
 	op_ret = copy_from_user(&cpld_op_data, (cpld_op_args *)arg, sizeof(cpld_op_args));
@@ -37,7 +260,6 @@ int ds5662_ioctl_proc_master_slot_id(/*struct inode *inode, */struct file *filp,
 	return op_ret;
 }
 
-
 int ds5662_get_slot_index(void)
 {
     int ret = 0;
@@ -45,6 +267,7 @@ int ds5662_get_slot_index(void)
 	struct file *fp;
     mm_segment_t fs;
 	loff_t pos = 0;
+	
 	fp = filp_open("/mnt/stack_unit", O_RDONLY, 0);
 	if(IS_ERR(fp))
 	{
@@ -71,20 +294,24 @@ int ds5662_get_slot_index(void)
 		    return 	1;
 		}
 	}
+	
 	return 0;	
  }
 
-int ds5662_ioctl_proc_cpld_slot_id(/*struct inode *inode,*/ struct file *filp, unsigned int cmd, unsigned long arg)
+int ds5662_ioctl_proc_cpld_slot_id(struct file *filp, unsigned int cmd, unsigned long arg)
 {
-	int op_ret;
 	cpld_op_args cpld_op_data;
+	int op_ret;
 
+	DBG(debug_ioctl, "Enter ds5662_ioctl_proc_cpld_slot_id\n");
+	
 	memset(&cpld_op_data, 0, sizeof(cpld_op_args));
 	
 	op_ret = copy_from_user(&cpld_op_data, (cpld_op_args *)arg, sizeof(cpld_op_args));
 	cpld_op_data.value = ds5662_get_slot_index();
 	op_ret = copy_to_user((cpld_op_args *)arg, &cpld_op_data, sizeof(cpld_op_args));
-	return 0;
+
+	return op_ret;
 }
 
 proc_file ds5662_common_files[] = 
@@ -108,20 +335,26 @@ proc_file ds5662_common_files[] =
 	{"slot_num", 				&bm_proc_slot_num},
 };
 
-proc_file_struct ds5662_board_spec_files_arr[] = 
-{
-};
-
 ioctl_proc ds5662_ioctltl_proc_arr[] = 
 {
 	{BM_IOC_CPLD_MASTER_SLOT_ID, 	ds5662_ioctl_proc_master_slot_id},
  	{BM_IOC_CPLD_SLOT_ID,			ds5662_ioctl_proc_cpld_slot_id},
+		
+	{BM_IOC_CPLD_FAN_PRESENT, 		ds5662_ioctl_proc_cpld_fan},
+	{BM_IOC_CPLD_FAN_ALARM, 		ds5662_ioctl_proc_cpld_fan},
+	{BM_IOC_CPLD_FAN_SPEED,			ds5662_ioctl_proc_cpld_fan},
+	{BM_IOC_CPLD_POWER_PRESENT, 	ds5662_ioctl_proc_power_present},
+	{BM_IOC_POWER_STATE, 			ds5662_ioctl_proc_power_state},	
+	{BM_IOC_POWER_INFO,				ds5662_ioctl_proc_power_info},
+	{BM_IOC_TEMP_STATE, 			ds5662_ioctl_proc_temp_state},
+	{BM_IOC_TEMP_INFO, 				ds5662_ioctl_proc_temp_info},
+	{BM_IOC_TEMP_THRESHOLD, 		ds5662_ioctl_proc_temp_threshold},
+	{BM_IOC_LED_CONTROL,			ds5662_ioctl_proc_led_control},
 };
 
 
 int ds5662_init(void)
 {
-	
 	ko_product->proc_common_count = LENGTH(ds5662_common_files);
 	DBG(debug_ioctl,  "proc_common_count is %d.\n", ko_product->proc_common_count);
 
@@ -131,7 +364,6 @@ int ds5662_init(void)
 
 	ko_product->ioctl_proc_count = LENGTH(ds5662_ioctltl_proc_arr);
 	DBG(debug_ioctl,  "ioctl_proc_count is %d.\n", ko_product->ioctl_proc_count);
-
 
 	return 0;
 }
@@ -188,8 +420,8 @@ int ds5662_proc_init(void)
 	}	
 
 	DBG(debug_ioctl, "bm: proc all files success.\n");
-	return 0;
 	
+	return 0;
 }
 
 int ds5662_proc_cleanup(void)
@@ -219,8 +451,8 @@ int ds5662_proc_cleanup(void)
 
 ds_fix_param_t ds5662_ds_fix_param_array[] = 
 {
-	{.ds_index = 0,  .info_dev_addr = 0x54},
-	{.ds_index = 1,  .info_dev_addr = 0x55},			
+	{.ds_index = 0,  .info_dev_addr = 0x5A},
+	{.ds_index = 1,  .info_dev_addr = 0x5B},			
 };
 
 ds_param_t ds5662_ds_param = 
@@ -232,7 +464,7 @@ ds_param_t ds5662_ds_param =
 
 kfan_param_t ds5662_fan_param = 
 {
-	.num = 3,
+	.num = 4,
 };
 
 

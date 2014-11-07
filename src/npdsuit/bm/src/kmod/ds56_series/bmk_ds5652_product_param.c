@@ -11,7 +11,8 @@
 int ds5600_reset_board(int slot_index)
 {
 	int ret = 0;
-	
+	/* PCA9548A Reaet, CPLD0 reg:0x00 bit:0 */
+	/* QSFP/PHY/PP Reaet, CPLD1 reg:0x00 bit:0-5 */
 	return ret;
 }
 
@@ -19,7 +20,7 @@ int ds5600_reset_board(int slot_index)
 /* 暂时隔开。 这个和产品相关性挺大 */
 int ds5600_get_board_online_state(int slot_index)
 {
-	return BOARD_INSERT ;
+	return BOARD_INSERT;
 }
 
 int ds5600_ioctl_proc_cpld_fan(struct file *filp, unsigned int cmd, unsigned long arg)
@@ -74,7 +75,7 @@ int ds5600_ioctl_proc_power_present(struct file *filp, unsigned int cmd, unsigne
 	unsigned char value = 0 ;
 	cpld_reg_ctl* ptr_cpld_ctl = NULL;
 
-	DBG(debug_ioctl, KERN_INFO DRIVER_NAME ":Enter ds5600_ioctl_proc_power_present\n");
+	DBG(debug_ioctl, "Enter ds5600_ioctl_proc_power_present\n");
 	memset(&cpld_op_data, 0, sizeof(cpld_op_args));
 
 	op_ret = copy_from_user(&cpld_op_data, (cpld_op_args *)arg, sizeof(cpld_op_args));
@@ -166,13 +167,12 @@ int ds5600_ioctl_proc_temp_info(struct file *filp, unsigned int cmd, unsigned lo
 	
 }
 
-
 int ds5600_ioctl_proc_master_slot_id(/*struct inode *inode, */struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	cpld_op_args cpld_op_data;
 	int op_ret= 0;
 
-	DBG(debug_ioctl, KERN_INFO DRIVER_NAME ":Enter ds5600_ioctl_proc_master_slot_id\n");
+	DBG(debug_ioctl, "Enter ds5600_ioctl_proc_master_slot_id\n");
 	memset(&cpld_op_data, 0, sizeof(cpld_op_args));
 
 	op_ret = copy_from_user(&cpld_op_data, (cpld_op_args *)arg, sizeof(cpld_op_args));
@@ -253,14 +253,11 @@ proc_file ds5600_common_files[] =
 	{"slot_num", 				&bm_proc_slot_num},
 };
 
-proc_file_struct ds5600_board_spec_files_arr[] = 
-{
-};
-
 ioctl_proc ds5652_ioctl_proc_arr[] = 
 {
 	{BM_IOC_CPLD_MASTER_SLOT_ID, 	ds5600_ioctl_proc_master_slot_id},
  	{BM_IOC_CPLD_SLOT_ID,			ds5600_ioctl_proc_cpld_slot_id},
+		
 	{BM_IOC_CPLD_FAN_PRESENT, 		ds5600_ioctl_proc_cpld_fan},
 	{BM_IOC_CPLD_FAN_ALARM, 		ds5600_ioctl_proc_cpld_fan},
 	{BM_IOC_CPLD_FAN_SPEED,			ds5600_ioctl_proc_cpld_fan},

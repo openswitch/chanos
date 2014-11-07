@@ -75,13 +75,15 @@ typedef struct _cmd_operate_object_
 \n\t\t\t\t\t\t-v 1-light on, 0-light off."
 
 #define DESC_SFP_WRITE		"write data to sfp rom.\
-\n\t\t\t\t\t\t-a set the port index \
+\n\t\t\t\t\t\t-p set the port index \
+\n\t\t\t\t\t\t-a address, the dev address. \
 \n\t\t\t\t\t\t-c command, the reg offset \
 \n\t\t\t\t\t\t-v value to write \
 \n\t\t\t\t\t\t-l buf length."
 			 
 #define DESC_SFP_READ		"read data from sfp rom. \
-\n\t\t\t\t\t\t-a set the port index. \
+\n\t\t\t\t\t\t-p set the port index. \
+\n\t\t\t\t\t\t-a address, the dev address. \
 \n\t\t\t\t\t\t-c command, the reg offset. \
 \n\t\t\t\t\t\t-l read buf length."
 
@@ -619,17 +621,18 @@ int sfp_light_set(long value)
 
 int sfp_write(long value)
 {
-	char * buf; 
-	char *temp;
-	int len = data_len;
-	int ret = 0;
-	int sfp_index = data_dev_addr;
-	int sfp_reg_offset = data_reg_addr;
 	int sfp_param_state;
+	int sfp_index = poe_port_data;
+	int sfp_dev_addr = data_dev_addr;
+	int sfp_reg_offset = data_reg_addr;
+	int len = data_len;
+	char *buf;
+	char *temp;
+	int ret = 0;
 
-	if (0 == nbm_sfp_presence_get(index, &sfp_param_state))
+	if (0 == nbm_sfp_presence_get(sfp_index, &sfp_param_state))
 	{
-		printf("\tsfp port %d is %s.\n", index,
+		printf("\tsfp port %d is %s.\n", sfp_index,
 			(sfp_param_state == SFP_ONLINE)? "PRESENSE" : "ABSENSE" );
 
 		if (sfp_param_state != SFP_ONLINE)
@@ -639,7 +642,7 @@ int sfp_write(long value)
 	}
 	else
 	{
-		printf("\tsfp port %d presense state error.\n", index);
+		printf("\tsfp port %d presense state error.\n", sfp_index);
 		return -1;
 	}			
 	
@@ -650,13 +653,15 @@ int sfp_write(long value)
 		printf("there is no memory at all.\n");
 		return -1;
 	}
+	memset(buf, 0, len);
+	
 	temp = buf;
 	while(len--)
 	{
 		*temp++ = value;
 	}
 	
-	ret = nbm_sfp_write(sfp_index, sfp_reg_offset, buf, len);
+	ret = nbm_sfp_write(sfp_index, sfp_dev_addr, sfp_reg_offset, buf, len);
 	if(ret)
 	{
 		printf("write sfp index %d error.\n", sfp_index);
@@ -674,13 +679,14 @@ int sfp_write(long value)
 
 int sfp_read(long value)
 {
-	char * buf; 
-	int len = data_len;
-	int ret = 0;
-	int sfp_index = data_dev_addr;
-	int sfp_reg_offset = data_reg_addr;
-	int index;
 	int sfp_param_state;
+	int sfp_index = poe_port_data;
+	int sfp_dev_addr = data_dev_addr;
+	int sfp_reg_offset = data_reg_addr;
+	int len = data_len;
+	char *buf;
+	int index;
+	int ret = 0;
 
 	if (0 == nbm_sfp_presence_get(sfp_index, &sfp_param_state))
 	{
@@ -694,21 +700,21 @@ int sfp_read(long value)
 	}
 	else
 	{
-		printf("\tsfp port %d presense state error.\n", index);
+		printf("\tsfp port %d presense state error.\n", sfp_index);
 		return -1;
 	}			
 
 
 	
-	buf = (char *)malloc(data_len);
+	buf = (char *)malloc(len);
 	if (buf == NULL)
 	{
 		printf("there is no memory at all.\n");
 		return -1;
 	}
-	
-	printf("buf value is %x. \n", (int)buf); /* */
-	ret = nbm_sfp_read(sfp_index, sfp_reg_offset, buf, len);
+	memset(buf, 0, len);
+	//printf("buf value is %x. \n", (int)buf); /* */
+	ret = nbm_sfp_read(sfp_index, sfp_dev_addr, sfp_reg_offset, buf, len);
 	if(ret)
 	{
 		printf("read sfp index %d error.\n", sfp_index);

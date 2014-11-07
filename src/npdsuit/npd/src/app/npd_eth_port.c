@@ -7792,7 +7792,9 @@ unsigned int eth_port_sfp_type_check(struct eth_port_s *portInfo)
 		|| portInfo->port_type == ETH_GE_COMBO
 		|| portInfo->port_type == ETH_XGE_XFP
 		|| portInfo->port_type == ETH_XGE_FIBER
-		|| portInfo->port_type == ETH_XGE_SFPPLUS)
+		|| portInfo->port_type == ETH_XGE_SFPPLUS
+		|| portInfo->port_type == ETH_XGE_QSFP
+		|| portInfo->port_type == ETH_40G_QSFP)
 	{
 		return ETHPORT_RETURN_CODE_ERR_NONE;
 	}
@@ -7906,7 +7908,119 @@ retcode:
     return reply;
 }
 
+DBusMessage * npd_dbus_show_ethport_transceiver
+(
+    DBusConnection *conn,
+    DBusMessage *msg,
+    void *user_data
+)
+{
+    DBusMessage* reply;
+	DBusMessageIter  iter, iter_array, iter_struct;
+	
+    unsigned int eth_g_index = 0;
+	fiber_module_man_param_t tcv_info;
+    struct eth_port_s portInfo = {0};
+    unsigned int ret = 0, i = 0;
+	unsigned int tmp = 0U;
+    unsigned int op_ret = 0;
+	unsigned int tcv_index = 0;
+	NPD_NETIF_INDEX_U eth_ifindex;
 
+    DBusError err;
+    dbus_error_init(&err);
+    
+    if (!(dbus_message_get_args(msg, &err,
+                                DBUS_TYPE_UINT32,&eth_g_index,
+                                DBUS_TYPE_INVALID)))
+    {
+        syslog_ax_eth_port_err("Unable to get input args ");
+
+        if (dbus_error_is_set(&err))
+        {
+            syslog_ax_eth_port_err("%s raised: %s",err.name,err.message);
+            dbus_error_free(&err);
+        }
+
+        return NULL;
+    }
+
+    portInfo.eth_port_ifindex = eth_g_index;
+    ret = dbtable_sequence_search(g_eth_ports, eth_g_index, &portInfo);
+
+    if (0 != ret)
+    {
+        ret = ETHPORT_RETURN_CODE_NO_SUCH_PORT;
+        goto retcode;
+    }
+
+    if (PORT_ONLINE_REMOVED == portInfo.state)
+    {
+        goto retcode;
+    }
+	ret = eth_port_sfp_type_check(&portInfo);
+	if (ETHPORT_RETURN_CODE_ERR_NONE != ret)
+    {
+		syslog_ax_eth_port_err("port %d is not sfp type.\n",eth_g_index);
+        goto retcode;
+    }
+
+    ret = eth_port_local_and_master_check(eth_g_index);
+    if (ETHPORT_RETURN_CODE_ERR_NONE != ret)
+    {
+        goto retcode;
+    }    
+    ret = npd_get_eth_port_drv_info(eth_g_index, &portInfo);
+
+	eth_ifindex.netif_index = eth_g_index;
+	tcv_index  = eth_ifindex.eth_if.port;
+	
+	syslog_ax_eth_port_dbg("get sfp slot %d port %d info.\n", 
+		eth_ifindex.eth_if.slot, tcv_index);
+
+	op_ret = SYS_LOCAL_MODULE_TCV_INFO_GET(tcv_index, &tcv_info);
+	if (op_ret != 0)
+	{
+		syslog_ax_eth_port_err("port %d read transceiver info error.\n", eth_g_index);
+		ret = ETHPORT_RETURN_CODE_ERR_GENERAL;
+		goto retcode;
+	}
+
+retcode:
+    reply = dbus_message_new_method_return(msg);
+    dbus_message_iter_init_append(reply, &iter);
+    dbus_message_iter_append_basic(&iter,
+                                   DBUS_TYPE_UINT32,
+                                   &ret);
+	if (ETHPORT_RETURN_CODE_ERR_NONE == ret)
+    {
+        dbus_message_iter_open_container(&iter,
+                                         DBUS_TYPE_ARRAY,
+                                         DBUS_STRUCT_BEGIN_CHAR_AS_STRING
+                                         DBUS_TYPE_UINT32_AS_STRING
+                                         DBUS_STRUCT_END_CHAR_AS_STRING,
+                                         &iter_array);
+
+        for (i = 0; i< (sizeof(fiber_module_man_param_t)/4); i++)
+        {
+            dbus_message_iter_open_container(&iter_array,
+                                             DBUS_TYPE_STRUCT,
+                                             NULL,
+                                             &iter_struct);
+			
+            tmp = *((unsigned int*)(&tcv_info) + i);
+            dbus_message_iter_append_basic(&iter_struct,
+                 						   DBUS_TYPE_UINT32,
+                 						   &(tmp));
+
+            dbus_message_iter_close_container(&iter_array, &iter_struct);
+        }
+
+        dbus_message_iter_close_container(&iter, &iter_array);
+    }
+	
+    return reply;
+}
 
 DBusMessage * npd_dbus_clear_ethport_stat(DBusConnection *conn, DBusMessage *msg, void *user_data)
 {

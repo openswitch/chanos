@@ -915,7 +915,7 @@ int nbm_sfp_presence_get(int index, int *presence_state)
 	return 0;	
 }
 
-int nbm_sfp_write(int index, unsigned int reg_addr, char * buf, int len)
+int nbm_sfp_write(int index, unsigned int dev_addr, unsigned int reg_addr, char *buf, int len)
 {
 	int op_ret = 0;
 	sfp_op_args sfp_data;
@@ -927,8 +927,9 @@ int nbm_sfp_write(int index, unsigned int reg_addr, char * buf, int len)
 	
 	memset(&sfp_data, 0, sizeof(sfp_op_args));
 	sfp_data.index = index;
-	sfp_data.reg_addr = reg_addr;
-	sfp_data.rwflag = 1;	//write op
+	sfp_data.reg_addr = dev_addr;
+	sfp_data.rwflag = 1; /* write opt */
+	sfp_data.value = reg_addr;
 	sfp_data.buf = (uint64_t)buf; 
 	sfp_data.buf_len = len;
 	
@@ -942,7 +943,7 @@ int nbm_sfp_write(int index, unsigned int reg_addr, char * buf, int len)
 	return 0;		
 }
 
-int nbm_sfp_read(int index, unsigned int reg_addr, char *buf, int len)
+int nbm_sfp_read(int index, unsigned int dev_addr, unsigned int reg_addr, char *buf, int len)
 {
 	int op_ret = 0;
 	sfp_op_args sfp_data;
@@ -954,12 +955,13 @@ int nbm_sfp_read(int index, unsigned int reg_addr, char *buf, int len)
 
 	memset(&sfp_data, 0, sizeof(sfp_op_args));
 	sfp_data.index = index;
-	sfp_data.reg_addr = reg_addr;
+	sfp_data.reg_addr = dev_addr;
+	sfp_data.rwflag = 0; /* read opt */
+	sfp_data.value = reg_addr;
 	sfp_data.buf = (uint64_t)buf; 
 	sfp_data.buf_len = len;
-	sfp_data.rwflag = 0;
 
-	printf("buf value is %x. \n", (int)sfp_data.buf); /* */
+	//printf("buf value is %x. \n", (int)sfp_data.buf); /* */
 	
 	op_ret = ioctl (g_bm_fd, BM_IOC_SFP_OPERATE, &sfp_data);
 	if(op_ret == -1)

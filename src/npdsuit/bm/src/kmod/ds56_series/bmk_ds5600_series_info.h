@@ -43,6 +43,16 @@ int ioctl_proc_module_hwcode(struct file *filp, unsigned int cmd, unsigned long 
 int ioctl_proc_module_type(struct file *filp, unsigned int cmd, unsigned long arg);
 int ioctl_proc_backboard_version(struct file *filp, unsigned int cmd, unsigned long arg);
 int ioctl_proc_board_num(struct file *filp, unsigned int cmd, unsigned long arg);
+
+int ioctl_proc_wdt_enable(struct file *filp, unsigned int cmd, unsigned long arg);
+int ioctl_proc_wdt_timer(struct file *filp, unsigned int cmd, unsigned long arg);
+int ioctl_proc_wdt_clear(struct file *filp, unsigned int cmd, unsigned long arg);
+
+int ioctl_proc_i2c_read_8(struct file *filp, unsigned int cmd, unsigned long arg);
+int ioctl_proc_i2c_write_8(struct file *filp, unsigned int cmd, unsigned long arg);
+int ioctl_proc_i2c_read_eeprom(struct file *filp, unsigned int cmd, unsigned long arg);
+int ioctl_proc_i2c_write_eeprom(struct file *filp, unsigned int cmd, unsigned long arg);
+int ioctl_proc_i2c_read_eeprom_one(struct file *filp, unsigned int cmd, unsigned long arg);
 #else
 int bm_common_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg);
 int bm_product_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg);
@@ -72,7 +82,19 @@ int ioctl_proc_module_type(struct inode *inode, struct file *filp, unsigned int 
 int ioctl_proc_backboard_version(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg);
 int ioctl_proc_board_num(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg);
 
+int ioctl_proc_wdt_enable(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg);
+int ioctl_proc_wdt_timer(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg);
+int ioctl_proc_wdt_clear(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg);
+
+int ioctl_proc_i2c_read_8(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg);
+int ioctl_proc_i2c_write_8(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg);
+int ioctl_proc_i2c_read_eeprom(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg);
+int ioctl_proc_i2c_write_eeprom(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg);
+int ioctl_proc_i2c_read_eeprom_one(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg);
+
 #endif
+
+cpld_reg_ctl * util_get_cmd_reg_ctrl(unsigned int cmd);
 
 extern struct file_operations bm_proc_module_sn;
 extern struct file_operations bm_proc_module_name;

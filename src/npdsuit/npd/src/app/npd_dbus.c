@@ -2424,6 +2424,10 @@ static DBusHandlerResult npd_dbus_relay_message_handler (DBusConnection *connect
 			{
 				 reply = npd_dbus_show_ethport_sfp(connection,message,user_data);
 			}
+			else if (dbus_message_is_method_call(message,NPD_DBUS_RELAY_INTERFACE,NPD_DBUS_ETHPORTS_INTERFACE_METHOD_SHOW_ETHPORT_TCV))
+			{
+				 reply = npd_dbus_show_ethport_transceiver(connection,message,user_data);
+			}
             else if(dbus_message_is_method_call(message,NPD_DBUS_RELAY_INTERFACE,NPD_DBUS_ETHPORTS_INTERFACE_METHOD_CLEAR_ETHPORT_STAT))
     		{
     			reply = npd_dbus_clear_ethport_stat(connection,message,user_data);

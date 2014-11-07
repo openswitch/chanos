@@ -3378,6 +3378,20 @@ enum npd_dbus_result_no_e {
 ********************************************************************************/
 #define NPD_DBUS_ETHPORTS_INTERFACE_METHOD_SHOW_ETHPORT_SFP "show_ethport_sfp" 
 
+/*****************************************************************************
+*  DESCRIPTION: 
+*			This method should also work for box product
+*			arg lists for method NPD_DBUS_ETHPORTS_INTERFACE_METHOD_SHOW_ETHPORT_TCV
+*
+*  INPUT:
+*	 	None.
+*
+*  OUTPUT:  
+*		if this eth_port is FABRIC
+*		int - laser, on or off
+*		int - presense or absense
+********************************************************************************/
+#define NPD_DBUS_ETHPORTS_INTERFACE_METHOD_SHOW_ETHPORT_TCV "show_ethport_tcv" 
 
 /*****************************************************************************
 *	DESCRIPTION: 

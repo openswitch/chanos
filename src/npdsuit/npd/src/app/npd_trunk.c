@@ -38,7 +38,9 @@ extern "C"
 #include "name_hash_index.h"
 #include "npd_lacp.h"
 #include "npd_trunk.h"
-
+#ifdef HAVE_HASH_MODE_GLB
+#include "npd_eth_port.h"
+#endif
 void npd_trunk_handle_port_event
 (
 	unsigned int  eth_g_index,
@@ -84,7 +86,9 @@ extern hash_table_index_t *proto_vlanport_hash;
 extern array_table_index_t *proto_vlan_array;
 
 extern hash_table_index_t *vlan_xlate_table_hash;
-
+#ifdef HAVE_HASH_MODE_GLB
+extern array_table_index_t *npd_eth_cfg_index;
+#endif
 unsigned int trunk_index(unsigned int index)
 {
     return index;
@@ -2630,13 +2634,37 @@ void npd_save_trunk_cfg(char* buf,int bufLen)
     unsigned int port;
 	unsigned int eth_g_index = 0;
     char tempbuf[128];
-	
+#ifdef HAVE_HASH_MODE_GLB
+    struct npd_eth_cfg_s npd_eth_cfg_set = {0};
+#endif
+
     node = malloc(sizeof(struct trunk_s));
     if(NULL == node)
     {
         ret = COMMON_RETURN_CODE_NO_RESOURCE;
         goto error;
     }
+#ifdef HAVE_HASH_MODE_GLB
+
+    ret = dbtable_array_get(npd_eth_cfg_index, 0, &npd_eth_cfg_set);
+
+    if (ret == 0)
+    {
+        if(npd_eth_cfg_set.global_load_balance_mode != LOAD_BANLC_SRC_DEST_MAC)
+        {
+            sprintf(tempbuf, "load-balance %s\n", trkLBalanc[npd_eth_cfg_set.global_load_balance_mode]);
+            totalLen += strlen(tempbuf);
+            if(totalLen < bufLen)
+            {
+                strcat(showStr, tempbuf);
+            }
+            else
+            {
+                goto error;
+            }
+        }
+    }    
+#endif
 
 	for(i = 1; i <= NPD_MAX_TRUNK_ID; i++) {
         node->trunk_id = i;
@@ -2654,6 +2682,8 @@ void npd_save_trunk_cfg(char* buf,int bufLen)
         {
             goto error;
         }
+
+#ifndef HAVE_HASH_MODE_GLB
         if(node->load_balance_mode != g_loadBalanc)
         {
             sprintf(tempbuf, " load-balance %s\n", trkLBalanc[node->load_balance_mode]);
@@ -2667,6 +2697,7 @@ void npd_save_trunk_cfg(char* buf,int bufLen)
                 goto error;
             }
         }
+#endif
         if(node->aggregator_mode != MANUAL_MODE)
         {
             sprintf(tempbuf, " port-channel mode %s\n", aggregator_mode[node->aggregator_mode]);

@@ -283,14 +283,6 @@ unsigned int nam_asic_vlan_get_port_members
 	
 );
 
-unsigned int nam_vlan_na_msg_enable
-(
-    unsigned char devNum,
-    unsigned short vlanId,
-    unsigned int  enable
-);
-
-
 unsigned int nam_set_igmp_enable
 (
 	unsigned short vlanId,
@@ -380,20 +372,6 @@ unsigned int nam_asic_group_mbr_bmp
 	unsigned char devNum,
 	unsigned short vidx,
 	unsigned int *groupMbrBmp
-);
-
-unsigned int nam_asic_vlan_autolearn_set
-(
-    unsigned char devNum,
-    unsigned short vlanId,
-    unsigned int  autolearn
-);
-
-int nam_config_vlan_mtu
-(
-	unsigned char devNum,
-	unsigned int mtuIndex,
-	unsigned int mtuValue
 );
 
 int nam_config_vlan_egress_filter

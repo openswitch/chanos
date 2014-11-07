@@ -359,6 +359,12 @@ extern product_param_t productinfo;
 	(localmoduleinfo->fix_spec_param->sys_led_lighting ? \
 		localmoduleinfo->fix_spec_param->sys_led_lighting(status):0)
 
+#define SYS_LOCAL_MODULE_INSERTED(panel_port) \
+	(localmoduleinfo->fix_spec_param->fiber_module_fix_param->fiber_module_inserted(panel_port))
+	
+#define SYS_LOCAL_MODULE_TCV_INFO_GET(panel_port, ptcv_info) \
+	(ptcv_info ? localmoduleinfo->fix_spec_param->fiber_module_fix_param->fiber_module_info_get(panel_port, ptcv_info):0)
+
 #define LOCAL_MODULE_ID (productinfo.local_module_id)
 #define LOCAL_MODULE_HW_VERSION	(productinfo.local_module_hw_version)
 

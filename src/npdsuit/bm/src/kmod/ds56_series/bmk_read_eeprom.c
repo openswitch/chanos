@@ -9,6 +9,7 @@
 #include <linux/jiffies.h>
 #include <linux/of.h>
 #include <linux/i2c.h>
+#include <linux/i2c-dev.h>
 #include <linux/syscalls.h>
 #include "bmk_read_eeprom.h"
 
@@ -232,7 +233,272 @@ static int _ax_populate_sysinfo_with_textbuf(_ax_sysinfo_t* dest_sysinfo_ptr, un
 	return rcode;
 }
 
+int bm_i2c_read(int twsi_index, unsigned char chip, unsigned int addr, int alen, unsigned char *buffer, int len)
+#if 1
+{	
+	struct file *filp;
+	struct i2c_client *client = NULL;
+	struct i2c_msg i2c_msgs[2];
+	char i2c_path[32];
+	unsigned long timeout, read_time;
+	int status;
+	int i;
 
+	memset((void *)i2c_path, 0, sizeof(i2c_path));
+	memset((void *)i2c_msgs, 0, sizeof(i2c_msgs));
+	
+	sprintf(i2c_path, "/dev/i2c-%d", twsi_index);
+	filp = filp_open(i2c_path, O_RDWR, 0);
+	if(IS_ERR(filp))
+	{
+		DBG(debug_ioctl, "Get device file for %s failed!\n", i2c_path);
+		return -1;
+	}
+	client = filp->private_data;
+    if(client == NULL)
+	{
+		DBG(debug_ioctl, "Get i2c client of %s failed!\n", i2c_path);
+		filp_close(filp, NULL);
+		return -1;
+	}
+
+	i2c_msgs[0].addr = chip;
+	i2c_msgs[0].flags = 0; /* write opt */
+	i2c_msgs[0].len = alen;
+	i2c_msgs[0].buf = kmalloc(alen * sizeof(unsigned char), GFP_KERNEL);
+	if(!i2c_msgs[0].buf)
+	{
+		DBG(debug_ioctl, "%s kmalloc failed!\n", i2c_path);
+		filp_close(filp, NULL);
+		return -1;
+    }
+	memset((void *)i2c_msgs[0].buf, 0, alen);
+	for(i = alen-1; i >= 0; i--)
+		i2c_msgs[0].buf[i] = (unsigned char)(addr>>(i*8));
+
+	i2c_msgs[1].addr = chip;
+	i2c_msgs[1].flags = 1; /* read opt */
+	i2c_msgs[1].len = len;
+	i2c_msgs[1].buf = buffer;
+	if(i2c_msgs[1].buf)
+		memset((void *)i2c_msgs[1].buf, 0, len);
+	
+	/*
+	 * Reads fail if the previous write didn't complete yet. We may
+	 * loop a few times until this one succeeds, waiting at least
+	 * long enough for one entire page write to work.
+	 */
+	timeout = jiffies + msecs_to_jiffies(25);
+	do
+	{
+		read_time = jiffies;
+		
+		status = i2c_transfer(client->adapter, i2c_msgs, 2);
+
+		//DBG(debug_ioctl, "read %zu@%d --> %d (%ld)\n", len, addr, status, jiffies);
+
+		if (status == 2)
+		{
+		   	//DBG(debug_ioctl, "Read value from %x at %x successed.\n", chip, addr);
+			kfree(i2c_msgs[0].buf);
+			filp_close(filp, NULL);
+			return 0;
+		}
+
+		/* REVISIT: at HZ=100, this is sloooow */
+		msleep(1);
+	} while (time_before(read_time, timeout));
+
+	kfree(i2c_msgs[0].buf);
+	filp_close(filp, NULL);
+    return -1;
+}
+#else
+{
+	struct i2c_rdwr_ioctl_data i2c_data;
+	struct i2c_msg i2c_msgs[2];
+	struct file *filp;
+	char i2c_path[32];
+	int i;
+
+	memset((void *)i2c_path, 0, sizeof(i2c_path));
+	memset((void *)i2c_msgs, 0, sizeof(i2c_msgs));
+
+	sprintf(i2c_path, "/dev/i2c-%d", twsi_index);
+	filp = filp_open(i2c_path, O_RDWR, 0);
+	if(IS_ERR(filp))
+	{
+		DBG(debug_ioctl, "%s open failed!\n", i2c_path);
+		return -1;
+	}
+	
+	i2c_data.nmsgs = 2;
+	i2c_data.msgs = i2c_msgs;
+	i2c_data.msgs[0].addr = chip;
+	i2c_data.msgs[0].flags = 0; /* write opt */
+	i2c_data.msgs[0].len = alen;
+	i2c_data.msgs[0].buf = kmalloc(alen * sizeof(unsigned char), GFP_KERNEL);
+	if(!i2c_data.msgs[0].buf)
+	{
+		DBG(debug_ioctl, "%s kmalloc failed!\n", i2c_path);  
+		return -1;
+    }
+	memset((void *)i2c_data.msgs[0].buf, 0, alen);
+	for(i = alen-1; i >= 0; i--)
+		i2c_data.msgs[0].buf[i] = (unsigned char)(addr>>(i*8));
+	
+	i2c_data.msgs[1].addr = chip;
+	i2c_data.msgs[1].flags = 1; /* read opt */
+	i2c_data.msgs[1].len = len;
+	i2c_data.msgs[1].buf = buffer;
+	if(i2c_data.msgs[1].buf)
+		memset((void *)i2c_data.msgs[1].buf, 0, len);
+	
+	//filp->f_op->unlocked_ioctl(filp, I2C_TIMEOUT, 0x500); /* timeout  */  
+	//filp->f_op->unlocked_ioctl(filp, I2C_RETRIES, 1000);  /* retry times */
+	
+	if((filp->f_op->unlocked_ioctl(filp, I2C_RDWR, (unsigned long)&i2c_data)) < 0)
+	{
+		DBG(debug_ioctl, "%s read failed!\n", i2c_path);
+		kfree(i2c_data.msgs[0].buf);
+		filp_close(filp, NULL);
+		return -1;
+	}
+
+	kfree(i2c_data.msgs[0].buf);
+	filp_close(filp, NULL);
+	
+	return 0;
+}
+#endif
+
+int bm_i2c_write(int twsi_index, unsigned char chip, unsigned int addr, int alen, unsigned char *buffer, int len)
+#if 1
+{
+	struct file *filp;
+	struct i2c_client *client = NULL;
+	struct i2c_msg i2c_msgs[2];
+	char i2c_path[32];
+	unsigned long timeout, write_time;
+	int status;
+	int	i;
+	
+	memset((void *)i2c_path, 0, sizeof(i2c_path));
+	memset((void *)i2c_msgs, 0, sizeof(i2c_msgs));
+
+	sprintf(i2c_path, "/dev/i2c-%d", twsi_index);
+	filp = filp_open(i2c_path, O_RDWR, 0);
+	if(IS_ERR(filp))
+	{
+		DBG(debug_ioctl, "Get device file for %s failed!\n", i2c_path);
+		return -1;
+	}
+	client = filp->private_data;
+    if(client == NULL)
+	{
+		DBG(debug_ioctl, "Get i2c client of %s failed!\n", i2c_path);
+	    filp_close(filp, NULL);
+		return -1;
+	}
+
+	i2c_msgs[0].addr = chip;
+	i2c_msgs[0].flags = 0; /* write opt */
+	i2c_msgs[0].len = (alen + len);
+	i2c_msgs[0].buf = kmalloc((alen + len) * sizeof(unsigned char), GFP_KERNEL);
+	if(!i2c_msgs[0].buf)
+	{
+		DBG(debug_ioctl, "%s kmalloc failed!\n", i2c_path);
+	    filp_close(filp, NULL);
+		return -1;
+    }
+	memset((void *)i2c_msgs[0].buf, 0, (alen + len));
+	for(i = alen-1; i >= 0; i--)
+		i2c_msgs[0].buf[i] = (unsigned char)(addr>>(i*8));
+	memcpy((void *)&i2c_msgs[0].buf[alen], (const void *)buffer, len);
+
+	/*
+	 * Reads fail if the previous write didn't complete yet. We may
+	 * loop a few times until this one succeeds, waiting at least
+	 * long enough for one entire page write to work.
+	 */
+	timeout = jiffies + msecs_to_jiffies(25);
+	do
+	{
+		write_time = jiffies;
+		
+		status = i2c_transfer(client->adapter, i2c_msgs, 1);
+
+		//DBG(debug_ioctl, "write %zu@%d --> %d (%ld)\n", len, addr, status, jiffies);
+
+		if (status == 1)
+		{
+		    //DBG(debug_ioctl, "Write value to %x at %x successed.\r\n", chip, addr);
+			kfree(i2c_msgs[0].buf);
+			filp_close(filp, NULL);
+			return 0;
+		}
+
+		/* REVISIT: at HZ=100, this is sloooow */
+		msleep(1);
+	} while (time_before(write_time, timeout));
+	
+	kfree(i2c_msgs[0].buf);
+	filp_close(filp, NULL);
+    return -1;
+}
+#else
+{
+	struct i2c_rdwr_ioctl_data i2c_data;
+	struct i2c_msg i2c_msgs[2];
+	struct file *filp;
+	char i2c_path[32];
+	int	i;
+
+	memset((void *)i2c_path, 0, sizeof(i2c_path));
+	memset((void *)i2c_msgs, 0, sizeof(i2c_msgs));
+
+	sprintf(i2c_path, "/dev/i2c-%d", twsi_index);
+	filp = filp_open(i2c_path, O_RDWR, 0);
+	if(IS_ERR(filp))
+	{
+		DBG(debug_ioctl, "%s open failed!\n", i2c_path);
+		return -1;
+	}
+
+	i2c_data.nmsgs = 1;
+	i2c_data.msgs = i2c_msgs;
+	i2c_data.msgs[0].addr = chip;
+	i2c_data.msgs[0].flags = 0; /* write opt */
+	i2c_data.msgs[0].len = (alen + len);
+	i2c_data.msgs[0].buf = kmalloc((alen + len) * sizeof(unsigned char), GFP_KERNEL);
+	if(!i2c_data.msgs[0].buf)
+	{
+	    filp_close(file, NULL);
+		DBG(debug_ioctl, "%s kmalloc failed!\n", i2c_path);  
+		return -1;
+    }
+	memset((void *)i2c_data.msgs[0].buf, 0, (alen + len));
+	for(i = alen-1; i >= 0; i--)
+		i2c_data.msgs[0].buf[i] = (unsigned char)(addr>>(i*8));
+	memcpy((void *)&i2c_data.msgs[0].buf[alen], (const void *)buffer, len);
+
+	//filp->f_op->unlocked_ioctl(filp, I2C_TIMEOUT, 0x500); /* timeout  */  
+	//filp->f_op->unlocked_ioctl(filp, I2C_RETRIES, 1000);  /* retry times */
+	
+	if((filp->f_op->unlocked_ioctl(filp, I2C_RDWR, (unsigned long)&i2c_data)) < 0)
+	{
+		DBG(debug_ioctl, "%s write failed!\n", i2c_path);
+		kfree(i2c_data.msgs[0].buf);
+		filp_close(filp, NULL);
+		return -1;
+	}
+	
+	kfree(i2c_data.msgs[0].buf);
+	filp_close(filp, NULL);
+	
+	return 0;
+}
+#endif
 /** 
   * copy from _ax_sysinfo_t to ax_sysinfo_product_t
   */
@@ -250,10 +516,10 @@ static void bmk_ds5652_populate_global_bootinfo(char* date_sysinfo_ptr, ax_sysin
 	
 	for(i = 0; i < AX_EEPROM_SYSINFO_MAX_SIZE + 1; i++)
 	{
-	    DBG(debug_ioctl, "%c ", date_sysinfo_ptr[i]);
+	    //DBG(debug_ioctl, "%c ", date_sysinfo_ptr[i]);
 	    if(i%16 == 15)
 	    {
-	        DBG(debug_ioctl, "\r\n");
+	        //DBG(debug_ioctl, "\r\n");
 	    }
 	    switch(date_sysinfo_ptr[i])
 	    {
@@ -350,6 +616,7 @@ int bmk_ds5652_twsi_eeprom_read_byte(uint8_t addr, unsigned short data_offset, c
 	client = file->private_data;
     if(client == NULL)
 	{
+	    filp_close(file, NULL);
 		DBG(debug_ioctl, "Get i2c client of /dev/i2c-1 failed!\n");
 		return -1;
 	}
@@ -379,18 +646,20 @@ int bmk_ds5652_twsi_eeprom_read_byte(uint8_t addr, unsigned short data_offset, c
 		
 		status = i2c_transfer(client->adapter, msg, 2);
 
-		DBG(debug_ioctl, "read %zu@%d --> %d (%ld)\n",
-				1, data_offset, status, jiffies);
+		//DBG(debug_ioctl, "read %zu@%d --> %d (%ld)\n",
+		//		1, data_offset, status, jiffies);
 
 		if (status == 2)
 		{
-		    DBG(debug_ioctl, "Read value %x from eeprom at %x successed.\r\n", *buf_ptr, data_offset);
+		//    DBG(debug_ioctl, "Read value %x from eeprom at %x successed.\r\n", *buf_ptr, data_offset);
+			filp_close(file, NULL);
 			return 0;
 		}
 
 		/* REVISIT: at HZ=100, this is sloooow */
 		msleep(1);
 	} while (time_before(read_time, timeout));
+	filp_close(file, NULL);
     return -1;
 }
 
@@ -412,6 +681,7 @@ int bmk_ds5652_twsi_eeprom_write_byte(uint8_t addr, unsigned short data_offset, 
 	client = file->private_data;
     if(client == NULL)
 	{
+	    filp_close(file, NULL);
 		DBG(debug_ioctl, "Get i2c client of /dev/i2c-1 failed!\n");
 		return -1;
 	}
@@ -439,18 +709,20 @@ int bmk_ds5652_twsi_eeprom_write_byte(uint8_t addr, unsigned short data_offset, 
 		read_time = jiffies;
 		status = i2c_transfer(client->adapter, msg, 1);
 
-		DBG(debug_ioctl, "write %zu@%d --> %d (%ld)\n",
-				1, data_offset, status, jiffies);
+		//DBG(debug_ioctl, "write %zu@%d --> %d (%ld)\n",
+		//		1, data_offset, status, jiffies);
 
 		if (status == 1)
 		{
-		    DBG(debug_ioctl, "Write %x to eeprom at %x successed.\r\n", data, data_offset);
+		//    DBG(debug_ioctl, "Write %x to eeprom at %x successed.\r\n", data, data_offset);
+			filp_close(file, NULL);
 			return 0;
 		}
 
 		/* REVISIT: at HZ=100, this is sloooow */
 		msleep(1);
 	} while (time_before(read_time, timeout));
+	filp_close(file, NULL);
     return -1;
 }
 

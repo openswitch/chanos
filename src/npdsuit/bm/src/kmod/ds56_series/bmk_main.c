@@ -228,7 +228,7 @@ static int bm_init(void)
 {
 	int result;
 	dev_t bm_devt;
-
+	
 	bm_devt = MKDEV(BM_MAJOR_NUM,BM_MINOR_NUM);
 	result = register_chrdev_region(bm_devt,1,DRIVER_NAME);
 	printk(KERN_INFO DRIVER_NAME ":register major dev [%d] with debug_ioctl[%d]\n",MAJOR(bm_devt),debug_ioctl);
@@ -255,8 +255,8 @@ static int bm_init(void)
 		printk(KERN_INFO DRIVER_NAME ":loaded successfully.\n");
 	}
 	result = bm_product_init();
+	
 	return result;
-
 }
 
 

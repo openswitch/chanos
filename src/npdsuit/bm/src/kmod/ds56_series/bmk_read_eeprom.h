@@ -78,5 +78,9 @@ int bm_ax_read_module_sysinfo(ax_module_sysinfo* sysinfo);
 int ax_read_sysinfo_from_eeprom_proc(unsigned char  eeprom_addr, ax_sysinfo_product_t* sysinfo);
 
 int  _ax_i2c_read8(unsigned char chip, uint addr, int alen, unsigned char *buffer, int len);
+int  _ax_i2c_read8_port(unsigned char port_idx, unsigned char chip, uint addr, int alen, unsigned char *buffer, int len);
+
+int bm_i2c_read(int twsi_index, unsigned char chip, unsigned int addr, int alen, unsigned char *buffer, int len);
+int bm_i2c_write(int twsi_index, unsigned char chip, unsigned int addr, int alen, unsigned char *buffer, int len);
 
 #endif 

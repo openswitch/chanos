@@ -25,6 +25,8 @@ int dcli_get_eth_port_rate(unsigned int eth_g_index, unsigned int *inbandwidth,u
 
 int dcli_get_eth_port_sfp_atrr(unsigned int eth_g_index, eth_port_sfp *sfpInfo);
 
+int dcli_get_eth_port_transceiver_atrr(unsigned int eth_g_index, fiber_module_man_param_t *tcvInfo);
+	
 int clear_eth_port_stat(unsigned int eth_g_index);
 
 int dcli_eth_port_config_buffer_mode(unsigned char isEnable);

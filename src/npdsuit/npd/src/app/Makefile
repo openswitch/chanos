@@ -75,7 +75,7 @@ NPD_COMMON_OBJS := npd_main.o npd_dbus.o npd_log.o npd_vlan.o npd_trunk.o npd_et
 			product_conn.o npd_c_slot.o npd_product.o chassis_manage_proto.o \
 			circle.o os_unix.o npd_asd.o npd_database.o npd_netif_event.o npd_switch_port.o npd_lacp.o npd_dhcp_relay.o \
                         npd_rx.o npd_tx.o npd_udld.o \
-                        npd_pkt_list.o npd_tracking.o npd_poe.o npd_erpp.o npd_sflow.o
+                        npd_pkt_list.o npd_tracking.o npd_poe.o npd_erpp.o npd_sflow.o npd_sfp_ddm.o
 ifneq ($(findstring GVRP,$(INCLUDE_CHANOS_MODULES)),)
 NPD_COMMON_OBJS += npd_gvrp.o npd_gvrp_gid.o npd_gvrp_gidtt.o npd_gvrp_timer.o npd_gvrp_gip.o 
 endif

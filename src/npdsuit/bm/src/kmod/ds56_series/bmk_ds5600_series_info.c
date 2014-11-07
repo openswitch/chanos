@@ -6,7 +6,7 @@
 #include <linux/spinlock.h>
 #include <linux/fs.h>
 #include <linux/proc_fs.h>
-
+#include <linux/watchdog.h>
 #include <asm/uaccess.h>
 #include "bmk_main.h"
 #include "bmk_product_feature.h"
@@ -17,9 +17,8 @@
 
 #include "bmk_ds5600_series_info.h"
 
-
 unsigned int debug_ioctl = 0;    
-unsigned int debug_octeon =  0 ; 
+unsigned int debug_octeon =  0; 
 
 
 /** 
@@ -32,6 +31,31 @@ extern mac_addr_stored_t stored_mac;
   * data from box device.
   */
 extern long bm_get_product_code(void);
+
+cpld_reg_ctl * util_get_cmd_reg_ctrl(unsigned int cmd)
+{
+	int index; 
+	cpld_reg_ctl * ptr_cpld_ctl = NULL;
+	
+	for (index = 0; index < ko_board->cpld_reg_ctrl_count; index++)
+	{
+		cpld_reg_ctl *cpld_ctl = &ko_board->cpld_reg_ctrl_arr[index];
+		if (cpld_ctl->cmd_code == cmd)
+		{
+			DBG(debug_ioctl, "cmd %#x index %d, offset %#x, mask %#x.\n", 
+									cmd, index, cpld_ctl->offset, cpld_ctl->mask);
+			ptr_cpld_ctl = cpld_ctl;
+			break;
+		}
+	}
+
+	if (ptr_cpld_ctl == NULL)
+	{
+		DBG(debug_ioctl, "can't find cmd code  0x%x\n", cmd);
+	}
+
+	return ptr_cpld_ctl;
+}
 
 ioctl_proc ds5600_ioctl_proc_arr[] = 
 {
@@ -56,6 +80,16 @@ ioctl_proc ds5600_ioctl_proc_arr[] =
 	{BM_IOC_CPLD_BOARD_ONLINE, 		ioctl_proc_board_online},
 	
 	{BM_IOC_KERNEL_DEBUG,			ioctl_proc_kernel_debug},
+
+	//{BM_IOC_CPLD_WDT_ENABLE,        ioctl_proc_wdt_enable},
+	//{BM_IOC_CPLD_WDT_TIMER,         ioctl_proc_wdt_timer},
+	//{BM_IOC_CPLD_WDT_CLEAR,         ioctl_proc_wdt_clear},
+		
+	//{BM_IOC_I2C_READ_8,				ioctl_proc_i2c_read_8},
+	//{BM_IOC_I2C_WRITE_8,			ioctl_proc_i2c_write_8},
+	//{BM_IOC_I2C_READ_EEPROM,		ioctl_proc_i2c_read_eeprom},
+	//{BM_IOC_I2C_WRITE_EEPROM,		ioctl_proc_i2c_write_eeprom},
+	//{BM_IOC_I2C_READ_EEPROM_ONE,	ioctl_proc_i2c_read_eeprom_one}, 
 };
 
 int bm_product_series_ioctl(/*struct inode *inode, */struct file *filp, unsigned int cmd, unsigned long arg)
@@ -159,11 +193,182 @@ void cpld_module_type_handler(void * data)
 *
 *****************************************************/
 
+struct file *filp_wdt = NULL;
+
+int ioctl_proc_wdt_enable(struct file *filp, unsigned int cmd, unsigned long arg)
+{
+	cpld_op_args cpld_op_data;
+	int time_out = 60; /* 60s */
+	int op_ret;
+	int ret;
+
+	DBG(debug_ioctl, "Enter ds5662_ioctl_proc_wdt_enable\n");
+	
+	memset(&cpld_op_data, 0, sizeof(cpld_op_args));
+
+	op_ret = copy_from_user(&cpld_op_data, (cpld_op_args *)arg, sizeof(cpld_op_args));
+	if (!cpld_op_data.write_flag) /* read op */
+	{
+		cpld_op_data.value = (filp_wdt->f_op) ? WATCHDOG_ENABLE : WATCHDOG_DISABLE;
+	}
+	else /* write op */
+	{
+		if(cpld_op_data.value == WATCHDOG_ENABLE) /* enable watchdog */
+		{
+			if(filp_wdt->f_op)
+				return 0;
+
+			filp_wdt = filp_open("/dev/watchdog", O_WRONLY, 0);
+			if(IS_ERR(filp_wdt))
+			{
+				DBG(debug_ioctl, "Get device file for /dev/watchdog failed!\n");
+				return -1;
+			}
+			ret = filp_wdt->f_op->unlocked_ioctl(filp_wdt, WDIOC_SETTIMEOUT, (unsigned long)&time_out);
+		}
+		else /* disable watchdog */
+		{
+			if(!filp_wdt->f_op)
+				return 0;
+
+			ret = filp_wdt->f_op->write(filp_wdt, "V", 1, NULL); /* support close */
+            filp_close(filp_wdt, NULL);
+			filp_wdt->f_op = NULL;
+			filp_wdt = NULL;
+		}
+	}
+	op_ret = copy_to_user((cpld_op_args *)arg, &cpld_op_data, sizeof(cpld_op_args));
+	
+	return ret; 
+}
+
+int ioctl_proc_wdt_timer(struct file *filp, unsigned int cmd, unsigned long arg)
+{
+	cpld_op_args cpld_op_data;
+	int op_ret;
+	int ret;
+
+	DBG(debug_ioctl, "Enter ds5662_ioctl_proc_wdt_timer\n");
+	
+	memset(&cpld_op_data, 0, sizeof(cpld_op_args));
+
+	op_ret = copy_from_user(&cpld_op_data, (cpld_op_args *)arg, sizeof(cpld_op_args));
+	if(filp_wdt->f_op)
+	{
+		if(!cpld_op_data.write_flag) /* read opt */
+			ret = filp_wdt->f_op->unlocked_ioctl(filp_wdt, WDIOC_GETTIMEOUT, (unsigned long)&cpld_op_data.value);
+		else /* write opt */
+			ret = filp_wdt->f_op->unlocked_ioctl(filp_wdt, WDIOC_SETTIMEOUT, (unsigned long)&cpld_op_data.value);
+	}
+	else
+	{
+		ret = 0;
+	}
+	op_ret = copy_to_user((cpld_op_args *)arg, &cpld_op_data, sizeof(cpld_op_args));
+	
+	return ret;
+}
+
+int ioctl_proc_wdt_clear(struct file *filp, unsigned int cmd, unsigned long arg)
+{
+	int ret;
+
+	DBG(debug_ioctl, "Enter ds5662_ioctl_proc_wdt_clear\n");
+
+	if(filp_wdt->f_op)
+		ret = filp_wdt->f_op->write(filp_wdt, "A", 1, NULL);
+	else
+		ret = 0;
+	
+	return ret;
+}
+
+int ioctl_proc_i2c_read_8(struct file *filp, unsigned int cmd, unsigned long arg)
+{
+	i2c_op_8_args i2c_op_8_data;
+	int op_ret;
+	int ret;
+
+	memset((void *)&i2c_op_8_data, 0, sizeof(i2c_op_8_args));
+	
+	op_ret = copy_from_user(&i2c_op_8_data, (i2c_op_8_args *)arg, sizeof(i2c_op_8_args));
+	ret = bm_i2c_read(0, i2c_op_8_data.dev_addr, i2c_op_8_data.reg_offset, 1,
+					i2c_op_8_data.data, i2c_op_8_data.buf_len);
+	op_ret = copy_to_user((i2c_op_8_args *)arg, &i2c_op_8_data, sizeof(i2c_op_8_args));
+
+	return ret;
+}
+
+int ioctl_proc_i2c_write_8(struct file *filp, unsigned int cmd, unsigned long arg)
+{
+	i2c_op_8_args i2c_op_8_data;
+	int op_ret;
+	int ret;
+
+	memset((void *)&i2c_op_8_data, 0, sizeof(i2c_op_8_args));
+	
+	op_ret = copy_from_user(&i2c_op_8_data, (i2c_op_8_args *)arg, sizeof(i2c_op_8_args));
+	ret = bm_i2c_write(0, i2c_op_8_data.dev_addr, i2c_op_8_data.reg_offset, 1,
+					i2c_op_8_data.data, i2c_op_8_data.buf_len);
+	op_ret = copy_to_user((i2c_op_8_args *)arg, &i2c_op_8_data, sizeof(i2c_op_8_args));
+
+	return ret;
+}
+
+int ioctl_proc_i2c_read_eeprom(struct file *filp, unsigned int cmd, unsigned long arg)
+{
+	i2c_op_8_args i2c_op_eeprom;
+	int op_ret;
+	int ret;
+
+	memset((void *)&i2c_op_eeprom, 0, sizeof(i2c_op_8_args));
+	
+	op_ret = copy_from_user(&i2c_op_eeprom, (i2c_op_8_args *)arg, sizeof(i2c_op_8_args));
+	ret = bm_i2c_read(1, i2c_op_eeprom.dev_addr, i2c_op_eeprom.reg_offset, 2,
+					i2c_op_eeprom.data, i2c_op_eeprom.buf_len);
+	op_ret = copy_to_user((i2c_op_8_args *)arg, &i2c_op_eeprom, sizeof(i2c_op_8_args));
+
+	return ret;
+}
+
+int ioctl_proc_i2c_write_eeprom(struct file *filp, unsigned int cmd, unsigned long arg)
+{
+	i2c_op_8_args i2c_op_eeprom;
+	int op_ret;
+	int ret;
+
+	memset((void *)&i2c_op_eeprom, 0, sizeof(i2c_op_8_args));
+	
+	op_ret = copy_from_user(&i2c_op_eeprom, (i2c_op_8_args *)arg, sizeof(i2c_op_8_args));
+	ret = bm_i2c_write(1, i2c_op_eeprom.dev_addr, i2c_op_eeprom.reg_offset, 2,
+					i2c_op_eeprom.data, i2c_op_eeprom.buf_len);
+	op_ret = copy_to_user((i2c_op_8_args *)arg, &i2c_op_eeprom, sizeof(i2c_op_8_args));
+
+	return ret;
+}
+
+int ioctl_proc_i2c_read_eeprom_one(struct file *filp, unsigned int cmd, unsigned long arg)
+{
+	i2c_op_8_args i2c_op_8_data;
+	int op_ret;
+	int ret;
+
+	memset((void *)&i2c_op_8_data, 0, sizeof(i2c_op_8_args));
+	
+	op_ret = copy_from_user(&i2c_op_8_data, (i2c_op_8_args *)arg, sizeof(i2c_op_8_args));
+	ret = bm_i2c_read(1, i2c_op_8_data.dev_addr, i2c_op_8_data.reg_offset, 1,
+					i2c_op_8_data.data, i2c_op_8_data.buf_len);
+	op_ret = copy_to_user((i2c_op_8_args *)arg, &i2c_op_8_data, sizeof(i2c_op_8_args));
+
+	return ret;
+}
 
 /****************************************************************/
-//int ioctl_proc_product_family(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
 int ioctl_proc_product_family(struct file *filp, unsigned int cmd, unsigned long arg)
-
+#else
+int ioctl_proc_product_family(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg)
+#endif
 {
     cpld_op_args cpld_op_data;
 	int  op_ret = 0;
@@ -332,12 +537,10 @@ int ioctl_proc_get_mac(struct inode *inode, struct file *filp, unsigned int cmd,
 }
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
-
-#else
-
-#endif
-
 int ioctl_proc_bootrom_exch(/*struct inode *inode, */struct file *filp, unsigned int cmd, unsigned long arg)
+#else
+int ioctl_proc_bootrom_exch(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg)
+#endif
 {
 	bootrom_file bootrom;
 	int retval = 0;
