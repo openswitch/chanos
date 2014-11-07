@@ -12,7 +12,8 @@ extern "C"
 #include "board/ts_product_feature.h"
 #include "nbm/nbm_cpld.h"
 #include "npd/nbm/npd_cplddef.h"
-
+#include "npd/product_feature.h"
+#include "npd/npd_sfp_ddm.h"
 #include "board/ts_product_feature.h"
 
 #include "ds5652_board_feature.c"

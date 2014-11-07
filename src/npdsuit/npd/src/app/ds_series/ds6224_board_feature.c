@@ -15,6 +15,24 @@ long ds6224_board_sfp_detect_start()
 
 long ds6224_board_sfp_info_get(unsigned long panel_port, fiber_module_man_param_t *param)
 {
+	int port_type;
+
+	if(!param)
+		return NPD_FAIL;
+
+	memset(param, 0, sizeof(fiber_module_man_param_t));
+
+	port_type = npd_get_port_type(SYS_LOCAL_MODULE_TYPE, (panel_port+1));
+	switch(port_type)
+	{
+		case ETH_XGE_SFPPLUS:
+			npd_get_sfp_info(panel_port, port_type, param);
+			break;
+		default:
+			npd_get_dump_sfp_info(panel_port, port_type, param);
+			break;
+	}
+
     return NPD_SUCCESS;
 }
 
@@ -93,33 +111,7 @@ fiber_module_fix_param_t ds6224_board_sfp_param =
 
 long ds6224_board_asic_led_proc(int unit)
 {
-#if 0
-	CPSS_LED_CONF_STC				ledStreamConf;		/* led stream interface configuration structure */	
-	GT_STATUS						rc; 			/* return code */	
-	GT_U32							ledInterfaceNum=0;	  /* led stream interface number */ 
-	GT_U32	  portGroupId = 0x3;		 /*Led stream configuration */	  
 
-	printf("Enter %s %s %d ",__FILE__, __FUNCTION__,__LINE__);
-	ledStreamConf.ledOrganize = CPSS_LED_ORDER_MODE_BY_CLASS_E;    
-	ledStreamConf.disableOnLinkDown = GT_TRUE;	  
-	ledStreamConf.blink0DutyCycle = CPSS_LED_BLINK_DUTY_CYCLE_1_E;	  
-	ledStreamConf.blink0Duration  = CPSS_LED_BLINK_DURATION_6_E;	
-	ledStreamConf.blink1DutyCycle = CPSS_LED_BLINK_DUTY_CYCLE_1_E;	  
-	ledStreamConf.blink1Duration  = CPSS_LED_BLINK_DURATION_5_E;	
-	ledStreamConf.pulseStretch	= CPSS_LED_PULSE_STRETCH_5_E;	 
-	ledStreamConf.ledStart	= 0x53;    
-	ledStreamConf.ledEnd	= 0x6b;    
-	ledStreamConf.clkInvert = GT_TRUE;	  
-	ledStreamConf.class5select	= CPSS_LED_CLASS_5_SELECT_HALF_DUPLEX_E;	
-	ledStreamConf.class13select = CPSS_LED_CLASS_13_SELECT_LINK_DOWN_E;
-	
-	rc = cpssDxChLedStreamPortGroupConfigSet(0, portGroupId, ledInterfaceNum, &ledStreamConf);		
-	printf("Leave  %s %s %d rc=%d ",__FILE__, __FUNCTION__, __LINE__, rc);
-	if(rc != GT_OK)    
-	{		  
-		return rc;	  
-	}		
-#endif
 	return NPD_SUCCESS; 
 }
 

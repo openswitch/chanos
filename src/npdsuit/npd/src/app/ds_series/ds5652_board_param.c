@@ -174,7 +174,7 @@ board_feature_t ds5652_board_feature =
     .ipsubnet_vlan_start_id=192,
     .ipsubnet_vlan_end_id=255,
     
-	.sg_filter = TRUE 
+	.sg_filter = FALSE 
 };
 
 int ds5652_board_support_product[] =

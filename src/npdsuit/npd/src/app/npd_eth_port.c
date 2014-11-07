@@ -495,7 +495,7 @@ void npd_init_eth_ports(void)
         syslog_ax_fdb_err("create npd ethernet port configuration table index fail\n");
         return ;
     }
-
+    memset(&npd_eth_cfg_default, 0, sizeof(npd_eth_cfg_default));
     npd_eth_cfg_default.rate_poll_enable = npd_eth_port_rate_poll_enable;
     ret = dbtable_array_insert(npd_eth_cfg_index, &npd_eth_cfg_global_no, &npd_eth_cfg_default);
 

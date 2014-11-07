@@ -15,6 +15,28 @@ long ds5652_board_sfp_detect_start()
 
 long ds5652_board_sfp_info_get(unsigned long panel_port, fiber_module_man_param_t *param)
 {
+	int port_type;
+
+	if(!param)
+		return NPD_FAIL;
+
+	memset(param, 0, sizeof(fiber_module_man_param_t));
+
+	port_type = npd_get_port_type(SYS_LOCAL_MODULE_TYPE, (panel_port+1));
+	switch(port_type)
+	{
+		case ETH_XGE_SFPPLUS:
+			npd_get_sfp_info(panel_port, port_type, param);
+			break;
+		case ETH_XGE_QSFP:
+		case ETH_40G_QSFP:
+			npd_get_qsfp_info(panel_port, port_type, param);
+			break;
+		default:
+			npd_get_dump_sfp_info(panel_port, port_type, param);
+			break;
+	}
+
     return NPD_SUCCESS;
 }
 
